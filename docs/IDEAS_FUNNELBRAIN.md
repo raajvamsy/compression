@@ -1,0 +1,121 @@
+# FunnelBrain theory applied to image compression (FFIC prototype)
+
+**Status:** research prototype, 2026-10-24. Code in [`ffic/`](../ffic). It measures **ideal code length** (sum of -log2 p).
+There is **no bitstream and no decoder yet**, so nothing here is a verified round trip. Treat every number as "what an
+arithmetic coder driven by this model should produce, minus a few hundredths of a percent".
+
+## 1. What FunnelBrain is (read from `raajvamsy/funnel-brain`, `docs/FUNNEL_BRAIN_HYPOTHESIS.md`, `funnel/field.py`)
+
+| FunnelBrain mechanism | In the brain | Reading for compression |
+|---|---|---|
+| Multi-scale transduction (windows 4 / 64 / 1024 B -> mean, spread, head, hash) | bytes become a point in concept space | a descriptor of the causal neighbourhood |
+| **Funnel** (frustum attractor: position, `mouth_radius`, `depth`, `exposure_count`, fatigue) | a learned concept | a context class that owns a predictor; depth = how much experience backs it |
+| `find_or_create_funnel` within `MERGE_RADIUS` | online leader clustering | classes are created on demand, not designed |
+| **Spin** (wave-ball phase velocity; `wave_modulation` = frequency / amplitude / phase) | helical trajectories, bounce angles | **orientation and activity of the local signal** (the "different directions" idea) |
+| **Prediction error** widens the mouth and deepens the funnel | online learning | every pixel's surprise updates weights, scale and skill |
+| Fatigue / saturation | funnel fills, ball bounces out | the learning rate floors out as a funnel matures |
+| **Sleep MDL**: *fission* (split a funnel whose modes disagree), meta-funnels, **nesting** (`parent_meta_id`) | offline restructuring, "keep a new cluster only if it pays for itself" | a hierarchy of contexts where **a child inherits its parent** and must earn influence |
+| Parallel balls + global workspace (one winner) | many candidates, one thought | several predictors at once, blended by recent error |
+| Shared field, organs as lenses | one substrate, many readers | FunnelZip's "lenses on one field" (already used there) |
+
+What I deliberately did **not** take: the ball-bounce simulation. It is a slow way to find the nearest funnel; here a
+funnel is found by direct lookup, which is where the speed comes from.
+
+## 2. FFIC: the mapping, in code (`ffic/ffic.c`)
+
+```
+for each plane (G first, then R, then B):          <- colour is a dimension: later planes read earlier planes
+  per pixel, from already-decoded pixels only:
+    transduce   : activity A (8), brightness L (4), SPIN theta (8 orientations + flat)
+    parallel balls : 5 fixed predictors, blended by their recent error nearby   -> "base"
+    funnel path : root -> A -> (A,theta) -> (A,theta,L)     (nested; a newborn funnel copies its parent's
+                  weights AND covariance; each funnel predicts; workspace weights = 1 / skill^2)
+    predictor   : recursive least squares on 12 causal taps + cross-plane colour taps (17 for R, 22 for B)
+    mouth       : residual scale from local error energy x activity x cross-plane surprise
+    coder       : residual e = x - round(pred) as binary decisions (zero? sign? magnitude bucket, mantissa),
+                  each probability = logistic mix of 6 funnel-context counters + a parametric Laplace prior
+    learn       : weights, covariance, skill, mouth, counters, mixer all adapt every pixel
+```
+
+## 3. Results (20 images: 12 Pexels crops 1024x768 + 8 Kodak 768x512; reference = JXL lossless effort 9)
+
+| Model | Size vs JXL e9 | Pexels-11 vs FunnelZip | Time, 20 images, 4 jobs in parallel |
+|---|---|---|---|
+| bare baseline (MED + activity context + Laplace) | +75.9% | +87.8% | 5.6 s |
+| + LMS, cross-plane taps, error-energy mouth, parallel balls (`lcew`) | +13.7% | +17.0% | 6.9 s |
+| + nested funnels (`ltpcew`, NLMS learner) | +15.0% | +18.2% | 8.4 s |
+| + recursive least squares (`ltpcrew`) | +4.8% | +5.9% | 56.6 s |
+| + binary context-mixing residual coder (`lcewb`, no RLS) | +10.2% | +13.2% | 19.7 s |
+| **full model** (`ltpcrewb`) | **+1.1%** | **+1.8%** | 70.7 s (about 3.5 s / image) |
+| full model, learning gated off on unsurprising pixels (`gate=0.5`) | +1.9% | +2.8% | 46.3 s (about 2.3 s / image) |
+| full model, RLS only on the deepest funnel (`rl=1`) | +4.7% | +6.1% | 37.6 s |
+
+Reference speeds on the same machine: FunnelZip about 12-17 s per image, JXL e9 about 1.3 s, JXL e7 about 0.2 s.
+
+Per image, full model vs JXL e9: **wins** on p1054218 (-9%), p2014422 (-9%), p1770809 (-4%), ties on p1366919 and kodim20,
+**loses** by 1-5% on the rest (worst: dog photo p2253275 +5%, kodim01 +5%). It beats FunnelZip on the two smoothest
+Pexels images (310 kB vs 318 kB, 158 kB vs 160 kB).
+
+## 4. What the experiments say about the theory
+
+* **Static splitting hurts; nesting repairs it.** Splitting into up to 288 funnels by spin and level made the model *worse*
+  (+29% with spin, +40% with level, against +17.8% for one funnel in that version) because every new funnel had to relearn
+  its predictor (context dilution). Making the same funnels nested, with inheritance and a skill-weighted blend, gave
+  +16.6% instead of +29-40%. This is the FunnelBrain rule ("a new cluster must pay for itself") confirmed on data.
+  But the benefit of the extra levels themselves is small and depends on the learner: with NLMS the nested hierarchy was
+  no better than a single funnel in the final code (+15.0% vs +13.7%); with RLS and the discrete coder it helps by about
+  one point (+2.4% -> +1.4% in the version before the last two additions). Spin and brightness are not where the big gains are.
+* **The colour dimension was the biggest single lever.** On a single G plane FFIC already matched JXL (-4% to +2%). Most
+  of the early gap was R and B. Giving them G's local colour structure at the neighbouring positions took the total from
+  about +18% to +4.9%.
+* **A better learner mattered more than more contexts.** Recursive least squares in place of NLMS: +20% -> +19.5% alone,
+  but with the discrete coder +11.7% -> +1.4%.
+* **A discrete residual coder mattered on smooth images.** A parametric Laplace around a fractional prediction cannot model
+  "exactly zero 80% of the time". The static conditional entropy given only (activity, energy) was *equal* to the Laplace
+  cost, so the gain came from richer contexts, not from the shape (diagnostic run, dog photo).
+* **Things that did not help much:** cross-plane error energy in the mouth (+4.9% -> +4.8%), ball disagreement as a
+  context plus a parametric prior input (+1.4% -> +1.1%), non-causal G taps (E, S, SE, SW of an already-decoded plane:
+  -0.07% for +44% time, left off), RLS on the root funnel (byte-identical with and without), and every parameter sweep
+  (forgetting factor, mixer rate, counter limit, covariance init: all within 0.5 points).
+
+## 5. Honest assessment: "a lot more and faster"
+
+* **Faster: yes, relative to FunnelZip.** About 4x (full) to 6x (gated) faster than the current FunnelZip on the same
+  images, at 1.8-2.8% larger on the Pexels subset. It is **not** faster than JXL (about 2-3x slower than e9, 10x+ slower than e7).
+* **More: not yet.** The model reaches JXL e9 parity (+1.1% overall) and beats it on 3 of 20 images. It does not beat
+  FunnelZip on average. The honest ceiling of this model family looks like a few percent better than JXL, because
+  the parameters are flat and the easy additions are used up. Real "a lot more" needs something structurally new.
+* **FunnelBrain's contribution is the design, not new mathematics.** The final system is close to known techniques
+  (context mixing, recursive-least-squares prediction, hierarchical context back-off). What FunnelBrain gave was a
+  coherent blueprint that I could test piece by piece, and the nesting/inheritance rule was a real, measured win.
+* **Test-set caveat.** The Pexels images are JPEG-derived (CDN recompression), so they carry an 8x8 DCT block structure
+  that raw camera files lack. Kodak (lossless source) is the cleaner check: there FFIC is +0% to +5% vs JXL.
+* **Not done:** a real arithmetic coder and decoder (round-trip proof); float determinism between encoder and decoder
+  (needs a fixed compiler/flags or fixed-point arithmetic); speed work (SIMD, fewer taps, update gating in the C core);
+  8-bit grayscale / alpha / 16-bit paths.
+
+## 6. Next steps, ranked by expected value
+
+1. **Real coder + decoder + round-trip test** (must precede any claim). Small, and it fixes the numbers.
+2. **FunnelBrain "sleep" for real:** MDL-gated *fission* (split a funnel only when a shadow child beats it over a window),
+   plus periodic merge/prune, replacing my fixed quantisations. This is the one FunnelBrain mechanism I have not built.
+   Expectation: low single digits.
+3. **More balls with different timescales** (RLS with two forgetting factors, different tap sets) blended by the workspace.
+4. **Speed:** gate and decimate RLS updates, SIMD the covariance update, drop taps by measured importance. Target:
+   JXL-e9-class time at the current size.
+5. **Use FunnelZip's strengths inside FFIC:** its exact-value hashed contexts and JPEG-block structure (8x8 lattice
+   context) should help the Pexels-type images where FFIC still trails it.
+6. Ideas from [IDEAS_PHYSICS.md](IDEAS_PHYSICS.md) not yet tried: coarse-to-fine two-pass context (all four sides),
+   fuzzy-match (delay embedding) lens, diffusion-filled estimate as a ball.
+
+## 7. Reproduce
+
+```bash
+cd ffic
+python3 prep_data.py OUTDIR PEXELS_JPG_DIR KODAK_PNG_DIR        # raw RGB + JXL e9 reference sizes
+clang -O2 -march=native -o ffic ffic.c -lm
+QUIET=1 python3 bench.py OUTDIR none lcew ltpcrewb ltpcrewb:gate=0.5   # per-config totals (4 jobs in parallel)
+./ffic OUTDIR/pex_p2253275.rgb 1024 768 ltpcrewb                 # one image
+```
+Flags: `l` learn, `t` spin, `v` level, `p` nesting, `c` colour taps, `e` energy mouth, `w` ball blend, `r` RLS,
+`b` binary context-mixing coder, `f` non-causal colour taps. Options: `gate=`, `rl=` (RLS level mask), `lam=`, `lrm=`, `clim=`, `P0=`, `mu=`.
