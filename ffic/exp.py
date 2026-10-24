@@ -24,7 +24,7 @@ def fingerprint():
 
 
 def build():
-    subprocess.check_call(["clang", "-O2", "-march=native", "-o", EXE, os.path.join(HERE, "ffic.c"), "-lm"])
+    subprocess.check_call(["clang", "-O2", "-march=native", "-pthread", "-o", EXE, os.path.join(HERE, "ffic.c"), "-lm"])
 
 
 def funnelzip_sizes(D):
@@ -56,7 +56,7 @@ def run_experiment(D, exp):
     if exp.get("data"): D = os.path.join(os.path.dirname(D.rstrip('/')), exp["data"])
     ref = json.load(open(os.path.join(D, "ref.json"))); fz = funnelzip_sizes(os.path.join(os.path.dirname(D.rstrip('/')), 'ffic_data'))
     t0 = time.time()
-    with ThreadPoolExecutor(4) as pool:
+    with ThreadPoolExecutor(int(os.environ.get("JOBS", exp.get("jobs", 4)))) as pool:
         futs = {n: pool.submit(run_one, D, ref, n, exp["cfg"]) for n in ref}
         per = {n: f.result() for n, f in futs.items()}
     wall = time.time() - t0
@@ -67,13 +67,13 @@ def run_experiment(D, exp):
         "id": exp["id"], "group": exp.get("group", ""), "mechanism": exp["mechanism"], "funnelbrain": exp["funnelbrain"],
         "hypothesis": exp["hypothesis"], "cfg": exp["cfg"], "data": exp.get("data", "ffic_data"), "code_sha1": fp, "git_head": head,
         "date": time.strftime("%Y-%m-%d %H:%M:%S"), "wall_s": round(wall, 1),
-        "cpu_s": round(sum(v["ms"] for v in per.values()) / 1000, 1),
+        "cpu_s": round(sum(v["ms"] for v in per.values()) / 1000, 1), "wall_sum_s": round(sum(v.get("wall", v["ms"]) for v in per.values()) / 1000, 1),
         "total_bytes": int(tot), "vs_jxl9_pct": round(100 * (tot / jxl - 1), 3),
         "pexels_bytes": int(sum(per[n]["bytes"] for n in pex)),
         "vs_funnelzip_pct": round(100 * (sum(per[n]["bytes"] for n in pex) / max(1, sum(fz[n] for n in pex)) - 1), 3),
         "kodak_vs_jxl9_pct": round(100 * (sum(per[n]["bytes"] for n in ref if n.startswith("kod")) / sum(ref[n]["jxl9"] for n in ref if n.startswith("kod")) - 1), 3),
         "pexels_vs_jxl9_pct": round(100 * (sum(per[n]["bytes"] for n in ref if n.startswith("pex")) / sum(ref[n]["jxl9"] for n in ref if n.startswith("pex")) - 1), 3),
-        "per_image": {n: {"bytes": int(v["bytes"]), "R": int(v["R"]), "G": int(v["G"]), "B": int(v["B"]), "ms": int(v["ms"]),
+        "per_image": {n: {"bytes": int(v["bytes"]), "R": int(v["R"]), "G": int(v["G"]), "B": int(v["B"]), "ms": int(v["ms"]), "wall_ms": int(v.get("wall", v["ms"])),
                           "vs_jxl9_pct": round(100 * (v["bytes"] / ref[n]["jxl9"] - 1), 2),
                           "stats": {k: v[k] for k in ("funnels", "field_born", "field_max", "fission", "prune", "hippo_hit", "replay") if k in v}}
                       for n, v in per.items()},
@@ -81,7 +81,7 @@ def run_experiment(D, exp):
     }
     os.makedirs(LOGDIR, exist_ok=True)
     with open(LOG, "a") as f: f.write(json.dumps(rec) + "\n")
-    print(f"{exp['id']:28} {rec['total_bytes']:>11,} B  {rec['vs_jxl9_pct']:+6.2f}% vs JXL  {rec['vs_funnelzip_pct']:+6.2f}% vs FZ  cpu {rec['cpu_s']:6.1f}s", flush=True)
+    print(f"{exp['id']:28} {rec['total_bytes']:>11,} B  {rec['vs_jxl9_pct']:+6.2f}% vs JXL  {rec['vs_funnelzip_pct']:+6.2f}% vs FZ  cpu {rec['cpu_s']:6.1f}s  wall/img sum {rec['wall_sum_s']:6.1f}s", flush=True)
     return rec
 
 

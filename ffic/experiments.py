@@ -191,3 +191,11 @@ EXPERIMENTS += [
          mechanism="Colour layers fully independent: R, G and B planes each coded with no information from the others (no colour taps, no registers; material funnels still read G).",
          funnelbrain="Parallel layers that never interact.", hypothesis="Much worse: the colour links were the biggest single lever (+18% -> +5% when added)."),
 ]
+
+_p = dict(group="pipeline", funnelbrain="Parallel layers that still talk: the three colour layers run at once, each a few rows behind the one it reads (G -> R -> B).")
+EXPERIMENTS += [
+    dict(id="seq_timed", cfg=MB, jobs=1, mechanism="Current best coder, sequential layers, one image at a time (fair wall-time reference).",
+         hypothesis="Same bytes as best_now; wall time = CPU time.", **_p),
+    dict(id="pipe", cfg=MB + " pipe=1 snapk=32", jobs=1, mechanism="Staggered colour pipeline: G, R, B on three threads; R waits until G is 2 rows ahead, B until R is; R/B funnels are born from G's funnels frozen every 32 rows (R starts after G's first 32 rows).",
+         hypothesis="~2-3x less wall time; bytes within a few hundredths of a percent (registers inherit from a snapshot of G instead of fully trained G).", **_p),
+]

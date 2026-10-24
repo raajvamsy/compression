@@ -137,6 +137,17 @@ beats global Bayesian weighting, which settles on one world. **Caveat:** these a
 but a real decoder must run all K worlds and evaluate each world's probability for every candidate value (about 500 decision
 nodes per world per pixel), so encode is about K x slower and decode much slower than one coder. Implementable, not cheap.
 
+## 5e. Layers in parallel
+
+* Colour layers coded fully independently: **+11.0% vs JXL** (12.7% bigger than linked layers). The links are essential.
+* Horizontal strips, each on its own core: 2 strips +0.48% size for ~2x speed, 4 strips +1.18% for ~4x.
+* **Staggered colour pipeline (`pipe=1`)**: G, R and B run on three threads at once; R waits until G is 2 rows ahead and B
+  until R is, so every layer only reads finished rows and the output is deterministic (a decoder can mirror it). R/B
+  funnels are born from G's funnels frozen every 32 rows, R starting after G's first 32 rows. Result on 20 images:
+  **2.1x less wall time (127 s -> 60 s), +0.05% size** (-1.42% vs JXL e9). Not 3x because the layers are unequal work:
+  B has the most learning inputs (22 vs 12 for G) and sets the pace. With registers off, pipeline and sequential give
+  identical bytes, so the only size difference is which G funnels R/B inherit from.
+
 ## 6. Next steps, ranked by expected value
 
 1. **Real coder + decoder + round-trip test** (must precede any claim). Small, and it fixes the numbers.

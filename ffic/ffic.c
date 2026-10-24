@@ -40,6 +40,8 @@
  *                     (gsig = softening length, glim = mass at which the histogram halves = forgetting)
  *   ilace=1           TIME AS SCALE: code even rows first (a coarser picture, its own funnels and contexts), then odd rows,
  *                     which also see the decoded row BELOW (3 extra taps + a vertical-interpolation ball)
+ *   pipe=1            STAGGERED COLOUR PIPELINE: G, R and B run on three threads at once; R waits until G is lag rows ahead,
+ *                     B until R is. Deterministic: a layer only reads finished rows; registers copy G's funnels frozen every snapk rows
  *   FFIC_PIXCOST=path  write each pixel's code length (float32, planes R,G,B) for the parallel-worlds analysis
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
  *
@@ -50,6 +52,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <pthread.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
 #define NSUBX (NSUB + 6)
@@ -84,9 +87,9 @@ static int MLINE = 0, MWIN = 6; static float MLAM = 20.f;
 #define MMAXC 256
 typedef struct { float c[3]; int n; double S[9], St[3]; } Mat;
 static int MATF = 0, MMAX = 64, MCTX = 0; static float MRAD = 0.02f, MDEC = 0.999f, MATLAM = 30.f, MBW = 0.f;
-static long long st_mat_born;
+static _Thread_local long long st_mat_born;
 /* gravity: values the image keeps landing on act as masses; a prediction is pulled toward nearby heavy values */
-static int ILACE = 0, RS = 1;   /* TIME as scale: even rows first (the coarse past), then odd rows, which also see the row below */
+static int ILACE = 0; static _Thread_local int RS = 1;   /* TIME as scale: even rows first (the coarse past), then odd rows, which also see the row below */
 static int GMASS = 0, GMR = 8; static float GSIG = 2.f, GLIM = 4096.f;
 /* solve (S + ridge) w = St + ridge*w0 for k regressors (+ intercept), k <= 3 */
 static void mat_solve(const Mat *m, int k, const double *w0, double *w) {
@@ -106,7 +109,7 @@ static const int TAPX[NNB] = {-1, 0, -1, 1, -2, 0, 1, -1, -2, 2, -3, 2};
 static const int TAPY[NNB] = {0, -1, -1, -1, 0, -2, -2, -2, -1, -1, 0, -2};
 static const int FUTX[NF] = {1, 0, 1, -1}, FUTY[NF] = {0, 1, 1, 1};
 static const int WOFX[8] = {-4, -6, 0, 0, -4, 4, -3, 3}, WOFY[8] = {0, 0, -4, -6, -4, -4, -2, -2};
-static long long st_fission, st_prune, st_hippo_hit, st_hippo_q, st_field_born, st_replay;
+static _Thread_local long long st_fission, st_prune, st_hippo_hit, st_hippo_q, st_field_born, st_replay;
 
 static inline int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 static inline float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -141,7 +144,7 @@ static void cm_init(CM *m, const int *sizes, int ncx, int nsel) {
 static void cm_free(CM *m) { for (int i = 0; i < m->ncx; i++) free(m->t[i]); free(m->mw); free(m->mw2); free(m->apm); }
 /* code one binary decision (bit) in decision slot `slot`, contexts cx[], mixer selectors sel (+ sel2), ACC context actx,
    parametric prior ppar; accumulates ideal cost */
-static int g_sel2, g_actx;
+static _Thread_local int g_sel2, g_actx;
 static inline void cm_bit(CM *m, int slot, const int *cx, int sel, int bit, float ppar) {
     float st[NIN]; Ctr *c[NCX]; const int nc = m->ncx;
     float *w = m->mw + ((size_t)slot * NA_SEL + sel) * NIN;
@@ -267,41 +270,30 @@ static void field_sleep(Funnel *fl, int *nf) {                              /* f
     }
 }
 
-int main(int argc, char **argv) {
-    if (argc < 4) { fprintf(stderr, "usage: ffic file.rgb W H [flags]\n"); return 1; }
-    W = atoi(argv[2]); H = atoi(argv[3]);
-    for (int i = 4; i < argc; i++) {
-        char *a = argv[i], *eq = strchr(a, '=');
-        if (eq) {
-            float v = atof(eq + 1); int n = (int)(eq - a);
-            #define K_(s) (n == (int)strlen(s) && !strncmp(a, s, n))
-            if (K_("mu")) MU = v; else if (K_("lam")) LAM = v; else if (K_("P0")) P0 = v; else if (K_("lrm")) LRM = v; else if (K_("gate")) GATE = v;
-            else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
-            else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
-            else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
-            else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
-            else { fprintf(stderr, "unknown option %s\n", a); return 1; }
-            continue;
-        }
-        opt_l = opt_t = opt_v = opt_p = opt_c = opt_e = opt_w = opt_r = opt_b = opt_f = 0;
-        if (strcmp(a, "none"))
-            for (char *c = a; *c; c++) { switch (*c) { case 'l': opt_l = 1; break; case 't': opt_t = 1; break; case 'v': opt_v = 1; break;
-                case 'p': opt_p = 1; break; case 'c': opt_c = 1; break; case 'e': opt_e = 1; break; case 'w': opt_w = 1; break; case 'r': opt_r = 1; break; case 'b': opt_b = 1; break; case 'f': opt_f = 1; break; } }
-    }
-    FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
-    size_t N = (size_t)W * H; unsigned char *raw = malloc(N * 3);
-    if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
-    int *pl[3]; float *pfin[3];
-    for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
-    static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
-    const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
-    double bits[3] = {0, 0, 0}; clock_t t0 = clock(); long long born = 0; int field_max = 0;
-    float *pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
-    const int nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); const int icurve = NSUB + (HIPPO ? 1 : 0);
 
-    Funnel *gl[MAXLV] = {0};                                                  /* G plane's trained grid funnels (Main register) */
-    for (int oi = 0; oi < 3; oi++) {
+/* ---- shared state (read by all plane threads) and the staggered colour pipeline ---- */
+static size_t N; static int *pl[3]; static float *pfin[3]; static float *pixcost;
+static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
+static const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
+static double bits[3]; static int nsub, icurve;
+static Funnel *gl[MAXLV];                            /* sequential mode: G plane's fully trained grid funnels (Main register) */
+static int PIPE = 0, LAG = 2, SNAPK = 64;            /* pipe=1: the three colour layers run at once, each LAG rows behind the previous one */
+static Funnel **snaps[4096];                         /* pipeline registers: G's grid funnels frozen every SNAPK rows */
+static int rows_done[3];
+static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER; static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
+static long long tot_born, tot_field_born, tot_fission, tot_prune, tot_hq, tot_hh, tot_replay, tot_mat; static int tot_field_max;
+static void wait_rows(int plane, int need) {         /* block until layer `plane` has finished `need` rows (coding order) */
+    pthread_mutex_lock(&mu); while (rows_done[plane] < need) pthread_cond_wait(&cv, &mu); pthread_mutex_unlock(&mu);
+}
+static void publish_rows(int plane, int done) { pthread_mutex_lock(&mu); rows_done[plane] = done; pthread_cond_broadcast(&cv); pthread_mutex_unlock(&mu); }
+static inline Funnel *register_src(int lvl, int idx, int yi) {   /* where an R/B funnel is born from (G's funnel at the same address) */
+    Funnel *a = NULL;
+    if (PIPE) { int si = yi / SNAPK; Funnel **sn = snaps[si > 0 ? si : 1]; a = sn ? sn[lvl] : NULL; } else a = gl[lvl];   /* early rows use G's first snapshot */
+    return (a && a[idx].n > 0) ? &a[idx] : NULL;
+}
+
+static void code_plane(int oi) {
+    long long born = 0; int field_max = 0;
         int c = order[oi]; int *P = pl[c];
         const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
         const int hasmat = MATF && oi >= 1, imat = iml + nml;
@@ -331,6 +323,10 @@ int main(int argc, char **argv) {
           const int y = ILACE ? (yi < HE ? 2 * yi : 2 * (yi - HE) + 1) : yi, pass = ILACE && yi >= HE;
           RS = (ILACE && !pass) ? 2 : 1;
           const int nsubq = nsubp + (pass ? 1 : 0), ivb = nsubp;
+          if (PIPE && oi > 0) {                                                  /* earlier layers are LAG rows ahead; R starts once G's first snapshot exists */
+              int need = ILACE ? H : yi + LAG; if (REGISTER && oi == 1 && need < SNAPK) need = SNAPK;
+              wait_rows(oi - 1, need < H ? need : H);
+          }
           for (int x = 0; x < W; x++) {
             size_t idx = (size_t)y * W + x;
             int nbv[NNB]; size_t nbi[NNB];                                        /* causal fetch with fallbacks at the borders */
@@ -445,7 +441,7 @@ int main(int argc, char **argv) {
                 if (!opt_t && lvl == 3) k = A * NL + L;
                 path[j] = &lv[lvl][k % lsize[lvl]]; resw[j] = 1.f;
                 if (path[j]->n < 0) {
-                    Funnel *g = (REGISTER && oi > 0 && gl[lvl] && gl[lvl][k % lsize[lvl]].n > 0) ? &gl[lvl][k % lsize[lvl]] : NULL;
+                    Funnel *g = (REGISTER && oi > 0) ? register_src(lvl, k % lsize[lvl], yi) : NULL;
                     funnel_init(path[j], g ? g : (j > 0 && opt_p) ? path[j - 1] : NULL); path[j]->n = 0; born++;
                     if (g) { for (int t = NNB; t < NT; t++) path[j]->w[t] = 0.f; reset_cov(path[j]); }   /* spatial weights from G; colour taps start fresh */
                 }
@@ -585,6 +581,14 @@ int main(int argc, char **argv) {
               funnel_learn(f, uu, nact, rp_t[x] - d - f->bias, n2, 1); f->n--; st_replay++;
           }
           if (FIELD && SLEEP > 0 && (yi + 1) % SLEEP == 0) field_sleep(fld, &nfld);
+          if (PIPE) {
+              if (oi == 0 && REGISTER && (yi + 1) % SNAPK == 0 && (yi + 1) / SNAPK < 4096) {   /* freeze G's funnels for R/B to be born from */
+                  Funnel **sn = malloc(MAXLV * sizeof(Funnel *));
+                  for (int j = 0; j < MAXLV; j++) { sn[j] = malloc(lsize[j] * sizeof(Funnel)); memcpy(sn[j], lv[j], lsize[j] * sizeof(Funnel)); }
+                  snaps[(yi + 1) / SNAPK] = sn;
+              }
+              publish_rows(oi, yi + 1);
+          }
         }
         if (getenv("FFIC_DUMP") && oi == 0 && fld) {                           /* explainer data: learned field + landing map of the first plane */
             char pth[512]; snprintf(pth, sizeof pth, "%s.fid", getenv("FFIC_DUMP")); FILE *fo = fopen(pth, "wb"); fwrite(fid, sizeof(short), N, fo); fclose(fo);
@@ -598,11 +602,53 @@ int main(int argc, char **argv) {
         for (int k = 0; k < NSUBX; k++) free(esub[k]);
         free(mats); free(gmt); free(gtot); free(efin); free(actm); free(fid); free(hmem); free(hcnt); free(rp_f); free(rp_u); free(rp_t); free(fld);
         for (int j = 0; j < MAXLV; j++) { if (REGISTER && oi == 0) gl[j] = lv[j]; else if (!(REGISTER && gl[j] == lv[j])) free(lv[j]); } free(mouth);
+        pthread_mutex_lock(&mu);
+    tot_born += born; if (field_max > tot_field_max) tot_field_max = field_max; tot_field_born += st_field_born; tot_fission += st_fission;
+    tot_prune += st_prune; tot_hq += st_hippo_q; tot_hh += st_hippo_hit; tot_replay += st_replay; tot_mat += st_mat_born;
+    pthread_mutex_unlock(&mu);
+    if (PIPE) publish_rows(oi, H);
+}
+static void *plane_thread(void *a) { code_plane((int)(long)a); return NULL; }
+
+int main(int argc, char **argv) {
+    if (argc < 4) { fprintf(stderr, "usage: ffic file.rgb W H [flags]\n"); return 1; }
+    W = atoi(argv[2]); H = atoi(argv[3]);
+    for (int i = 4; i < argc; i++) {
+        char *a = argv[i], *eq = strchr(a, '=');
+        if (eq) {
+            float v = atof(eq + 1); int n = (int)(eq - a);
+            #define K_(s) (n == (int)strlen(s) && !strncmp(a, s, n))
+            if (K_("mu")) MU = v; else if (K_("lam")) LAM = v; else if (K_("P0")) P0 = v; else if (K_("lrm")) LRM = v; else if (K_("gate")) GATE = v;
+            else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
+            else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
+            else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
+            else { fprintf(stderr, "unknown option %s\n", a); return 1; }
+            continue;
+        }
+        opt_l = opt_t = opt_v = opt_p = opt_c = opt_e = opt_w = opt_r = opt_b = opt_f = 0;
+        if (strcmp(a, "none"))
+            for (char *c = a; *c; c++) { switch (*c) { case 'l': opt_l = 1; break; case 't': opt_t = 1; break; case 'v': opt_v = 1; break;
+                case 'p': opt_p = 1; break; case 'c': opt_c = 1; break; case 'e': opt_e = 1; break; case 'w': opt_w = 1; break; case 'r': opt_r = 1; break; case 'b': opt_b = 1; break; case 'f': opt_f = 1; break; } }
     }
+    FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
+    N = (size_t)W * H; unsigned char *raw = malloc(N * 3);
+    if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
+    pl[0] = pl[1] = pl[2] = NULL;
+    for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
+    clock_t t0 = clock(); struct timespec w0, w1; clock_gettime(CLOCK_MONOTONIC, &w0);
+    pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
+    nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); icurve = NSUB + (HIPPO ? 1 : 0);
+    if (PIPE) {                                                             /* staggered colour pipeline: one thread per layer */
+        pthread_t th[3]; for (int oi = 0; oi < 3; oi++) pthread_create(&th[oi], NULL, plane_thread, (void *)(long)oi);
+        for (int oi = 0; oi < 3; oi++) pthread_join(th[oi], NULL);
+    } else for (int oi = 0; oi < 3; oi++) code_plane(oi);
+    clock_gettime(CLOCK_MONOTONIC, &w1); double wall = (w1.tv_sec - w0.tv_sec) * 1000.0 + (w1.tv_nsec - w0.tv_nsec) / 1e6;
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
-    printf("bytes=%.0f bpp=%.4f ms=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld\n",
-           tot / 8, tot / N, ms, born, bits[0] / 8, bits[1] / 8, bits[2] / 8, st_field_born, field_max, st_fission, st_prune,
-           st_hippo_q ? (double)st_hippo_hit / st_hippo_q : 0.0, st_replay, st_mat_born);
+    printf("bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld\n",
+           tot / 8, tot / N, ms, wall, tot_born, bits[0] / 8, bits[1] / 8, bits[2] / 8, tot_field_born, tot_field_max, tot_fission, tot_prune,
+           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat);
     return 0;
 }
