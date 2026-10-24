@@ -28,6 +28,9 @@
  *   apm=1             ACC (anterior cingulate, computes PE): a secondary stage corrects each coder probability by how wrong
  *                     such probabilities usually are in this situation (error energy x ball disagreement)   apmw= apmr=
  *   mix2=1            second coder workspace selected by surprise level, blended with the first
+ *   mline=1|2         COLOUR PHYSICS, material lines: under one material and light, shading moves a pixel along a line in
+ *                     colour space (dichromatic model + camera offset): R ~ a*G + b. The line is fitted on the mwin decoded
+ *                     neighbours (ridge mlam toward slope 1) and gives an extra ball + tap for R and B; 2 = B also from R
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
  *
  * usage: ffic file.rgb W H [flags] [key=value...]   letters: l learn t spin v level p nesting c cross e energy w blend r RLS b CM f future
@@ -39,11 +42,11 @@
 #include <time.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
-#define NSUBX (NSUB + 2)
+#define NSUBX (NSUB + 4)
 #define NNB 12                    /* neighbour taps (causal window) */
 #define CK 4                      /* neighbours used for cross-plane taps (W N NW NE) */
 #define NF 4                      /* non-causal neighbours of an already-decoded plane: E S SE SW */
-#define NX 2                      /* extra feature taps (hippocampal recall) */
+#define NX 3                      /* extra feature taps (hippocampal recall, material lines) */
 #define NT (NNB + 2 * (CK + 1 + NF) + NX)
 #define NA 8                      /* activity levels */
 #define NTH 9                     /* spin states: 8 orientations + flat */
@@ -66,6 +69,7 @@ static int W, H;
 static int opt_l = 1, opt_t = 1, opt_v = 1, opt_p = 1, opt_c = 1, opt_e = 1, opt_w = 1, opt_r = 1, opt_b = 1, opt_f = 0;
 static float MU = 0.01f, LAM = 0.998f, P0 = 50.f, GATE = 0.f; static int RLMASK = 15;
 static int FIELD = 0, SLEEP = 0, BOUNCE = 0, HIPPO = 0, LAMPE = 0, REPLAY = 0, MS = 0, KRES = 3, FMAX = 192;
+static int MLINE = 0, MWIN = 6; static float MLAM = 20.f;
 static float SAL = 0.f, WST = 2.f, MERGE = 0.12f, GRAV = 0.f, SALP = 1.f, SALMAX = 4.f, SALBIAS = 0.f, SALALL = 0.f; static int REGISTER = 0, CURVE = 0;
 static const int ATH[NA - 1] = {3, 6, 12, 24, 48, 96, 192};
 static const int TAPX[NNB] = {-1, 0, -1, 1, -2, 0, 1, -1, -2, 2, -3, 2};
@@ -245,7 +249,7 @@ int main(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 1; }
             continue;
@@ -268,7 +272,9 @@ int main(int argc, char **argv) {
     Funnel *gl[MAXLV] = {0};                                                  /* G plane's trained grid funnels (Main register) */
     for (int oi = 0; oi < 3; oi++) {
         int c = order[oi]; int *P = pl[c];
-        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0);
+        const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
+        const int nsubp = nsub + nml;
+        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml;
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
         Mouth *mouth = malloc(NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
@@ -321,10 +327,18 @@ int main(int argc, char **argv) {
                 float tw = (float)(Wv - NWv), tw2 = (float)(NWv - NNWv), tn = (float)(Nv - NWv), tn2 = (float)(NWv - NWWv);
                 sp[icurve] = clampf(0.5f * (Nv + tw + (tw - tw2) * 0.5f) + 0.5f * (Wv + tn + (tn - tn2) * 0.5f), 0, 255);
             }
+            for (int q = 0; q < nml; q++) {                                       /* material line: fit this plane against an earlier one on the neighbours */
+                int *Q = pl[q == 0 ? 1 : 0]; float gm = 0, rm = 0, gv = 0, cv_ = 0;
+                for (int k = 0; k < MWIN; k++) { gm += Q[nbi[k]]; rm += nbv[k]; }
+                gm /= MWIN; rm /= MWIN;
+                for (int k = 0; k < MWIN; k++) { float dg = Q[nbi[k]] - gm; gv += dg * dg; cv_ += dg * (nbv[k] - rm); }
+                float slope = (cv_ + MLAM) / (gv + MLAM);
+                sp[iml + q] = clampf(rm + slope * (Q[idx] - gm), 0, 255);
+            }
             float base;
             if (opt_w) {
                 float sw = 0, sv = 0;
-                for (int k = 0; k < nsub; k++) {
+                for (int k = 0; k < nsubp; k++) {
                     float S = emap(esub[k], x - 1, y) + emap(esub[k], x, y - 1) + emap(esub[k], x - 1, y - 1) + emap(esub[k], x + 1, y - 1) + 0.5f;
                     float wk = 1.f / (S * S); sw += wk; sv += wk * sp[k];
                 }
@@ -418,6 +432,7 @@ int main(int argc, char **argv) {
                 }
             }
             if (HIPPO) u[nu++] = sp[NSUB] - base;
+            for (int q = 0; q < nml; q++) u[nu++] = sp[iml + q] - base;
             float un2 = 1.f; for (int k = 0; k < nact; k++) un2 += u[k] * u[k];
             float pj[MAXLV + KMAX], sw2 = 0.f, sv2 = 0.f;
             for (int j = 0; j < nset; j++) {                                      /* global workspace */
@@ -470,7 +485,7 @@ int main(int argc, char **argv) {
 
             /* ---- prediction error: everything adapts ---- */
             float ef = fabsf(xv - pc); efin[idx] = ef;
-            for (int k = 0; k < nsub; k++) esub[k][idx] = fabsf(xv - sp[k]);
+            for (int k = 0; k < nsubp; k++) esub[k][idx] = fabsf(xv - sp[k]);
             { float a = 1.f / (mo->n + 1.5f); if (a < 1.f / 96) a = 1.f / 96; float eu = SALALL > 0.f ? fminf(ef, SALALL * (mo->scale + 0.3f)) : ef; mo->scale += a * (eu - mo->scale); mo->n++; }
             for (int j = 0; j < nlearn; j++) funnel_learn(path[j], u, nact, xv - pj[j], un2, j >= nlv ? 1 : (RLMASK >> (nlv - 1 - j)) & 1);
             if (FIELD && land >= 0) {                                             /* landing funnel drifts toward the ball, mouth follows its spread */
@@ -489,6 +504,13 @@ int main(int argc, char **argv) {
               funnel_learn(f, uu, nact, rp_t[x] - d - f->bias, n2, 1); f->n--; st_replay++;
           }
           if (FIELD && SLEEP > 0 && (y + 1) % SLEEP == 0) field_sleep(fld, &nfld);
+        }
+        if (getenv("FFIC_DUMP") && oi == 0 && fld) {                           /* explainer data: learned field + landing map of the first plane */
+            char pth[512]; snprintf(pth, sizeof pth, "%s.fid", getenv("FFIC_DUMP")); FILE *fo = fopen(pth, "wb"); fwrite(fid, sizeof(short), N, fo); fclose(fo);
+            snprintf(pth, sizeof pth, "%s.json", getenv("FFIC_DUMP")); fo = fopen(pth, "w"); fprintf(fo, "[");
+            for (int i = 0; i < nfld; i++) { fprintf(fo, "%s{\"i\":%d,\"n\":%d,\"mouth\":%.4f,\"perf\":%.3f,\"c\":[", i ? "," : "", i, fld[i].n, fld[i].mouth, fld[i].perf);
+                for (int d = 0; d < DIM; d++) fprintf(fo, "%s%.4f", d ? "," : "", fld[i].c[d]); fprintf(fo, "]}"); }
+            fprintf(fo, "]\n"); fclose(fo);
         }
         if (opt_b) bits[c] = cm.bits;
         cm_free(&cm);

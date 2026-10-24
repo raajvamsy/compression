@@ -136,3 +136,19 @@ EXPERIMENTS += [
     dict(id="stack5", group="combo", cfg=S3.replace("salp=2", "salp=3") + " salall=2 apm=1 mix2=1", mechanism="stack4 + ACC + second mixer.",
          funnelbrain="Everything that helped so far.", hypothesis="Gains add."),
 ]
+
+S5 = S3.replace("salp=2", "salp=3") + " salall=2 apm=1 mix2=1"   # = stack5, current best
+EXPERIMENTS += [
+    dict(id="mline", group="colour physics", cfg=S5 + " mline=1",
+         mechanism="Material lines: R and B get an extra ball (and RLS tap) from a line R ~ a*G + b fitted on 6 decoded neighbours (ridge 20 toward slope 1).",
+         funnelbrain="Colour formation: pixel = light x material x shading; a material under one light moves along a line in colour space as shading changes (dichromatic model).",
+         hypothesis="Offline test: local material line cuts R prediction error 12% on Kodak (1.82 -> 1.61) but +9% on Pexels; expect a gain on Kodak, neutral on Pexels."),
+    dict(id="mline2", group="colour physics", cfg=S5 + " mline=2", mechanism="Material lines, B also fitted against R (two line balls for B).",
+         funnelbrain="Colour formation (both earlier planes).", hypothesis="R carries extra material information for B."),
+    dict(id="mline_w12", group="colour physics", cfg=S5 + " mline=1 mwin=12", mechanism="Material lines fitted on 12 neighbours.", funnelbrain="Colour formation.",
+         hypothesis="A larger window gives a steadier line, worse at material edges."),
+    dict(id="mline_l5", group="colour physics", cfg=S5 + " mline=1 mlam=5", mechanism="Material lines, weaker ridge (slope free-er).", funnelbrain="Colour formation.",
+         hypothesis="Free slope fits shading better but is noisier."),
+    dict(id="mline_l80", group="colour physics", cfg=S5 + " mline=1 mlam=80", mechanism="Material lines, strong ridge (slope near 1 unless the evidence is strong).", funnelbrain="Colour formation.",
+         hypothesis="Closer to the difference model; tells whether the slope matters."),
+]
