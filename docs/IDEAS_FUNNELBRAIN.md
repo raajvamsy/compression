@@ -180,7 +180,7 @@ Two ways to treat a pixel's colour as one thing instead of three separate layers
 
 | run | what | total | vs JXL | notes |
 |---|---|---|---|---|
-| `pipe` (control) | layers G→R→B, staggered threads | 10,332,757 B | −1.42% | wall 60 s |
+| `pipe` (control) | layers G→R→B, staggered threads | 10,332,754 B | −1.42% | wall 60 s |
 | `inter` | pixel by pixel: G,R,B of each pixel before the next; G sees R−G, B−G of W and N | 10,362,565 B | −1.13% | worse on all 20; wall 176 s (per-pixel thread hand-off) |
 | `inter_cmatch` | + "is the whole colour the same as W/N/NW/NE, and which?" — on yes, layers are free | 10,579,434 B | +0.94% | Kodak −0.6…−2.7% on 7/8; Pexels +0.03…+24% |
 | `inter_cmatch_gated` | ask only where p(match) ≥ 0.55 | 10,505,799 B | +0.23% | fixes Pexels partly, loses Kodak gains |
