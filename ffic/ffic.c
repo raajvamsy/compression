@@ -1,4 +1,5 @@
-/* FFIC: FunnelField Image Coder, research prototype. Measures IDEAL code length (-log2 p); no bitstream yet.
+/* FFIC: FunnelField Image Coder, research prototype. Reports the IDEAL code length (-log2 p); with out=file it also writes a real
+ * arithmetic-coded bitstream, and `ffic -d file out.rgb` decodes it (the decoder runs the identical model).
  *
  * FunnelBrain mechanisms and where they live here (see docs/IDEAS_FUNNELBRAIN.md, ffic/experiments/LOG.md):
  *   transduction      causal-neighbourhood descriptor: activity (scale 1), level, SPIN = gradient orientation
@@ -147,10 +148,32 @@ static void cm_init(CM *m, const int *sizes, int ncx, int nsel) {
     m->bits = 0;
 }
 static void cm_free(CM *m) { for (int i = 0; i < m->ncx; i++) free(m->t[i]); free(m->mw); free(m->mw2); free(m->apm); }
+/* ---- binary arithmetic coder (carry-less, 32-bit range, 16-bit probabilities); one stream per colour layer ---- */
+typedef struct { unsigned x1, x2, x; unsigned char *buf; size_t n, cap, pos; } AC;
+static _Thread_local AC *g_ac;
+static _Thread_local int g_acmode;                   /* 0 measure ideal length only, 1 encode, 2 decode, -1 learn only (no bits) */
+static _Thread_local float g_pover = -1.f;           /* coding probability override (exclusion), model still learns normally */
+static inline void ac_put(AC *a, unsigned char c) { if (a->n == a->cap) { a->cap = a->cap ? a->cap * 2 : 1 << 16; a->buf = realloc(a->buf, a->cap); } a->buf[a->n++] = c; }
+static inline unsigned char ac_get(AC *a) { return a->pos < a->n ? a->buf[a->pos++] : 0; }
+static void ac_start_dec(AC *a) { a->x1 = 0; a->x2 = 0xffffffffu; a->x = 0; for (int i = 0; i < 4; i++) a->x = (a->x << 8) | ac_get(a); }
+static void ac_flush(AC *a) { for (int i = 0; i < 4; i++) { ac_put(a, a->x1 >> 24); a->x1 <<= 8; } }
+/* code/decode one bit whose probability of being 1 is p1; returns the bit */
+static inline int ac_bit(float p1, int bit) {
+    if (g_acmode <= 0) return bit;
+    AC *a = g_ac; unsigned p16 = (unsigned)(p1 * 65536.f); p16 = p16 < 1 ? 1 : p16 > 65535 ? 65535 : p16;
+    unsigned xmid = a->x1 + (unsigned)(((unsigned long long)(a->x2 - a->x1) * p16) >> 16);
+    if (g_acmode == 2) bit = a->x <= xmid;
+    if (bit) a->x2 = xmid; else a->x1 = xmid + 1;
+    while (((a->x1 ^ a->x2) & 0xff000000u) == 0) {
+        if (g_acmode == 1) ac_put(a, a->x2 >> 24); else a->x = (a->x << 8) | ac_get(a);
+        a->x1 <<= 8; a->x2 = (a->x2 << 8) | 255;
+    }
+    return bit;
+}
 /* code one binary decision (bit) in decision slot `slot`, contexts cx[], mixer selectors sel (+ sel2), ACC context actx,
    parametric prior ppar; accumulates ideal cost */
 static _Thread_local int g_sel2, g_actx;
-static inline void cm_bit(CM *m, int slot, const int *cx, int sel, int bit, float ppar) {
+static inline int cm_bit(CM *m, int slot, const int *cx, int sel, int bit, float ppar) {
     float st[NIN]; Ctr *c[NCX]; const int nc = m->ncx;
     float *w = m->mw + ((size_t)slot * NA_SEL + sel) * NIN;
     float dot = 0;
@@ -173,13 +196,14 @@ static inline void cm_bit(CM *m, int slot, const int *cx, int sel, int bit, floa
         float pa = ap[ab] * (1.f - af) + ap[ab + 1] * af;
         pf = (1.f - APMW) * p + APMW * pa; pf = pf < 1e-4f ? 1e-4f : pf > 1.f - 1e-4f ? 1.f - 1e-4f : pf;
     }
-    m->bits += -log2f(bit ? pf : 1.f - pf);
+    if (g_acmode >= 0) { float pc_ = g_pover >= 0.f ? g_pover : pf; bit = ac_bit(pc_, bit); m->bits += -log2f(bit ? pc_ : 1.f - pc_); }
     float err = (float)bit - p1;
     for (int i = 0; i < nc; i++) w[i] += LRM * err * st[i];
     w[NCX] += LRM * err * st[NCX]; w[NCX + 1] += LRM * err * st[NCX + 1];
     if (MIX2) { float e2 = (float)bit - squashf(dot2); for (int i = 0; i < nc; i++) w2[i] += LRM * e2 * st[i]; w2[NCX] += LRM * e2 * st[NCX]; w2[NCX + 1] += LRM * e2 * st[NCX + 1]; }
     if (APM) { ap[ab] += ((float)bit - ap[ab]) * APMR * (1.f - af); ap[ab + 1] += ((float)bit - ap[ab + 1]) * APMR * af; }
     for (int i = 0; i < nc; i++) { float a = 1.f / (c[i]->n + 1.6f); if (a < 1.f / CLIM) a = 1.f / CLIM; c[i]->p += ((float)bit - c[i]->p) * a; if (c[i]->n < 65000) c[i]->n++; }
+    return bit;
 }
 /* probability that decision `slot` is 1, exactly as cm_bit would code it, without learning (for exclusion) */
 static inline float cm_bitp(CM *m, int slot, const int *cx, int sel, float ppar) {
@@ -195,46 +219,78 @@ static inline float cm_bitp(CM *m, int slot, const int *cx, int sel, float ppar)
 }
 /* Laplace mass of integer residuals e in [lo,hi], centred at d (= pc - r) with scale b */
 static inline double lmass(int lo, int hi, double d, double b) { return lapF(hi + 0.5 - d, b) - lapF(lo - 0.5 - d, b); }
-/* code residual e (=x-r). d,b: parametric Laplace prior. r tells which signs are possible. */
-static inline void cm_residual(CM *m, const int *cx, int sel, int e, int r, double d, double b) {
-    const int BIG = 100000;
-    double m0 = lmass(0, 0, d, b), mneg = lmass(-BIG, -1, d, b), mpos = lmass(1, BIG, d, b);
-    cm_bit(m, 0, cx, sel, e == 0, (float)(m0 / (m0 + mneg + mpos + 1e-300)));
-    if (e == 0) return;
-    int neg = e < 0;
-    if (r > 0 && r < 255) cm_bit(m, 1, cx, sel, neg, (float)(mneg / (mneg + mpos + 1e-300)));
-    int mag = abs(e) - 1, k = 0; while ((2 << k) - 1 <= mag) k++;                  /* bucket k holds m in [2^k - 1, 2^(k+1) - 2] */
-    #define SIDE(a, bb) (neg ? lmass(-(bb), -(a), d, b) : lmass((a), (bb), d, b))   /* mass of |e| in [a,bb] on the chosen side */
-    for (int j = 0; j < k; j++) { double hi = SIDE((2 << j), BIG), all = SIDE((1 << j), BIG); cm_bit(m, 2 + (j < 8 ? j : 7), cx, sel, 1, (float)(hi / (all + 1e-300))); }
-    if (k < 8) { double hi = SIDE((2 << k), BIG), all = SIDE((1 << k), BIG); cm_bit(m, 2 + k, cx, sel, 0, (float)(hi / (all + 1e-300))); }
-    int rem = mag - ((1 << k) - 1), lo = 1 << k, hi2 = (2 << k) - 1;               /* |e| in [lo,hi2] */
-    for (int bi = k - 1; bi >= 0; bi--) {
-        int mid = (lo + hi2 + 1) / 2, bit = (rem >> bi) & 1;
-        double up = SIDE(mid, hi2), all = SIDE(lo, hi2);
-        cm_bit(m, bi == k - 1 ? 10 + (k < 8 ? k : 7) : 18, cx, sel, bit, (float)(up / (all + 1e-300)));
-        if (bit) lo = mid; else hi2 = mid - 1;
+
+/* ---- the residual as a walk down a binary tree: zero? -> sign -> unary bucket -> mantissa (same decisions for coder,
+   decoder, probability lookups and exclusion) ---- */
+typedef struct { int phase, neg, j, k, lo, hi2, bi, e; } RW;      /* phase 0 zero?, 1 sign, 2 bucket, 3 mantissa, 4 done */
+typedef struct { int r; double d, b, m0, mneg, mpos; } RP;
+#define RBIG 100000
+static inline double rside(const RP *p, int neg, int a, int bb) { return neg ? lmass(-bb, -a, p->d, p->b) : lmass(a, bb, p->d, p->b); }
+static inline void rw_node(const RW *w, const RP *p, int *slot, float *ppar) {
+    switch (w->phase) {
+    case 0: *slot = 0; *ppar = (float)(p->m0 / (p->m0 + p->mneg + p->mpos + 1e-300)); break;
+    case 1: *slot = 1; *ppar = (float)(p->mneg / (p->mneg + p->mpos + 1e-300)); break;
+    case 2: { double hi = rside(p, w->neg, 2 << w->j, RBIG), all = rside(p, w->neg, 1 << w->j, RBIG); *slot = 2 + (w->j < 8 ? w->j : 7); *ppar = (float)(hi / (all + 1e-300)); break; }
+    default: { int mid = (w->lo + w->hi2 + 1) / 2; double up = rside(p, w->neg, mid, w->hi2), all = rside(p, w->neg, w->lo, w->hi2);
+        *slot = w->bi == w->k - 1 ? 10 + (w->k < 8 ? w->k : 7) : 18; *ppar = (float)(up / (all + 1e-300)); }
     }
 }
-
-/* probability the residual coder gives to residual e (walks the same decisions, learns nothing) */
-static double cm_pval(CM *m, const int *cx, int sel, int e, int r, double d, double b) {
-    const int BIG = 100000;
-    double m0 = lmass(0, 0, d, b), mneg = lmass(-BIG, -1, d, b), mpos = lmass(1, BIG, d, b);
-    double pz = cm_bitp(m, 0, cx, sel, (float)(m0 / (m0 + mneg + mpos + 1e-300)));
-    if (e == 0) return pz;
-    double P = 1 - pz; int neg = e < 0;
-    if (r > 0 && r < 255) { double ps = cm_bitp(m, 1, cx, sel, (float)(mneg / (mneg + mpos + 1e-300))); P *= neg ? ps : 1 - ps; }
-    int mag = abs(e) - 1, k = 0; while ((2 << k) - 1 <= mag) k++;
-    for (int j = 0; j < k; j++) { double hi = SIDE((2 << j), BIG), all = SIDE((1 << j), BIG); P *= cm_bitp(m, 2 + (j < 8 ? j : 7), cx, sel, (float)(hi / (all + 1e-300))); }
-    if (k < 8) { double hi = SIDE((2 << k), BIG), all = SIDE((1 << k), BIG); P *= 1 - cm_bitp(m, 2 + k, cx, sel, (float)(hi / (all + 1e-300))); }
-    int rem = mag - ((1 << k) - 1), lo = 1 << k, hi2 = (2 << k) - 1;
-    for (int bi = k - 1; bi >= 0; bi--) {
-        int mid = (lo + hi2 + 1) / 2, bit = (rem >> bi) & 1; double up = SIDE(mid, hi2), all = SIDE(lo, hi2);
-        double pb = cm_bitp(m, bi == k - 1 ? 10 + (k < 8 ? k : 7) : 18, cx, sel, (float)(up / (all + 1e-300)));
-        P *= bit ? pb : 1 - pb; if (bit) lo = mid; else hi2 = mid - 1;
+static inline int rw_bit(const RW *w, int e) {                     /* which way residual e goes at this node */
+    switch (w->phase) {
+    case 0: return e == 0;
+    case 1: return e < 0;
+    case 2: { int mag = abs(e) - 1, k = 0; while ((2 << k) - 1 <= mag) k++; return k > w->j; }
+    default: return abs(e) >= (w->lo + w->hi2 + 1) / 2;
     }
+}
+static inline void rw_step(RW *w, const RP *p, int bit) {
+    switch (w->phase) {
+    case 0: if (bit) { w->phase = 4; w->e = 0; } else if (p->r > 0 && p->r < 255) w->phase = 1; else { w->neg = p->r >= 255; w->phase = 2; w->j = 0; } break;
+    case 1: w->neg = bit; w->phase = 2; w->j = 0; break;
+    case 2: if (bit && w->j < 7) { w->j++; break; }
+        if (bit) w->j++;                                                  /* (cannot happen for 8-bit samples) */
+        w->k = w->j; w->lo = 1 << w->k; w->hi2 = (2 << w->k) - 1; w->bi = w->k - 1;
+        if (w->bi < 0) { w->phase = 4; w->e = w->neg ? -1 : 1; } else w->phase = 3; break;
+    default: { int mid = (w->lo + w->hi2 + 1) / 2; if (bit) w->lo = mid; else w->hi2 = mid - 1;
+        if (--w->bi < 0) { w->phase = 4; w->e = w->neg ? -w->lo : w->lo; } }
+    }
+}
+static inline RP rp_make(int r, double d, double b) { RP p = {r, d, b, lmass(0, 0, d, b), lmass(-RBIG, -1, d, b), lmass(1, RBIG, d, b)}; return p; }
+/* probability of the rest of residual e's path from walker state w (model is not changed) */
+static double rw_rest(CM *m, const int *cx, int sel, RW w, const RP *p, int e) {
+    double P = 1;
+    while (w.phase != 4) { int slot; float pp; rw_node(&w, p, &slot, &pp); int bit = rw_bit(&w, e); double q = cm_bitp(m, slot, cx, sel, pp); P *= bit ? q : 1 - q; rw_step(&w, p, bit); }
     return P;
 }
+/* probability the residual coder gives to residual e (learns nothing) */
+static double cm_pval(CM *m, const int *cx, int sel, int e, int r, double d, double b) {
+    RP p = rp_make(r, d, b); RW w = {0}; return rw_rest(m, cx, sel, w, &p, e);
+}
+/* code (mode 1), decode (mode 2), measure only (0) or learn only (3) residual e (=x-r). Values in ex[] are known NOT to be the
+   answer ("not a match"): at every node their probability mass is removed and the decision renormalised (decoder does the same). */
+static int cm_residual_x(CM *m, const int *cx, int sel, int e, int r, double d, double b, const int *ex, int nex) {
+    RP p = rp_make(r, d, b); RW w = {0}; int live[4], nl = 0;
+    for (int i = 0; i < nex && i < 4; i++) live[nl++] = ex[i];
+    int save = g_acmode; if (save == 3) g_acmode = -1;
+    while (w.phase != 4) {
+        int slot; float pp; rw_node(&w, &p, &slot, &pp);
+        g_pover = -1.f;
+        if (nl) {                                                          /* renormalise without the excluded values */
+            float pf = cm_bitp(m, slot, cx, sel, pp); double x1 = 0, x0 = 0;
+            for (int i = 0; i < nl; i++) { int bx = rw_bit(&w, live[i]); RW w2 = w; rw_step(&w2, &p, bx); double rest = rw_rest(m, cx, sel, w2, &p, live[i]);
+                if (bx) x1 += pf * rest; else x0 += (1 - pf) * rest; }
+            double den = 1 - x1 - x0, q = den > 1e-9 ? (pf - x1) / den : pf;
+            g_pover = (float)(q < 1e-5 ? 1e-5 : q > 1 - 1e-5 ? 1 - 1e-5 : q);
+        }
+        int bit = cm_bit(m, slot, cx, sel, g_acmode == 2 ? 0 : rw_bit(&w, e), pp);
+        g_pover = -1.f;
+        int k = 0; for (int i = 0; i < nl; i++) if (rw_bit(&w, live[i]) == bit) live[k++] = live[i]; nl = k;   /* keep values still on this branch */
+        rw_step(&w, &p, bit);
+    }
+    g_acmode = save;
+    return w.e;
+}
+static inline void cm_residual(CM *m, const int *cx, int sel, int e, int r, double d, double b) { cm_residual_x(m, cx, sel, e, r, d, b, NULL, 0); }
 
 static void funnel_init(Funnel *f, const Funnel *parent) {
     if (parent) { *f = *parent; f->n = 0; f->perf = parent->perf * 1.25f + 0.05f; }      /* inherit weights + covariance; start a bit less trusted */
@@ -318,8 +374,8 @@ static int PIPE = 0, LAG = 2, SNAPK = 64;            /* pipe=1: the three colour
 /* inter=1: PIXEL BY PIXEL instead of layer by layer: G, R, B of one pixel are coded before the next pixel, so G can use the
    previous pixels' R and B. cmatch=1: WHOLE-COLOUR MATCH: G first codes "is this pixel's whole colour equal to one of the
    W, N, NW, NE colours, and which?"; on a match the three layers cost nothing (models still learn from the pixel). */
-static int INTER = 0, CMATCH = 0, MEXCL = 0; static double MTHR = 0.35, excl_saved; static _Thread_local long long st_excl; static unsigned char *asked; static long prog[3]; static unsigned char *matched; static signed char *midx; static double match_bits;
-static _Thread_local long long st_matched; static int g_ask, g_free; static unsigned char *freed;
+static int INTER = 0, CMATCH = 0, MEXCL = 0; static double MTHR = 0.35; static _Thread_local long long st_excl; static unsigned char *asked; static long prog[3]; static unsigned char *matched; static signed char *midx; static double match_bits;
+static _Thread_local long long st_matched; static unsigned char *freed; static int *mcand;
 static inline void wait_pix(int p, long need) {
     unsigned spins = 0;
     while (__atomic_load_n(&prog[p], __ATOMIC_ACQUIRE) < need) { if (++spins > 2000) { sched_yield(); spins = 0; } }
@@ -328,6 +384,18 @@ typedef struct { float p; unsigned short n; } MCtr;
 static MCtr mc_flag[4][128], mc_idx[256]; static float mc_w[16][6]; static int MINF = 0;
 static inline float mc_p(MCtr *c) { return c->p < 0.002f ? 0.002f : c->p > 0.998f ? 0.998f : c->p; }
 static inline void mc_upd(MCtr *c, int bit) { float a = 1.f / (c->n + 1.6f); if (a < 1.f / 255) a = 1.f / 255; c->p += (bit - c->p) * a; if (c->n < 65000) c->n++; }
+static int MODE = 0; static AC acs[3];               /* MODE 0: ideal length only, 1: write a real bitstream, 2: decode one */
+typedef struct { int on, k, nci; size_t idx, cand[4]; MCtr *cc[4]; float st[6], *w, pm; } MPend;
+static MPend mpend;                                  /* match question waiting for the pixel's true colour before it learns */
+static void match_learn(MPend *q) {                  /* G thread, once R and B of pixel q->idx are known (encoder and decoder alike) */
+    int m = -1; size_t i = q->idx;
+    for (int t = 0; t < q->k; t++) { size_t a = q->cand[t]; if (pl[0][a] == pl[0][i] && pl[1][a] == pl[1][i] && pl[2][a] == pl[2][i]) { m = t; break; } }
+    matched[i] = m >= 0; midx[i] = (signed char)m;
+    if (q->k > 0) { int bit = m >= 0;
+        for (int t = 0; t < 6; t++) if (t < q->nci || t >= 4) q->w[t] += 0.01f * (bit - q->pm) * q->st[t];
+        for (int t = 0; t < q->nci; t++) mc_upd(q->cc[t], bit); }
+    q->on = 0;
+}
 static Funnel **snaps[4096];                         /* pipeline registers: G's grid funnels frozen every SNAPK rows */
 static int rows_done[3];
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER; static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
@@ -344,6 +412,7 @@ static inline Funnel *register_src(int lvl, int idx, int yi) {   /* where an R/B
 
 static void code_plane(int oi) {
     long long born = 0; int field_max = 0;
+    g_ac = &acs[oi]; g_acmode = MODE; if (MODE == 2) ac_start_dec(g_ac); else if (MODE == 1) { g_ac->x1 = 0; g_ac->x2 = 0xffffffffu; }
         int c = order[oi]; int *P = pl[c];
         const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
         const int hasmat = MATF && oi >= 1, imat = iml + nml;
@@ -580,12 +649,12 @@ static void code_plane(int oi) {
             float sb = mo->scale < 0.25f ? 0.25f : mo->scale;
 
             /* ---- ideal code length ---- */
-            int xv = P[idx];
+            int xv = MODE == 2 ? 0 : P[idx];                                      /* decoder: not known yet, decoded below */
             if (!opt_b) {
                 double t = xv - pc, mass = lapF(t + 0.5, sb) - lapF(t - 0.5, sb), Z = lapF(255.5 - pc, sb) - lapF(-0.5 - pc, sb);
                 double pr = mass / Z; if (pr < 1e-9) pr = 1e-9; bits[c] += -log2(pr);
             } else {
-                int r = (int)lrintf(pc), e = xv - r;
+                int r = (int)lrintf(pc), e = xv - r; int ex[4], nex = 0;
                 #define CL2(v) (clampi((v), -2, 2) + 2)
                 int cx[NCX];
                 int fr = (int)floorf((pc - r + 0.5f) * 3.999f);
@@ -609,13 +678,17 @@ static void code_plane(int oi) {
                 if (MCTX && hasmat) cx[ci++] = mland * NEN + EN;
                 g_sel2 = EN * 3 + cfl; g_actx = EN * 3 + (SQ < 2 ? 0 : SQ < 4 ? 1 : 2);
                 if (CMATCH && oi == 0) {                                          /* whole-colour match, coded once per pixel by G */
+                    if (mpend.on) match_learn(&mpend);                            /* the previous pixel is complete now: learn its true answer */
                     size_t cand[4]; int k = 0;
                     size_t nbs[4] = {x > 0 ? idx - 1 : idx, y > 0 ? idx - W : idx, (x > 0 && y > 0) ? idx - W - 1 : idx, (y > 0 && x < W - 1) ? idx - W + 1 : idx};
                     for (int q = 0; q < 4; q++) { size_t a = nbs[q]; if (a == idx) continue; int dup = 0;
                         for (int t = 0; t < k; t++) if (pl[0][cand[t]] == pl[0][a] && pl[1][cand[t]] == pl[1][a] && pl[2][cand[t]] == pl[2][a]) dup = 1;
                         if (!dup) cand[k++] = a; }
-                    int m = -1; for (int t = 0; t < k; t++) if (pl[0][cand[t]] == pl[0][idx] && pl[1][cand[t]] == pl[1][idx] && pl[2][cand[t]] == pl[2][idx]) { m = t; break; }
+                    asked[idx] = 0; freed[idx] = 0;
+                    MPend *q_ = &mpend; q_->on = 1; q_->idx = idx; q_->k = k; memcpy(q_->cand, cand, sizeof cand);
                     if (k > 0) {
+                        int m = -1;                                               /* encoder only: the true answer */
+                        if (MODE != 2) for (int t = 0; t < k; t++) if (pl[0][cand[t]] == pl[0][idx] && pl[1][cand[t]] == pl[1][idx] && pl[2][cand[t]] == pl[2][idx]) { m = t; break; }
                         int mW = x > 0 ? matched[idx - 1] : 0, mN = y > 0 ? matched[idx - W] : 0; float dg = 99;
                         for (int t = 0; t < k; t++) { float d = fabsf(pl[1][cand[t]] - pc); if (d < dg) dg = d; }
                         int dq = dg < 0.5f ? 0 : dg < 1.5f ? 1 : dg < 4.f ? 2 : 3, c0 = (k - 1) * 4 + mW * 2 + mN;
@@ -631,31 +704,29 @@ static void code_plane(int oi) {
                         if (MINF) { st[4] = logf(pg / (1 - pg)); dot += w[4] * st[4]; } else st[4] = 0;
                         st[5] = 0.3f; dot += w[5] * st[5];
                         float pm = 1.f / (1.f + expf(-dot)); pm = pm < 1e-4f ? 1e-4f : pm > 1 - 1e-4f ? 1 - 1e-4f : pm;
-                        int bit = m >= 0, ask = CMATCH < 2 || pm >= MTHR;           /* cmatch=2: only ask where a match is expected */
-                        g_ask = ask; asked[idx] = ask;
-                        if (ask) match_bits += -log2f(bit ? pm : 1 - pm);
-                        for (int q = 0; q < 6; q++) if (q < nci || q >= 4) w[q] += 0.01f * (bit - pm) * st[q];
-                        for (int q = 0; q < nci; q++) mc_upd(cc[q], bit);
-                        if (bit && ask) for (int t = 0; t < k - 1; t++) {                 /* which candidate: one yes/no per candidate */
-                            int wi = x > 0 ? midx[idx - 1] + 1 : 0; MCtr *ci = &mc_idx[((t * 4 + (k - 1)) * 5 + wi) & 255];
-                            float pp = mc_p(ci); int b2 = m == t; match_bits += -log2f(b2 ? pp : 1 - pp); mc_upd(ci, b2); if (b2) break;
-                        }
+                        int bit = m >= 0, ask = CMATCH < 2 || pm >= MTHR, mi = -1;  /* cmatch=2: only ask where a match is expected */
+                        if (ask) { bit = ac_bit(pm, bit); match_bits += -log2f(bit ? pm : 1 - pm); }
+                        if (bit && ask) { for (int t = 0; t < k - 1; t++) {           /* which candidate: one yes/no per candidate */
+                                int wi = x > 0 ? midx[idx - 1] + 1 : 0; MCtr *ci = &mc_idx[((t * 4 + (k - 1)) * 5 + wi) & 255];
+                                float pp = mc_p(ci); int b2 = ac_bit(pp, m == t); match_bits += -log2f(b2 ? pp : 1 - pp); mc_upd(ci, b2); if (b2) { mi = t; break; } }
+                            if (mi < 0) mi = k - 1; }
+                        asked[idx] = ask; freed[idx] = bit && ask;
+                        if (freed[idx]) { mcand[idx] = (int)cand[mi]; st_matched++; }
+                        memcpy(q_->cc, cc, sizeof cc); memcpy(q_->st, st, sizeof st); q_->w = w; q_->nci = nci; q_->pm = pm;
                     }
-                    matched[idx] = m >= 0; midx[idx] = (signed char)m;               /* contexts use the true equality (decoder knows it after the pixel) */
-                    g_free = m >= 0 && (CMATCH < 2 || g_ask); freed[idx] = g_free; if (g_free) st_matched++;
                 }
-                double b0_ = cm.bits, pex = 0;
-                if (MEXCL && oi == 2 && asked[idx] && !matched[idx]) {           /* "not a match" + G and R equal a candidate => B is not that candidate's B */
+                double b0_ = cm.bits;
+                if (MEXCL && oi == 2 && asked[idx] && !freed[idx]) {             /* "not a match" + G and R equal a candidate => B is not that candidate's B */
                     size_t nbs[4] = {x > 0 ? idx - 1 : idx, y > 0 ? idx - W : idx, (x > 0 && y > 0) ? idx - W - 1 : idx, (y > 0 && x < W - 1) ? idx - W + 1 : idx};
-                    int seen[4], ns = 0;
                     for (int q = 0; q < 4; q++) { size_t a = nbs[q]; if (a == idx || pl[0][a] != pl[0][idx] || pl[1][a] != pl[1][idx]) continue;
-                        int v = pl[2][a], dup = 0; for (int t = 0; t < ns; t++) dup |= seen[t] == v; if (dup) continue; seen[ns++] = v;
-                        pex += cm_pval(&cm, cx, A, v - r, r, (double)(pc - r), (double)sb); }
-                    if (ns) st_excl++;
+                        int v = pl[2][a] - r, dup = 0; for (int t = 0; t < nex; t++) dup |= ex[t] == v; if (!dup) ex[nex++] = v; }
+                    if (nex) st_excl++;
                 }
-                cm_residual(&cm, cx, A, e, r, (double)(pc - r), (double)sb);
-                if (pex > 0) { double sv = -log2(1 - fmin(pex, 0.999999)); cm.bits -= sv; excl_saved += sv; }
-                if (CMATCH && freed[idx]) cm.bits = b0_;                        /* matched pixel: its layers are free (models still learned) */
+                if (CMATCH && freed[idx]) {                                       /* matched pixel: value copied, layers only learn (no bits) */
+                    if (MODE == 2) xv = pl[c][mcand[idx]];
+                    e = xv - r; int sv = g_acmode; g_acmode = -1; cm_residual(&cm, cx, A, e, r, (double)(pc - r), (double)sb); g_acmode = sv;
+                } else { e = cm_residual_x(&cm, cx, A, e, r, (double)(pc - r), (double)sb, ex, nex); xv = r + e; }
+                if (MODE == 2) P[idx] = xv;
                 if (pixcost) pixcost[(size_t)c * N + idx] = (float)(cm.bits - b0_);
             }
 
@@ -704,6 +775,7 @@ static void code_plane(int oi) {
                 for (int d = 0; d < DIM; d++) fprintf(fo, "%s%.4f", d ? "," : "", fld[i].c[d]); fprintf(fo, "]}"); }
             fprintf(fo, "]\n"); fclose(fo);
         }
+        if (MODE == 1) ac_flush(g_ac);
         if (opt_b) bits[c] = cm.bits + (oi == 0 ? match_bits : 0);
         cm_free(&cm);
         for (int k = 0; k < NSUBX; k++) free(esub[k]);
@@ -718,10 +790,9 @@ static void code_plane(int oi) {
 }
 static void *plane_thread(void *a) { code_plane((int)(long)a); return NULL; }
 
-int main(int argc, char **argv) {
-    if (argc < 4) { fprintf(stderr, "usage: ffic file.rgb W H [flags]\n"); return 1; }
-    W = atoi(argv[2]); H = atoi(argv[3]);
-    for (int i = 4; i < argc; i++) {
+/* options: letters and key=value (the same list is stored in the file header so the decoder rebuilds the identical model) */
+static int parse_opts(int argc, char **argv) {
+    for (int i = 0; i < argc; i++) {
         char *a = argv[i], *eq = strchr(a, '=');
         if (eq) {
             float v = atof(eq + 1); int n = (int)(eq - a);
@@ -732,7 +803,7 @@ int main(int argc, char **argv) {
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
             else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
-            else { fprintf(stderr, "unknown option %s\n", a); return 1; }
+            else { fprintf(stderr, "unknown option %s\n", a); return 0; }
             continue;
         }
         opt_l = opt_t = opt_v = opt_p = opt_c = opt_e = opt_w = opt_r = opt_b = opt_f = 0;
@@ -740,25 +811,66 @@ int main(int argc, char **argv) {
             for (char *c = a; *c; c++) { switch (*c) { case 'l': opt_l = 1; break; case 't': opt_t = 1; break; case 'v': opt_v = 1; break;
                 case 'p': opt_p = 1; break; case 'c': opt_c = 1; break; case 'e': opt_e = 1; break; case 'w': opt_w = 1; break; case 'r': opt_r = 1; break; case 'b': opt_b = 1; break; case 'f': opt_f = 1; break; } }
     }
-    FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
-    N = (size_t)W * H; unsigned char *raw = malloc(N * 3);
-    if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
+    return 1;
+}
+
+int main(int argc, char **argv) {
+    const char *outp = NULL, *decp = NULL; char opts[4096] = ""; char *ov[256]; int oc = 0;
+    if (argc >= 4 && !strcmp(argv[1], "-d")) { decp = argv[2]; outp = argv[3]; MODE = 2; }
+    else if (argc < 4) { fprintf(stderr, "usage: ffic file.rgb W H [flags] [key=value...] [out=file.ffic]\n       ffic -d file.ffic out.rgb\n"); return 1; }
+    unsigned char *raw;
+    if (MODE == 2) {                                                          /* header: magic, W, H, options, three stream lengths, streams */
+        FILE *fi = fopen(decp, "rb"); if (!fi) { perror("open"); return 1; }
+        char mg[6]; unsigned hw[2], ol, sl[3];
+        if (fread(mg, 1, 6, fi) != 6 || memcmp(mg, "FFIC1", 6) || fread(hw, 4, 2, fi) != 2 || fread(&ol, 4, 1, fi) != 1 || ol >= sizeof opts) { fprintf(stderr, "not an FFIC file\n"); return 1; }
+        W = (int)hw[0]; H = (int)hw[1];
+        if (fread(opts, 1, ol, fi) != ol || fread(sl, 4, 3, fi) != 3) { fprintf(stderr, "truncated header\n"); return 1; } opts[ol] = 0;
+        for (int i = 0; i < 3; i++) { acs[i].n = acs[i].cap = sl[i]; acs[i].buf = malloc(sl[i] + 1); if (fread(acs[i].buf, 1, sl[i], fi) != sl[i]) { fprintf(stderr, "truncated stream\n"); return 1; } }
+        fclose(fi);
+        for (char *t = strtok(opts, " "); t && oc < 256; t = strtok(NULL, " ")) ov[oc++] = t;
+        if (!parse_opts(oc, ov)) return 1;
+        N = (size_t)W * H; raw = calloc(N * 3, 1);
+    } else {
+        W = atoi(argv[2]); H = atoi(argv[3]);
+        for (int i = 4; i < argc; i++) {
+            if (!strncmp(argv[i], "out=", 4)) { outp = argv[i] + 4; MODE = 1; continue; }
+            ov[oc++] = argv[i]; if (strlen(opts) + strlen(argv[i]) + 2 < sizeof opts) { if (*opts) strcat(opts, " "); strcat(opts, argv[i]); }
+        }
+        if (!parse_opts(oc, ov)) return 1;
+        FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
+        N = (size_t)W * H; raw = malloc(N * 3);
+        if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
+    }
+    if (MODE && !opt_b) { fprintf(stderr, "a real bitstream needs the context-mixing coder (flag b)\n"); return 1; }
+    if (MODE && INTER && opt_f) { fprintf(stderr, "future taps (f) are not causal with inter=1\n"); return 1; }
     pl[0] = pl[1] = pl[2] = NULL;
     for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
     clock_t t0 = clock(); struct timespec w0, w1; clock_gettime(CLOCK_MONOTONIC, &w0);
     pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
     nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); icurve = NSUB + (HIPPO ? 1 : 0);
-    if (INTER) { PIPE = 1; ILACE = 0; if (CMATCH) { matched = calloc(N, 1); freed = calloc(N, 1); asked = calloc(N, 1); midx = calloc(N, 1); for (int i = 0; i < 16; i++) for (int q = 0; q < 6; q++) mc_w[i][q] = q < 4 ? 0.3f : 0; for (int a = 0; a < 4; a++) for (int i = 0; i < 128; i++) mc_flag[a][i].p = 0.3f; for (int i = 0; i < 256; i++) mc_idx[i].p = 0.5f; } }
+    if (INTER) { PIPE = 1; ILACE = 0; if (CMATCH) { matched = calloc(N, 1); freed = calloc(N, 1); asked = calloc(N, 1); mcand = calloc(N, sizeof(int)); midx = calloc(N, 1); for (int i = 0; i < 16; i++) for (int q = 0; q < 6; q++) mc_w[i][q] = q < 4 ? 0.3f : 0; for (int a = 0; a < 4; a++) for (int i = 0; i < 128; i++) mc_flag[a][i].p = 0.3f; for (int i = 0; i < 256; i++) mc_idx[i].p = 0.5f; } }
     else CMATCH = 0;                                                      /* whole-colour match needs pixel-by-pixel order */
     if (PIPE) {                                                             /* staggered colour pipeline: one thread per layer */
         pthread_t th[3]; for (int oi = 0; oi < 3; oi++) pthread_create(&th[oi], NULL, plane_thread, (void *)(long)oi);
         for (int oi = 0; oi < 3; oi++) pthread_join(th[oi], NULL);
     } else for (int oi = 0; oi < 3; oi++) code_plane(oi);
     clock_gettime(CLOCK_MONOTONIC, &w1); double wall = (w1.tv_sec - w0.tv_sec) * 1000.0 + (w1.tv_nsec - w0.tv_nsec) / 1e6;
+    long long fbytes = 0;
+    if (MODE == 1) {
+        FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; }
+        unsigned hw[2] = {(unsigned)W, (unsigned)H}, ol = (unsigned)strlen(opts), sl[3] = {(unsigned)acs[0].n, (unsigned)acs[1].n, (unsigned)acs[2].n};
+        fwrite("FFIC1", 1, 6, fo); fwrite(hw, 4, 2, fo); fwrite(&ol, 4, 1, fo); fwrite(opts, 1, ol, fo); fwrite(sl, 4, 3, fo);
+        for (int i = 0; i < 3; i++) fwrite(acs[i].buf, 1, acs[i].n, fo);
+        fbytes = ftell(fo); fclose(fo);
+    }
+    if (MODE == 2) {
+        for (int c = 0; c < 3; c++) for (size_t i = 0; i < N; i++) raw[i * 3 + c] = (unsigned char)pl[c][i];
+        FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; } fwrite(raw, 1, N * 3, fo); fclose(fo);
+    }
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
-    printf("bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f excl=%.4f excl_bytes=%.0f\n",
-           tot / 8, tot / N, ms, wall, tot_born, bits[0] / 8, bits[1] / 8, bits[2] / 8, tot_field_born, tot_field_max, tot_fission, tot_prune,
-           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N, (double)st_excl_all / N, excl_saved / 8);
+    printf("file=%lld bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f excl=%.4f\n",
+           fbytes, tot / 8, tot / N, ms, wall, tot_born, bits[0] / 8, bits[1] / 8, bits[2] / 8, tot_field_born, tot_field_max, tot_fission, tot_prune,
+           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N, (double)st_excl_all / N);
     return 0;
 }

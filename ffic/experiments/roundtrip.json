@@ -1,0 +1,467 @@
+{
+ "best_now": {
+  "cfg": "ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1",
+  "desc": "best single coder, layers one after another",
+  "code_sha1": "863a70eb60",
+  "date": "2026-10-24 13:46:43",
+  "per_image": {
+   "pex_p1054218": {
+    "file": 301924,
+    "ideal": 301722,
+    "enc_s": 8.34,
+    "dec_s": 8.47,
+    "exact": true
+   },
+   "pex_p1287145": {
+    "file": 513295,
+    "ideal": 513092,
+    "enc_s": 7.75,
+    "dec_s": 8.51,
+    "exact": true
+   },
+   "pex_p1366919": {
+    "file": 620143,
+    "ideal": 619940,
+    "enc_s": 8.93,
+    "dec_s": 8.12,
+    "exact": true
+   },
+   "pex_p1612351": {
+    "file": 586582,
+    "ideal": 586379,
+    "enc_s": 8.08,
+    "dec_s": 8.68,
+    "exact": true
+   },
+   "pex_p1770809": {
+    "file": 1227355,
+    "ideal": 1227152,
+    "enc_s": 9.07,
+    "dec_s": 9.45,
+    "exact": true
+   },
+   "pex_p2014422": {
+    "file": 153035,
+    "ideal": 152834,
+    "enc_s": 6.56,
+    "dec_s": 6.68,
+    "exact": true
+   },
+   "pex_p2166711": {
+    "file": 377430,
+    "ideal": 377229,
+    "enc_s": 6.91,
+    "dec_s": 8.04,
+    "exact": true
+   },
+   "pex_p2253275": {
+    "file": 470292,
+    "ideal": 470090,
+    "enc_s": 8.7,
+    "dec_s": 8.33,
+    "exact": true
+   },
+   "pex_p3225517": {
+    "file": 847829,
+    "ideal": 847626,
+    "enc_s": 8.24,
+    "dec_s": 8.97,
+    "exact": true
+   },
+   "pex_p417074": {
+    "file": 671633,
+    "ideal": 671431,
+    "enc_s": 7.81,
+    "dec_s": 9.3,
+    "exact": true
+   },
+   "pex_p462162": {
+    "file": 761890,
+    "ideal": 761687,
+    "enc_s": 8.37,
+    "dec_s": 8.91,
+    "exact": true
+   },
+   "pex_p933054": {
+    "file": 260897,
+    "ideal": 260694,
+    "enc_s": 7.81,
+    "dec_s": 8.0,
+    "exact": true
+   },
+   "kod_kodim01": {
+    "file": 471229,
+    "ideal": 471026,
+    "enc_s": 4.51,
+    "dec_s": 4.79,
+    "exact": true
+   },
+   "kod_kodim03": {
+    "file": 328693,
+    "ideal": 328489,
+    "enc_s": 5.23,
+    "dec_s": 5.0,
+    "exact": true
+   },
+   "kod_kodim05": {
+    "file": 496257,
+    "ideal": 496054,
+    "enc_s": 4.83,
+    "dec_s": 4.8,
+    "exact": true
+   },
+   "kod_kodim08": {
+    "file": 512962,
+    "ideal": 512758,
+    "enc_s": 5.06,
+    "dec_s": 4.49,
+    "exact": true
+   },
+   "kod_kodim13": {
+    "file": 552548,
+    "ideal": 552344,
+    "enc_s": 5.29,
+    "dec_s": 4.59,
+    "exact": true
+   },
+   "kod_kodim15": {
+    "file": 383730,
+    "ideal": 383527,
+    "enc_s": 4.92,
+    "dec_s": 4.2,
+    "exact": true
+   },
+   "kod_kodim20": {
+    "file": 320562,
+    "ideal": 320358,
+    "enc_s": 4.49,
+    "dec_s": 4.11,
+    "exact": true
+   },
+   "kod_kodim22": {
+    "file": 473473,
+    "ideal": 473270,
+    "enc_s": 4.75,
+    "dec_s": 4.78,
+    "exact": true
+   }
+  },
+  "file": 10331759,
+  "ideal": 10327702,
+  "all_exact": true,
+  "vs_jxl9_pct": -1.427,
+  "overhead_pct": 0.039,
+  "enc_s": 135.7,
+  "dec_s": 138.2
+ },
+ "pipe": {
+  "cfg": "ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 pipe=1 snapk=32",
+  "desc": "staggered colour pipeline (3 threads)",
+  "code_sha1": "863a70eb60",
+  "date": "2026-10-24 13:48:00",
+  "per_image": {
+   "pex_p1054218": {
+    "file": 301983,
+    "ideal": 301764,
+    "enc_s": 5.47,
+    "dec_s": 5.38,
+    "exact": true
+   },
+   "pex_p1287145": {
+    "file": 513223,
+    "ideal": 513004,
+    "enc_s": 5.28,
+    "dec_s": 4.89,
+    "exact": true
+   },
+   "pex_p1366919": {
+    "file": 620116,
+    "ideal": 619897,
+    "enc_s": 5.08,
+    "dec_s": 4.41,
+    "exact": true
+   },
+   "pex_p1612351": {
+    "file": 586977,
+    "ideal": 586758,
+    "enc_s": 5.12,
+    "dec_s": 5.13,
+    "exact": true
+   },
+   "pex_p1770809": {
+    "file": 1227840,
+    "ideal": 1227621,
+    "enc_s": 5.05,
+    "dec_s": 4.65,
+    "exact": true
+   },
+   "pex_p2014422": {
+    "file": 152915,
+    "ideal": 152697,
+    "enc_s": 4.64,
+    "dec_s": 4.74,
+    "exact": true
+   },
+   "pex_p2166711": {
+    "file": 377725,
+    "ideal": 377508,
+    "enc_s": 4.54,
+    "dec_s": 4.16,
+    "exact": true
+   },
+   "pex_p2253275": {
+    "file": 470382,
+    "ideal": 470162,
+    "enc_s": 5.27,
+    "dec_s": 4.73,
+    "exact": true
+   },
+   "pex_p3225517": {
+    "file": 847672,
+    "ideal": 847453,
+    "enc_s": 4.29,
+    "dec_s": 4.4,
+    "exact": true
+   },
+   "pex_p417074": {
+    "file": 671976,
+    "ideal": 671758,
+    "enc_s": 4.32,
+    "dec_s": 4.7,
+    "exact": true
+   },
+   "pex_p462162": {
+    "file": 762328,
+    "ideal": 762108,
+    "enc_s": 4.12,
+    "dec_s": 4.71,
+    "exact": true
+   },
+   "pex_p933054": {
+    "file": 260763,
+    "ideal": 260544,
+    "enc_s": 4.39,
+    "dec_s": 4.6,
+    "exact": true
+   },
+   "kod_kodim01": {
+    "file": 471775,
+    "ideal": 471555,
+    "enc_s": 2.73,
+    "dec_s": 2.89,
+    "exact": true
+   },
+   "kod_kodim03": {
+    "file": 328884,
+    "ideal": 328664,
+    "enc_s": 2.72,
+    "dec_s": 2.92,
+    "exact": true
+   },
+   "kod_kodim05": {
+    "file": 496401,
+    "ideal": 496181,
+    "enc_s": 2.99,
+    "dec_s": 2.97,
+    "exact": true
+   },
+   "kod_kodim08": {
+    "file": 514463,
+    "ideal": 514243,
+    "enc_s": 2.74,
+    "dec_s": 2.37,
+    "exact": true
+   },
+   "kod_kodim13": {
+    "file": 552938,
+    "ideal": 552718,
+    "enc_s": 2.55,
+    "dec_s": 2.67,
+    "exact": true
+   },
+   "kod_kodim15": {
+    "file": 384578,
+    "ideal": 384358,
+    "enc_s": 2.43,
+    "dec_s": 1.93,
+    "exact": true
+   },
+   "kod_kodim20": {
+    "file": 320485,
+    "ideal": 320266,
+    "enc_s": 2.09,
+    "dec_s": 1.76,
+    "exact": true
+   },
+   "kod_kodim22": {
+    "file": 473714,
+    "ideal": 473495,
+    "enc_s": 1.87,
+    "dec_s": 1.87,
+    "exact": true
+   }
+  },
+  "file": 10337138,
+  "ideal": 10332754,
+  "all_exact": true,
+  "vs_jxl9_pct": -1.376,
+  "overhead_pct": 0.042,
+  "enc_s": 77.7,
+  "dec_s": 75.9
+ },
+ "inter_cmatch_excl_inf": {
+  "cfg": "ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 inter=1 cmatch=1 mexcl=1 minf=1 snapk=32",
+  "desc": "pixel by pixel + whole-colour match + exclusion",
+  "code_sha1": "863a70eb60",
+  "date": "2026-10-24 13:52:33",
+  "per_image": {
+   "pex_p1054218": {
+    "file": 341861,
+    "ideal": 341618,
+    "enc_s": 14.06,
+    "dec_s": 14.04,
+    "exact": true
+   },
+   "pex_p1287145": {
+    "file": 540083,
+    "ideal": 539840,
+    "enc_s": 15.62,
+    "dec_s": 15.58,
+    "exact": true
+   },
+   "pex_p1366919": {
+    "file": 638481,
+    "ideal": 638236,
+    "enc_s": 18.19,
+    "dec_s": 18.94,
+    "exact": true
+   },
+   "pex_p1612351": {
+    "file": 612192,
+    "ideal": 611948,
+    "enc_s": 17.48,
+    "dec_s": 17.92,
+    "exact": true
+   },
+   "pex_p1770809": {
+    "file": 1227936,
+    "ideal": 1227691,
+    "enc_s": 20.98,
+    "dec_s": 20.39,
+    "exact": true
+   },
+   "pex_p2014422": {
+    "file": 186954,
+    "ideal": 186712,
+    "enc_s": 14.42,
+    "dec_s": 14.6,
+    "exact": true
+   },
+   "pex_p2166711": {
+    "file": 410979,
+    "ideal": 410736,
+    "enc_s": 15.04,
+    "dec_s": 15.73,
+    "exact": true
+   },
+   "pex_p2253275": {
+    "file": 491485,
+    "ideal": 491242,
+    "enc_s": 15.3,
+    "dec_s": 15.8,
+    "exact": true
+   },
+   "pex_p3225517": {
+    "file": 853811,
+    "ideal": 853566,
+    "enc_s": 18.15,
+    "dec_s": 17.27,
+    "exact": true
+   },
+   "pex_p417074": {
+    "file": 685494,
+    "ideal": 685249,
+    "enc_s": 17.89,
+    "dec_s": 16.3,
+    "exact": true
+   },
+   "pex_p462162": {
+    "file": 772442,
+    "ideal": 772198,
+    "enc_s": 16.19,
+    "dec_s": 17.53,
+    "exact": true
+   },
+   "pex_p933054": {
+    "file": 297843,
+    "ideal": 297600,
+    "enc_s": 14.91,
+    "dec_s": 16.07,
+    "exact": true
+   },
+   "kod_kodim01": {
+    "file": 465465,
+    "ideal": 465220,
+    "enc_s": 9.21,
+    "dec_s": 8.95,
+    "exact": true
+   },
+   "kod_kodim03": {
+    "file": 317682,
+    "ideal": 317438,
+    "enc_s": 8.37,
+    "dec_s": 8.52,
+    "exact": true
+   },
+   "kod_kodim05": {
+    "file": 488189,
+    "ideal": 487945,
+    "enc_s": 9.13,
+    "dec_s": 10.3,
+    "exact": true
+   },
+   "kod_kodim08": {
+    "file": 506606,
+    "ideal": 506361,
+    "enc_s": 9.03,
+    "dec_s": 9.62,
+    "exact": true
+   },
+   "kod_kodim13": {
+    "file": 548932,
+    "ideal": 548687,
+    "enc_s": 9.54,
+    "dec_s": 9.85,
+    "exact": true
+   },
+   "kod_kodim15": {
+    "file": 374605,
+    "ideal": 374360,
+    "enc_s": 8.89,
+    "dec_s": 9.2,
+    "exact": true
+   },
+   "kod_kodim20": {
+    "file": 315260,
+    "ideal": 315016,
+    "enc_s": 7.11,
+    "dec_s": 7.62,
+    "exact": true
+   },
+   "kod_kodim22": {
+    "file": 464810,
+    "ideal": 464565,
+    "enc_s": 7.61,
+    "dec_s": 8.65,
+    "exact": true
+   }
+  },
+  "file": 10541110,
+  "ideal": 10536228,
+  "all_exact": true,
+  "vs_jxl9_pct": 0.57,
+  "overhead_pct": 0.046,
+  "enc_s": 267.1,
+  "dec_s": 272.9
+ }
+}

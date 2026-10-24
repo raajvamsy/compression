@@ -200,3 +200,23 @@ After a "no", the pixel's colour is known to differ from every candidate. In G�
 | `inter_cmatch_excl_inf` (+ minf=1) | +0.52% | −1.75% | **−2.01%** | 8 |
 
 Exclusion fires on 1–4% of pixels and saves 1.1–1.6 KB per photo. It does not rescue the smooth Pexels photos. There the yes/no answer is close to a coin flip (~0.8 bit per pixel), while the layered coder codes the same repeated pixels for about a tenth of a bit, and the gap is on G (p2014422: G 113 KB → 156 KB with the question). A separate question can only win where exact repeats surprise the layered coder (Kodak). CPU cost of `minf`: +20%.
+
+## 6. Real bitstream and decoder (round trip verified)
+
+`ffic file.rgb W H <options> out=file.ffic` now writes a real file, and `ffic -d file.ffic out.rgb` decodes it. File = header (magic, size, the option string so the decoder rebuilds the identical model) + three arithmetic-coded streams, one per colour layer (carry-less 32-bit binary coder, 16-bit probabilities). The decoder runs the same code path. Each value is decoded before anything reads it, and the threaded modes (pipe, pixel by pixel) wait on the same row/pixel hand-offs as the encoder, so the decoded result is deterministic.
+
+What had to change for a decodable stream:
+* The residual is coded as a walk down one binary tree (zero? → sign → bucket → mantissa) shared by coder, decoder, probability lookup and exclusion (`RW`/`rw_*`).
+* Whole-colour match: the encoder used the pixel's own R and B to update the match model right away. Now the model learns at the start of the next G pixel, once R and B are known to the decoder too. The numbers don't change, because nothing reads that model in between.
+* "Not a match" exclusion is coded for real: at every decision node the excluded values' probability mass is removed and the decision renormalised.
+
+Round trip on all 20 photos (`ffic/roundtrip.py`, `ffic/experiments/ROUNDTRIP.md`):
+
+| config | real file | ideal | coder overhead | vs JXL e9 | encode / decode (sum, s) | bit-exact |
+|---|---|---|---|---|---|---|
+| `best_now` | 10,331,759 B | 10,327,702 B | +0.039% | −1.43% | 136 / 138 | 20/20 |
+| `pipe` | 10,337,138 B | 10,332,754 B | +0.042% | −1.38% | 78 / 76 | 20/20 |
+| `inter_cmatch_excl_inf` | 10,541,110 B | 10,536,228 B | +0.046% | +0.57% | 267 / 273 | 20/20 |
+| smallest per photo | **10,273,344 B** | | | **−1.98%** | | |
+
+Decoding takes as long as encoding (symmetric, as in all context-mixing coders): about 7 s per photo for `best_now`, about 4 s with `pipe`.
