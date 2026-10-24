@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RGB Layer Mixer</title>
+<style>
+  body { margin:0; font:14px system-ui,sans-serif; background:#111; color:#eee; display:flex; min-height:100vh; }
+  aside { width:300px; padding:16px; overflow-y:auto; background:#1b1b1b; flex:none; max-height:100vh; box-sizing:border-box; }
+  main { flex:1; display:flex; align-items:center; justify-content:center; padding:16px; min-width:0; }
+  canvas { max-width:100%; max-height:calc(100vh - 32px); background:#000; border:1px solid #333; }
+  h1 { font-size:16px; margin:0 0 8px; }
+  h2 { font-size:13px; margin:14px 0 4px; text-transform:uppercase; letter-spacing:.05em; }
+  h2.red{color:#ff6b6b} h2.green{color:#6bff8a} h2.blue{color:#6ba8ff}
+  label { display:block; padding:2px 0; cursor:pointer; }
+  label.sub { padding-left:18px; color:#bbb; }
+  button { margin:4px 4px 0 0; padding:4px 8px; background:#333; color:#eee; border:1px solid #555; border-radius:4px; cursor:pointer; }
+  .note { color:#888; font-size:12px; margin-top:8px; }
+  @media (max-width:700px){ body{flex-direction:column} aside{width:auto;max-height:45vh} }
+</style>
+</head>
+<body>
+<aside>
+  <h1>RGB Layer Mixer</h1>
+  <div>
+    <button id="all">All</button><button id="none">None</button>
+    <button id="layers">3 full layers</button>
+  </div>
+  <label style="margin-top:8px"><input type="checkbox" data-src="original.jpg" data-mode="source-over"> Original photo</label>
+  <div id="list"></div>
+  <p class="note">Layers are blended additively on black, so red + green + blue layers together rebuild the original.</p>
+</aside>
+<main><canvas id="c"></canvas></main>
+<script>
+const channels = [
+  {key:'red',   dir:'layer_1_red',   cls:'red'},
+  {key:'green', dir:'layer_2_green', cls:'green'},
+  {key:'blue',  dir:'layer_3_blue',  cls:'blue'},
+];
+const bands = ['band_1_darkest_0-63','band_2_dark_64-127','band_3_light_128-191','band_4_lightest_192-255'];
+const list = document.getElementById('list');
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const cache = {};
+
+for (const ch of channels) {
+  list.insertAdjacentHTML('beforeend', `<h2 class="${ch.cls}">${ch.key} layer</h2>`);
+  list.insertAdjacentHTML('beforeend',
+    `<label><input type="checkbox" data-src="${ch.dir}/${ch.key}_layer_tinted.png"> full ${ch.key} layer</label>`);
+  for (const b of bands)
+    list.insertAdjacentHTML('beforeend',
+      `<label class="sub"><input type="checkbox" data-src="${ch.dir}/${b}/${ch.key}_band.png"> ${b.replace(/^band_\d_/,'').replace('_',' ')}</label>`);
+}
+
+const boxes = () => [...document.querySelectorAll('input[type=checkbox]')];
+
+function load(src) {
+  return cache[src] ||= new Promise((res, rej) => {
+    const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(src); i.src = src;
+  });
+}
+
+let token = 0;
+async function render() {
+  const t = ++token;
+  const on = boxes().filter(b => b.checked);
+  const imgs = await Promise.all(on.map(b => load(b.dataset.src)));
+  if (t !== token) return;
+  const first = imgs[0];
+  if (first && (cv.width !== first.naturalWidth)) { cv.width = first.naturalWidth; cv.height = first.naturalHeight; }
+  if (!cv.width) { cv.width = 1200; cv.height = 1800; }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.globalCompositeOperation = 'lighter';
+  imgs.forEach(i => ctx.drawImage(i, 0, 0));
+}
+
+boxes().forEach(b => b.addEventListener('change', render));
+const setAll = f => { boxes().forEach(b => b.checked = f(b)); render(); };
+document.getElementById('all').onclick = () => setAll(b => !b.dataset.src.includes('original'));
+document.getElementById('none').onclick = () => setAll(() => false);
+document.getElementById('layers').onclick = () => setAll(b => b.dataset.src.endsWith('_layer_tinted.png'));
+render();
+</script>
+</body>
+</html>
