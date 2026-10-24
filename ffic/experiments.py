@@ -219,3 +219,9 @@ EXPERIMENTS += [
     dict(id="inter_cmatch_gated", cfg=MB + " inter=1 cmatch=2 mthr=0.55 snapk=32", jobs=1, mechanism="Whole-colour match, but the question is only asked where the model already expects a match (p >= 0.55, computable by the decoder); its statistics still learn from every pixel.",
          hypothesis="Removes the flag overhead on smooth photos where matches are rare or already cheap. Sweep on 3 images: higher threshold helps Pexels, hurts Kodak.", **_w),
 ]
+EXPERIMENTS += [
+    dict(id="inter_cmatch_excl", cfg=MB + " inter=1 cmatch=1 mexcl=1 snapk=32", jobs=1, mechanism="Whole-colour match + 'not a match' exclusion: after a 'no', if this pixel's G and R equal a candidate's, B cannot be that candidate's B, so B's probability is renormalised without those values (ideal cost - log2(1 - P(excluded))).",
+         hypothesis="Recovers part of the flag's cost on 'no' pixels; only fires when G and R match a candidate (rare), so a small gain.", **_w),
+    dict(id="inter_cmatch_excl_inf", cfg=MB + " inter=1 cmatch=1 mexcl=1 minf=1 snapk=32", jobs=1, mechanism="As inter_cmatch_excl, and the match question also hears the G layer's own probability for the candidates' G values (extra counter context + mixer input).",
+         hypothesis="The flag knows when the layered coder is already sure, so it wastes fewer bits on smooth photos.", **_w),
+]

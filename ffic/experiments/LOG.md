@@ -71,34 +71,36 @@ Verdict compares with the reference experiment **ref_best** (current best, befor
 | 60 | `inter_cmatch_gated` | whole colour | +0.23% | -0.90% | +0.94% | -0.37% | +1.44% | 523 | 6.57 | helps |
 | 61 | `sal_robust` | plasticity | +0.24% | -0.89% | +0.62% | -0.98% | +2.69% | 77 | 0.96 | helps |
 | 62 | `r_curve` | spin | +0.29% | -0.84% | +0.63% | -0.97% | +2.79% | 76 | 0.96 | helps |
-| 63 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
-| 64 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
-| 65 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
-| 66 | `inter_cmatch` | whole colour | +0.94% | -0.20% | +2.63% | +1.43% | -0.05% | 538 | 6.76 | helps |
-| 67 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
-| 68 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
-| 69 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
-| 70 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
-| 71 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
-| 72 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
-| 73 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
-| 74 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
-| 75 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
-| 76 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
-| 77 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
-| 78 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
-| 79 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
-| 80 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
-| 81 | `ilace` | time | +1.68% | +0.54% | +2.27% | +0.67% | +3.70% | 145 | 1.82 | hurts |
-| 82 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
-| 83 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
-| 84 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
-| 85 | `ct_subgreen` | colour transforms | +5.04% | +3.86% | +4.46% | +2.59% | +9.95% | 141 | 1.77 | hurts |
-| 86 | `layers_independent` | layers | +11.01% | +9.76% | +14.72% | +12.97% | +7.08% | 96 | 1.21 | hurts |
+| 63 | `inter_cmatch_excl_inf` | whole colour | +0.52% | -0.61% | +2.23% | +1.00% | -0.44% | 723 | 9.08 | helps |
+| 64 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
+| 65 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
+| 66 | `inter_cmatch_excl` | whole colour | +0.71% | -0.43% | +2.46% | +1.25% | -0.39% | 605 | 7.60 | helps |
+| 67 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
+| 68 | `inter_cmatch` | whole colour | +0.94% | -0.20% | +2.63% | +1.43% | -0.05% | 538 | 6.76 | helps |
+| 69 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
+| 70 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
+| 71 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
+| 72 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
+| 73 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
+| 74 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
+| 75 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
+| 76 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
+| 77 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
+| 78 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
+| 79 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
+| 80 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
+| 81 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
+| 82 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
+| 83 | `ilace` | time | +1.68% | +0.54% | +2.27% | +0.67% | +3.70% | 145 | 1.82 | hurts |
+| 84 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
+| 85 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
+| 86 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
+| 87 | `ct_subgreen` | colour transforms | +5.04% | +3.86% | +4.46% | +2.59% | +9.95% | 141 | 1.77 | hurts |
+| 88 | `layers_independent` | layers | +11.01% | +9.76% | +14.72% | +12.97% | +7.08% | 96 | 1.21 | hurts |
 
 ## PFC goal bias: best mechanism set per image (encoder tries all, signals the choice in 1 byte)
 
-Total 10,192,610 B = -2.75% vs JXL e9, -3.85% vs `ref_best`. Encode cost = sum of all experiments' time (decode = one). Picks: `worlds5_local` x11, `inter_cmatch` x6, `worlds5_localfs_b1` x2, `ct_subgreen` x1
+Total 10,182,530 B = -2.85% vs JXL e9, -3.95% vs `ref_best`. Encode cost = sum of all experiments' time (decode = one). Picks: `worlds5_local` x10, `inter_cmatch_excl_inf` x6, `worlds5_localfs_b1` x2, `ct_subgreen` x1, `inter_cmatch_excl` x1
 
 
 ## Details
@@ -2578,6 +2580,72 @@ Better than the reference on 14 of 20 images.
 
 Better than the reference on 15 of 20 images.
 
+### `inter_cmatch_excl`
+
+* **Mechanism:** Whole-colour match + 'not a match' exclusion: after a 'no', if this pixel's G and R equal a candidate's, B cannot be that candidate's B, so B's probability is renormalised without those values (ideal cost - log2(1 - P(excluded))).
+* **FunnelBrain source:** See the colour as one thing (perception binds R, G, B into one colour) instead of three separate layers.
+* **Hypothesis:** Recovers part of the flag's cost on 'no' pixels; only fires when G and R match a candidate (rare), so a small gain.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 inter=1 cmatch=1 mexcl=1 snapk=32`   code `edb83f9fb2` (git 6ce4d89), run 2026-10-24 13:34:31
+* **Result:** 10,555,344 B = +0.71% vs JXL e9, -0.43% vs `ref_best`, +2.46% vs FunnelZip (Pexels). Planes R/G/B = 2,262,160 / 6,283,579 / 2,009,602. CPU 605.2 s (wall 203.8 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 344,396 | +1.54% | +11.03% | funnels=27, field_born=576, field_max=192, prune=287 |
+| pex_p1287145 | 541,562 | +5.09% | +2.14% | funnels=27, field_born=576, field_max=192, prune=353 |
+| pex_p1366919 | 639,239 | -0.32% | -0.07% | funnels=27, field_born=576, field_max=192, prune=355 |
+| pex_p1612351 | 613,728 | +3.36% | +0.12% | funnels=27, field_born=576, field_max=192, prune=384 |
+| pex_p1770809 | 1,227,792 | -5.07% | -1.61% | funnels=27, field_born=576, field_max=192, prune=382 |
+| pex_p2014422 | 188,448 | +8.37% | +19.43% | funnels=27, field_born=576, field_max=192, prune=316 |
+| pex_p2166711 | 413,047 | +6.56% | +4.85% | funnels=27, field_born=576, field_max=192, prune=262 |
+| pex_p2253275 | 492,738 | +4.59% | -0.52% | funnels=27, field_born=576, field_max=192, prune=304 |
+| pex_p3225517 | 853,865 | +0.11% | -0.83% | funnels=27, field_born=576, field_max=192, prune=395 |
+| pex_p417074 | 686,366 | +1.60% | -1.17% | funnels=27, field_born=576, field_max=192, prune=398 |
+| pex_p462162 | 772,958 | -0.04% | -1.60% | funnels=27, field_born=576, field_max=192, prune=396 |
+| pex_p933054 | 299,865 | +11.40% | +10.54% | funnels=27, field_born=576, field_max=192, prune=168 |
+| kod_kodim01 | 465,396 | +2.34% | -2.56% | funnels=27, field_born=576, field_max=192, prune=414 |
+| kod_kodim03 | 318,170 | -3.03% | -6.77% | funnels=27, field_born=576, field_max=192, prune=252 |
+| kod_kodim05 | 488,201 | +0.65% | -3.19% | funnels=27, field_born=576, field_max=192, prune=283 |
+| kod_kodim08 | 506,562 | +0.98% | -3.11% | funnels=27, field_born=576, field_max=192, prune=402 |
+| kod_kodim13 | 548,743 | -0.03% | -1.59% | funnels=27, field_born=576, field_max=192, prune=427 |
+| kod_kodim15 | 374,773 | -2.13% | -5.09% | funnels=27, field_born=576, field_max=192, prune=358 |
+| kod_kodim20 | 314,787 | -3.19% | -2.78% | funnels=27, field_born=576, field_max=192, prune=560 |
+| kod_kodim22 | 464,708 | -0.77% | -2.80% | funnels=27, field_born=576, field_max=192, prune=414 |
+
+Better than the reference on 14 of 20 images.
+
+### `inter_cmatch_excl_inf`
+
+* **Mechanism:** As inter_cmatch_excl, and the match question also hears the G layer's own probability for the candidates' G values (extra counter context + mixer input).
+* **FunnelBrain source:** See the colour as one thing (perception binds R, G, B into one colour) instead of three separate layers.
+* **Hypothesis:** The flag knows when the layered coder is already sure, so it wastes fewer bits on smooth photos.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 inter=1 cmatch=1 mexcl=1 minf=1 snapk=32`   code `edb83f9fb2` (git 6ce4d89), run 2026-10-24 13:38:34
+* **Result:** 10,536,227 B = +0.52% vs JXL e9, -0.61% vs `ref_best`, +2.23% vs FunnelZip (Pexels). Planes R/G/B = 2,262,160 / 6,264,468 / 2,009,602. CPU 722.8 s (wall 243.5 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 341,618 | +0.72% | +10.13% | funnels=27, field_born=576, field_max=192, prune=287 |
+| pex_p1287145 | 539,840 | +4.76% | +1.81% | funnels=27, field_born=576, field_max=192, prune=353 |
+| pex_p1366919 | 638,236 | -0.47% | -0.23% | funnels=27, field_born=576, field_max=192, prune=355 |
+| pex_p1612351 | 611,948 | +3.06% | -0.17% | funnels=27, field_born=576, field_max=192, prune=384 |
+| pex_p1770809 | 1,227,691 | -5.08% | -1.62% | funnels=27, field_born=576, field_max=192, prune=382 |
+| pex_p2014422 | 186,712 | +7.37% | +18.33% | funnels=27, field_born=576, field_max=192, prune=316 |
+| pex_p2166711 | 410,736 | +5.96% | +4.26% | funnels=27, field_born=576, field_max=192, prune=262 |
+| pex_p2253275 | 491,242 | +4.27% | -0.83% | funnels=27, field_born=576, field_max=192, prune=304 |
+| pex_p3225517 | 853,566 | +0.08% | -0.87% | funnels=27, field_born=576, field_max=192, prune=395 |
+| pex_p417074 | 685,249 | +1.43% | -1.33% | funnels=27, field_born=576, field_max=192, prune=398 |
+| pex_p462162 | 772,198 | -0.14% | -1.70% | funnels=27, field_born=576, field_max=192, prune=396 |
+| pex_p933054 | 297,600 | +10.56% | +9.70% | funnels=27, field_born=576, field_max=192, prune=168 |
+| kod_kodim01 | 465,220 | +2.30% | -2.60% | funnels=27, field_born=576, field_max=192, prune=414 |
+| kod_kodim03 | 317,438 | -3.25% | -6.99% | funnels=27, field_born=576, field_max=192, prune=252 |
+| kod_kodim05 | 487,944 | +0.59% | -3.24% | funnels=27, field_born=576, field_max=192, prune=283 |
+| kod_kodim08 | 506,362 | +0.94% | -3.15% | funnels=27, field_born=576, field_max=192, prune=402 |
+| kod_kodim13 | 548,687 | -0.04% | -1.60% | funnels=27, field_born=576, field_max=192, prune=427 |
+| kod_kodim15 | 374,360 | -2.24% | -5.20% | funnels=27, field_born=576, field_max=192, prune=358 |
+| kod_kodim20 | 315,015 | -3.12% | -2.71% | funnels=27, field_born=576, field_max=192, prune=560 |
+| kod_kodim22 | 464,565 | -0.80% | -2.83% | funnels=27, field_born=576, field_max=192, prune=414 |
+
+Better than the reference on 15 of 20 images.
+
 ### `worlds2_bayes`
 
 * **Mechanism:** Parallel worlds: 2 complete coders (best, old) run side by side; each pixel is coded with their weighted mixture (bayes: weights = cumulative evidence).
@@ -3039,3 +3107,5 @@ Better than the reference on 17 of 20 images.
 | 2026-10-24 13:16:14 | `inter` | d532223e63 | 10,362,565 | -1.13% | 521.6 |
 | 2026-10-24 13:19:16 | `inter_cmatch` | d532223e63 | 10,579,434 | +0.94% | 538.0 |
 | 2026-10-24 13:25:17 | `inter_cmatch_gated` | 5706e9a088 | 10,505,799 | +0.23% | 522.8 |
+| 2026-10-24 13:34:31 | `inter_cmatch_excl` | edb83f9fb2 | 10,555,344 | +0.71% | 605.2 |
+| 2026-10-24 13:38:34 | `inter_cmatch_excl_inf` | edb83f9fb2 | 10,536,227 | +0.52% | 722.8 |

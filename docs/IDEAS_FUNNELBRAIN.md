@@ -188,3 +188,15 @@ Two ways to treat a pixel's colour as one thing instead of three separate layers
 
 Why: 33–76% of pixels repeat a neighbour's full colour, but on smooth high-quality photos the layered coder already codes those repeats at a fraction of a bit per layer, so a separate yes/no question costs more than it saves. On Kodak (scanned film, more texture) exact repeats are surprising to the layered coder, so the joint question wins. Pixel-by-pixel order by itself gives G nothing useful: the colour of the W/N neighbours is already implied by its own neighbours' G values plus the R/B registers.
 Next if pursued: tell the layered coder "not a match" (exclude the candidate colours) on a no, instead of paying the flag on top.
+
+### 5g. "Not a match" exclusion (tested)
+
+After a "no", the pixel's colour is known to differ from every candidate. In G→R→B order this is exact information for B: if G and R equal a candidate's, B cannot be that candidate's B, so B's probability is renormalised over the remaining values (cost − log2(1 − P(excluded)), computed by walking the residual coder's decisions without learning, `cm_pval`). `minf=1` additionally gives the match question the G layer's own probability for the candidates' G values.
+
+| run | alone vs JXL | Kodak vs `pipe` | best per photo with `pipe` | photos that pick it |
+|---|---|---|---|---|
+| `inter_cmatch` | +0.94% | −1.36% | −1.88% | 7 |
+| `inter_cmatch_excl` (mexcl=1) | +0.71% | −1.70% | −1.99% | 8 |
+| `inter_cmatch_excl_inf` (+ minf=1) | +0.52% | −1.75% | **−2.01%** | 8 |
+
+Exclusion fires on 1–4% of pixels and saves 1.1–1.6 KB per photo. It does not rescue the smooth Pexels photos. There the yes/no answer is close to a coin flip (~0.8 bit per pixel), while the layered coder codes the same repeated pixels for about a tenth of a bit, and the gap is on G (p2014422: G 113 KB → 156 KB with the question). A separate question can only win where exact repeats surprise the layered coder (Kodak). CPU cost of `minf`: +20%.

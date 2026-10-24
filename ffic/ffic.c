@@ -43,6 +43,8 @@
  *   pipe=1            STAGGERED COLOUR PIPELINE: G, R and B run on three threads at once; R waits until G is lag rows ahead,
  *                     B until R is. Deterministic: a layer only reads finished rows; registers copy G's funnels frozen every snapk rows
  *   inter=1           PIXEL BY PIXEL order (G, R, B of each pixel before the next); G gets 4 colour taps from W and N
+ *   minf=1            with cmatch: the match question also hears how likely the G layer already finds a candidate's G
+ *   mexcl=1           with cmatch: on "not a match", B excludes the B value of every candidate whose G and R equal this pixel's
  *   cmatch=1          WHOLE-COLOUR MATCH (needs inter=1): one joint question per pixel, "same colour as which neighbour?"
  *   FFIC_PIXCOST=path  write each pixel's code length (float32, planes R,G,B) for the parallel-worlds analysis
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
@@ -179,6 +181,18 @@ static inline void cm_bit(CM *m, int slot, const int *cx, int sel, int bit, floa
     if (APM) { ap[ab] += ((float)bit - ap[ab]) * APMR * (1.f - af); ap[ab + 1] += ((float)bit - ap[ab + 1]) * APMR * af; }
     for (int i = 0; i < nc; i++) { float a = 1.f / (c[i]->n + 1.6f); if (a < 1.f / CLIM) a = 1.f / CLIM; c[i]->p += ((float)bit - c[i]->p) * a; if (c[i]->n < 65000) c[i]->n++; }
 }
+/* probability that decision `slot` is 1, exactly as cm_bit would code it, without learning (for exclusion) */
+static inline float cm_bitp(CM *m, int slot, const int *cx, int sel, float ppar) {
+    float st[NIN]; const int nc = m->ncx; float *w = m->mw + ((size_t)slot * NA_SEL + sel) * NIN; float dot = 0, dot2 = 0;
+    for (int i = 0; i < nc; i++) { float p = m->t[i][(size_t)cx[i] * SLOTS + slot].p; p = p < 0.001f ? 0.001f : p > 0.999f ? 0.999f : p; st[i] = stretchf(p); dot += w[i] * st[i]; }
+    ppar = ppar < 0.001f ? 0.001f : ppar > 0.999f ? 0.999f : ppar;
+    st[NCX] = stretchf(ppar); dot += w[NCX] * st[NCX]; st[NCX + 1] = 0.3f; dot += w[NCX + 1] * st[NCX + 1];
+    if (MIX2) { float *w2 = m->mw2 + ((size_t)slot * NSEL2 + g_sel2) * NIN; for (int i = 0; i < nc; i++) dot2 += w2[i] * st[i]; dot2 += w2[NCX] * st[NCX] + w2[NCX + 1] * st[NCX + 1]; }
+    float p = MIX2 ? squashf(0.5f * (dot + dot2)) : squashf(dot); p = p < 1e-4f ? 1e-4f : p > 1.f - 1e-4f ? 1.f - 1e-4f : p;
+    if (APM) { float sx = clampf(stretchf(p), -7.999f, 7.999f) * 2.f + 16.f; int ab = (int)sx; float af = sx - ab; float *ap = m->apm + ((size_t)slot * NAPM + g_actx) * 33;
+        float pa = ap[ab] * (1.f - af) + ap[ab + 1] * af; p = (1.f - APMW) * p + APMW * pa; p = p < 1e-4f ? 1e-4f : p > 1.f - 1e-4f ? 1.f - 1e-4f : p; }
+    return p;
+}
 /* Laplace mass of integer residuals e in [lo,hi], centred at d (= pc - r) with scale b */
 static inline double lmass(int lo, int hi, double d, double b) { return lapF(hi + 0.5 - d, b) - lapF(lo - 0.5 - d, b); }
 /* code residual e (=x-r). d,b: parametric Laplace prior. r tells which signs are possible. */
@@ -200,6 +214,26 @@ static inline void cm_residual(CM *m, const int *cx, int sel, int e, int r, doub
         cm_bit(m, bi == k - 1 ? 10 + (k < 8 ? k : 7) : 18, cx, sel, bit, (float)(up / (all + 1e-300)));
         if (bit) lo = mid; else hi2 = mid - 1;
     }
+}
+
+/* probability the residual coder gives to residual e (walks the same decisions, learns nothing) */
+static double cm_pval(CM *m, const int *cx, int sel, int e, int r, double d, double b) {
+    const int BIG = 100000;
+    double m0 = lmass(0, 0, d, b), mneg = lmass(-BIG, -1, d, b), mpos = lmass(1, BIG, d, b);
+    double pz = cm_bitp(m, 0, cx, sel, (float)(m0 / (m0 + mneg + mpos + 1e-300)));
+    if (e == 0) return pz;
+    double P = 1 - pz; int neg = e < 0;
+    if (r > 0 && r < 255) { double ps = cm_bitp(m, 1, cx, sel, (float)(mneg / (mneg + mpos + 1e-300))); P *= neg ? ps : 1 - ps; }
+    int mag = abs(e) - 1, k = 0; while ((2 << k) - 1 <= mag) k++;
+    for (int j = 0; j < k; j++) { double hi = SIDE((2 << j), BIG), all = SIDE((1 << j), BIG); P *= cm_bitp(m, 2 + (j < 8 ? j : 7), cx, sel, (float)(hi / (all + 1e-300))); }
+    if (k < 8) { double hi = SIDE((2 << k), BIG), all = SIDE((1 << k), BIG); P *= 1 - cm_bitp(m, 2 + k, cx, sel, (float)(hi / (all + 1e-300))); }
+    int rem = mag - ((1 << k) - 1), lo = 1 << k, hi2 = (2 << k) - 1;
+    for (int bi = k - 1; bi >= 0; bi--) {
+        int mid = (lo + hi2 + 1) / 2, bit = (rem >> bi) & 1; double up = SIDE(mid, hi2), all = SIDE(lo, hi2);
+        double pb = cm_bitp(m, bi == k - 1 ? 10 + (k < 8 ? k : 7) : 18, cx, sel, (float)(up / (all + 1e-300)));
+        P *= bit ? pb : 1 - pb; if (bit) lo = mid; else hi2 = mid - 1;
+    }
+    return P;
 }
 
 static void funnel_init(Funnel *f, const Funnel *parent) {
@@ -284,20 +318,20 @@ static int PIPE = 0, LAG = 2, SNAPK = 64;            /* pipe=1: the three colour
 /* inter=1: PIXEL BY PIXEL instead of layer by layer: G, R, B of one pixel are coded before the next pixel, so G can use the
    previous pixels' R and B. cmatch=1: WHOLE-COLOUR MATCH: G first codes "is this pixel's whole colour equal to one of the
    W, N, NW, NE colours, and which?"; on a match the three layers cost nothing (models still learn from the pixel). */
-static int INTER = 0, CMATCH = 0; static double MTHR = 0.35; static long prog[3]; static unsigned char *matched; static signed char *midx; static double match_bits;
+static int INTER = 0, CMATCH = 0, MEXCL = 0; static double MTHR = 0.35, excl_saved; static _Thread_local long long st_excl; static unsigned char *asked; static long prog[3]; static unsigned char *matched; static signed char *midx; static double match_bits;
 static _Thread_local long long st_matched; static int g_ask, g_free; static unsigned char *freed;
 static inline void wait_pix(int p, long need) {
     unsigned spins = 0;
     while (__atomic_load_n(&prog[p], __ATOMIC_ACQUIRE) < need) { if (++spins > 2000) { sched_yield(); spins = 0; } }
 }
 typedef struct { float p; unsigned short n; } MCtr;
-static MCtr mc_flag[3][128], mc_idx[256]; static float mc_w[16][4];
+static MCtr mc_flag[4][128], mc_idx[256]; static float mc_w[16][6]; static int MINF = 0;
 static inline float mc_p(MCtr *c) { return c->p < 0.002f ? 0.002f : c->p > 0.998f ? 0.998f : c->p; }
 static inline void mc_upd(MCtr *c, int bit) { float a = 1.f / (c->n + 1.6f); if (a < 1.f / 255) a = 1.f / 255; c->p += (bit - c->p) * a; if (c->n < 65000) c->n++; }
 static Funnel **snaps[4096];                         /* pipeline registers: G's grid funnels frozen every SNAPK rows */
 static int rows_done[3];
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER; static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
-static long long tot_matched, tot_born, tot_field_born, tot_fission, tot_prune, tot_hq, tot_hh, tot_replay, tot_mat; static int tot_field_max;
+static long long st_excl_all, tot_matched, tot_born, tot_field_born, tot_fission, tot_prune, tot_hq, tot_hh, tot_replay, tot_mat; static int tot_field_max;
 static void wait_rows(int plane, int need) {         /* block until layer `plane` has finished `need` rows (coding order) */
     pthread_mutex_lock(&mu); while (rows_done[plane] < need) pthread_cond_wait(&cv, &mu); pthread_mutex_unlock(&mu);
 }
@@ -585,16 +619,23 @@ static void code_plane(int oi) {
                         int mW = x > 0 ? matched[idx - 1] : 0, mN = y > 0 ? matched[idx - W] : 0; float dg = 99;
                         for (int t = 0; t < k; t++) { float d = fabsf(pl[1][cand[t]] - pc); if (d < dg) dg = d; }
                         int dq = dg < 0.5f ? 0 : dg < 1.5f ? 1 : dg < 4.f ? 2 : 3, c0 = (k - 1) * 4 + mW * 2 + mN;
-                        MCtr *cc[3] = {&mc_flag[0][c0], &mc_flag[1][A * NEN + EN], &mc_flag[2][(k - 1) * 4 + dq]};
-                        float st[4], dot = 0; float *w = mc_w[c0];
-                        for (int q = 0; q < 3; q++) { float pp = mc_p(cc[q]); st[q] = logf(pp / (1 - pp)); dot += w[q] * st[q]; }
-                        st[3] = 0.3f; dot += w[3] * st[3];
+                        float pg = 0;                                               /* minf=1: how sure the G layer already is of a candidate's G */
+                        if (MINF) { int sv[4], ns = 0; for (int t = 0; t < k; t++) { int v = pl[1][cand[t]], dup = 0; for (int u2 = 0; u2 < ns; u2++) dup |= sv[u2] == v; if (dup) continue; sv[ns++] = v;
+                                pg += (float)cm_pval(&cm, cx, A, v - r, r, (double)(pc - r), (double)sb); } }
+                        pg = pg < 0.001f ? 0.001f : pg > 0.999f ? 0.999f : pg;
+                        int pgq = (int)(pg * 7.999f);
+                        MCtr *cc[4] = {&mc_flag[0][c0], &mc_flag[1][A * NEN + EN], &mc_flag[2][(k - 1) * 4 + dq], &mc_flag[3][(k - 1) * 8 + pgq]};
+                        const int nci = MINF ? 4 : 3;
+                        float st[6], dot = 0; float *w = mc_w[c0];
+                        for (int q = 0; q < nci; q++) { float pp = mc_p(cc[q]); st[q] = logf(pp / (1 - pp)); dot += w[q] * st[q]; }
+                        if (MINF) { st[4] = logf(pg / (1 - pg)); dot += w[4] * st[4]; } else st[4] = 0;
+                        st[5] = 0.3f; dot += w[5] * st[5];
                         float pm = 1.f / (1.f + expf(-dot)); pm = pm < 1e-4f ? 1e-4f : pm > 1 - 1e-4f ? 1 - 1e-4f : pm;
                         int bit = m >= 0, ask = CMATCH < 2 || pm >= MTHR;           /* cmatch=2: only ask where a match is expected */
-                        g_ask = ask;
+                        g_ask = ask; asked[idx] = ask;
                         if (ask) match_bits += -log2f(bit ? pm : 1 - pm);
-                        for (int q = 0; q < 4; q++) w[q] += 0.01f * (bit - pm) * st[q];
-                        for (int q = 0; q < 3; q++) mc_upd(cc[q], bit);
+                        for (int q = 0; q < 6; q++) if (q < nci || q >= 4) w[q] += 0.01f * (bit - pm) * st[q];
+                        for (int q = 0; q < nci; q++) mc_upd(cc[q], bit);
                         if (bit && ask) for (int t = 0; t < k - 1; t++) {                 /* which candidate: one yes/no per candidate */
                             int wi = x > 0 ? midx[idx - 1] + 1 : 0; MCtr *ci = &mc_idx[((t * 4 + (k - 1)) * 5 + wi) & 255];
                             float pp = mc_p(ci); int b2 = m == t; match_bits += -log2f(b2 ? pp : 1 - pp); mc_upd(ci, b2); if (b2) break;
@@ -603,8 +644,17 @@ static void code_plane(int oi) {
                     matched[idx] = m >= 0; midx[idx] = (signed char)m;               /* contexts use the true equality (decoder knows it after the pixel) */
                     g_free = m >= 0 && (CMATCH < 2 || g_ask); freed[idx] = g_free; if (g_free) st_matched++;
                 }
-                double b0_ = cm.bits;
+                double b0_ = cm.bits, pex = 0;
+                if (MEXCL && oi == 2 && asked[idx] && !matched[idx]) {           /* "not a match" + G and R equal a candidate => B is not that candidate's B */
+                    size_t nbs[4] = {x > 0 ? idx - 1 : idx, y > 0 ? idx - W : idx, (x > 0 && y > 0) ? idx - W - 1 : idx, (y > 0 && x < W - 1) ? idx - W + 1 : idx};
+                    int seen[4], ns = 0;
+                    for (int q = 0; q < 4; q++) { size_t a = nbs[q]; if (a == idx || pl[0][a] != pl[0][idx] || pl[1][a] != pl[1][idx]) continue;
+                        int v = pl[2][a], dup = 0; for (int t = 0; t < ns; t++) dup |= seen[t] == v; if (dup) continue; seen[ns++] = v;
+                        pex += cm_pval(&cm, cx, A, v - r, r, (double)(pc - r), (double)sb); }
+                    if (ns) st_excl++;
+                }
                 cm_residual(&cm, cx, A, e, r, (double)(pc - r), (double)sb);
+                if (pex > 0) { double sv = -log2(1 - fmin(pex, 0.999999)); cm.bits -= sv; excl_saved += sv; }
                 if (CMATCH && freed[idx]) cm.bits = b0_;                        /* matched pixel: its layers are free (models still learned) */
                 if (pixcost) pixcost[(size_t)c * N + idx] = (float)(cm.bits - b0_);
             }
@@ -661,7 +711,7 @@ static void code_plane(int oi) {
         for (int j = 0; j < MAXLV; j++) { if (REGISTER && oi == 0) gl[j] = lv[j]; else if (!(REGISTER && gl[j] == lv[j])) free(lv[j]); } free(mouth);
         pthread_mutex_lock(&mu);
     tot_born += born; if (field_max > tot_field_max) tot_field_max = field_max; tot_field_born += st_field_born; tot_fission += st_fission;
-    tot_prune += st_prune; tot_hq += st_hippo_q; tot_hh += st_hippo_hit; tot_replay += st_replay; tot_mat += st_mat_born; tot_matched += st_matched;
+    tot_prune += st_prune; tot_hq += st_hippo_q; tot_hh += st_hippo_hit; tot_replay += st_replay; tot_mat += st_mat_born; tot_matched += st_matched; st_excl_all += st_excl;
     pthread_mutex_unlock(&mu);
     if (PIPE) publish_rows(oi, H);
     if (INTER) __atomic_store_n(&prog[oi], (long)N, __ATOMIC_RELEASE);
@@ -680,7 +730,7 @@ int main(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 1; }
             continue;
@@ -698,7 +748,7 @@ int main(int argc, char **argv) {
     clock_t t0 = clock(); struct timespec w0, w1; clock_gettime(CLOCK_MONOTONIC, &w0);
     pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
     nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); icurve = NSUB + (HIPPO ? 1 : 0);
-    if (INTER) { PIPE = 1; ILACE = 0; if (CMATCH) { matched = calloc(N, 1); freed = calloc(N, 1); midx = calloc(N, 1); for (int i = 0; i < 16; i++) for (int q = 0; q < 4; q++) mc_w[i][q] = q < 3 ? 0.3f : 0; for (int a = 0; a < 3; a++) for (int i = 0; i < 128; i++) mc_flag[a][i].p = 0.3f; for (int i = 0; i < 256; i++) mc_idx[i].p = 0.5f; } }
+    if (INTER) { PIPE = 1; ILACE = 0; if (CMATCH) { matched = calloc(N, 1); freed = calloc(N, 1); asked = calloc(N, 1); midx = calloc(N, 1); for (int i = 0; i < 16; i++) for (int q = 0; q < 6; q++) mc_w[i][q] = q < 4 ? 0.3f : 0; for (int a = 0; a < 4; a++) for (int i = 0; i < 128; i++) mc_flag[a][i].p = 0.3f; for (int i = 0; i < 256; i++) mc_idx[i].p = 0.5f; } }
     else CMATCH = 0;                                                      /* whole-colour match needs pixel-by-pixel order */
     if (PIPE) {                                                             /* staggered colour pipeline: one thread per layer */
         pthread_t th[3]; for (int oi = 0; oi < 3; oi++) pthread_create(&th[oi], NULL, plane_thread, (void *)(long)oi);
@@ -707,8 +757,8 @@ int main(int argc, char **argv) {
     clock_gettime(CLOCK_MONOTONIC, &w1); double wall = (w1.tv_sec - w0.tv_sec) * 1000.0 + (w1.tv_nsec - w0.tv_nsec) / 1e6;
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
-    printf("bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f\n",
+    printf("bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f excl=%.4f excl_bytes=%.0f\n",
            tot / 8, tot / N, ms, wall, tot_born, bits[0] / 8, bits[1] / 8, bits[2] / 8, tot_field_born, tot_field_max, tot_fission, tot_prune,
-           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N);
+           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N, (double)st_excl_all / N, excl_saved / 8);
     return 0;
 }
