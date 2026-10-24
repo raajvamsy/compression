@@ -173,3 +173,18 @@ QUIET=1 python3 bench.py OUTDIR none lcew ltpcrewb ltpcrewb:gate=0.5   # per-con
 ```
 Flags: `l` learn, `t` spin, `v` level, `p` nesting, `c` colour taps, `e` energy mouth, `w` ball blend, `r` RLS,
 `b` binary context-mixing coder, `f` non-causal colour taps. Options: `gate=`, `rl=` (RLS level mask), `lam=`, `lrm=`, `clim=`, `P0=`, `mu=`.
+
+## 5f. Whole colour vs layers (tested, `ffic/experiments/LOG.md` group "whole colour")
+
+Two ways to treat a pixel's colour as one thing instead of three separate layers. All numbers are over 20 photos, vs JXL e9.
+
+| run | what | total | vs JXL | notes |
+|---|---|---|---|---|
+| `pipe` (control) | layers G→R→B, staggered threads | 10,332,757 B | −1.42% | wall 60 s |
+| `inter` | pixel by pixel: G,R,B of each pixel before the next; G sees R−G, B−G of W and N | 10,362,565 B | −1.13% | worse on all 20; wall 176 s (per-pixel thread hand-off) |
+| `inter_cmatch` | + "is the whole colour the same as W/N/NW/NE, and which?" — on yes, layers are free | 10,579,434 B | +0.94% | Kodak −0.6…−2.7% on 7/8; Pexels +0.03…+24% |
+| `inter_cmatch_gated` | ask only where p(match) ≥ 0.55 | 10,505,799 B | +0.23% | fixes Pexels partly, loses Kodak gains |
+| per photo: `pipe` or `inter_cmatch` (+1 byte) | encoder tries both | 10,283,976 B | **−1.88%** | new best total; 2× encode time |
+
+Why: 33–76% of pixels repeat a neighbour's full colour, but on smooth high-quality photos the layered coder already codes those repeats at a fraction of a bit per layer, so a separate yes/no question costs more than it saves. On Kodak (scanned film, more texture) exact repeats are surprising to the layered coder, so the joint question wins. Pixel-by-pixel order by itself gives G nothing useful: the colour of the W/N neighbours is already implied by its own neighbours' G values plus the R/B registers.
+Next if pursued: tell the layered coder "not a match" (exclude the candidate colours) on a no, instead of paying the flag on top.

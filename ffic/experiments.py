@@ -207,3 +207,15 @@ EXPERIMENTS += [
     dict(id="ct_bfirst", data="ffic_data_bfirst", cfg=MB, mechanism="Channel order B -> R -> G.", hypothesis="Worst: blue is the noisiest channel.", **_c),
     dict(id="ct_subgreen", data="ffic_data_subgreen", cfg=MB, mechanism="Subtract green: store (R-G) mod 256, G, (B-G) mod 256 (WebP's transform).", hypothesis="Worse: the coder already links R and B to G, and the mod-256 wrap breaks smoothness.", **_c),
 ]
+
+_w = dict(group="whole colour", funnelbrain="See the colour as one thing (perception binds R, G, B into one colour) instead of three separate layers.")
+EXPERIMENTS += [
+    dict(id="inter", cfg=MB + " inter=1 snapk=32", jobs=1, mechanism="Pixel-by-pixel order: G, R, B of one pixel are coded before the next pixel (three threads hand over per pixel). G gains 4 colour taps: R-G and B-G of the W and N neighbours.",
+         hypothesis="Small gain on G (it now sees the neighbours' full colour), R/B unchanged; similar wall time to pipe.", **_w),
+    dict(id="inter_cmatch", cfg=MB + " inter=1 cmatch=1 snapk=32", jobs=1, mechanism="Whole-colour match: before coding a pixel, one yes/no 'is the whole colour equal to W, N, NW or NE?' (+ which one), context-mixed from neighbours' match flags, edge state and how close G's prediction is to a candidate. On a match the R, G, B layers cost nothing.",
+         hypothesis="Helps on flat / posterised areas (31% of pixels repeat a neighbour's colour); may lose where the per-layer coder already codes those pixels cheaply.", **_w),
+]
+EXPERIMENTS += [
+    dict(id="inter_cmatch_gated", cfg=MB + " inter=1 cmatch=2 mthr=0.55 snapk=32", jobs=1, mechanism="Whole-colour match, but the question is only asked where the model already expects a match (p >= 0.55, computable by the decoder); its statistics still learn from every pixel.",
+         hypothesis="Removes the flag overhead on smooth photos where matches are rare or already cheap. Sweep on 3 images: higher threshold helps Pexels, hurts Kodak.", **_w),
+]
