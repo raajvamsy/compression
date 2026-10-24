@@ -199,3 +199,11 @@ EXPERIMENTS += [
     dict(id="pipe", cfg=MB + " pipe=1 snapk=32", jobs=1, mechanism="Staggered colour pipeline: G, R, B on three threads; R waits until G is 2 rows ahead, B until R is; R/B funnels are born from G's funnels frozen every 32 rows (R starts after G's first 32 rows).",
          hypothesis="~2-3x less wall time; bytes within a few hundredths of a percent (registers inherit from a snapshot of G instead of fully trained G).", **_p),
 ]
+
+_c = dict(group="colour transforms", funnelbrain="Colour formation / perception: the same light can be described in other colour coordinates (opponent channels, inverted).")
+EXPERIMENTS += [
+    dict(id="ct_invert", data="ffic_data_invert", cfg=MB, mechanism="Reversible transform: every value inverted (255 - x) before coding.", hypothesis="Near zero: the coder is almost symmetric in brightness, but dark-noise statistics move to the bright end.", **_c),
+    dict(id="ct_rfirst", data="ffic_data_rfirst", cfg=MB, mechanism="Channel order R -> G -> B (red is the Main register instead of green).", hypothesis="Worse: green carries the most detail on camera sensors (2 of 4 Bayer sites).", **_c),
+    dict(id="ct_bfirst", data="ffic_data_bfirst", cfg=MB, mechanism="Channel order B -> R -> G.", hypothesis="Worst: blue is the noisiest channel.", **_c),
+    dict(id="ct_subgreen", data="ffic_data_subgreen", cfg=MB, mechanism="Subtract green: store (R-G) mod 256, G, (B-G) mod 256 (WebP's transform).", hypothesis="Worse: the coder already links R and B to G, and the mod-256 wrap breaks smoothness.", **_c),
+]
