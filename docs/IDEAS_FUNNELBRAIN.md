@@ -94,6 +94,22 @@ Pexels images (310 kB vs 318 kB, 158 kB vs 160 kB).
   (needs a fixed compiler/flags or fixed-point arithmetic); speed work (SIMD, fewer taps, update gating in the C core);
   8-bit grayscale / alpha / 16-bit paths.
 
+## 5b. Experiment rounds 1-4 (full log: [ffic/experiments/LOG.md](../ffic/experiments/LOG.md), raw: `ffic/experiments/log.jsonl`)
+
+42 logged experiments, each over the same 20 images, with code fingerprint, per-image and per-plane bytes, timing and mechanism stats.
+
+* **Best: `stack5` = -1.20% vs JXL e9, -1.09% vs FunnelZip (Pexels), at about 6 s per image.** It beats JXL on the
+  Pexels set (-2.67%) but still loses on Kodak (+1.74%).
+* **Biggest single lever: AMYGDALA salience, inverted.** Learning less from surprising pixels (robust RLS, weight
+  1/surprise^p): p=1 -0.89%, p=2 -1.33%, p=3 -1.46% vs the old best; clipping outliers in the skill and mouth estimators too
+  adds about 0.1-0.4%. Amplifying salience (the literal amygdala) hurts +1.4%.
+* **Small but real (stack):** registers (R/B funnels born from G's) -0.17%, gravity / depth pull -0.09%, continuous funnel
+  field with small mouths + landing-only + sleep fission/prune about -0.1 to -0.3%, multi-scale + bounce contexts -0.1%,
+  ACC probability correction -0.07%, second (surprise-selected) coder mixer -0.10%. Gains add when stacked.
+* **Neutral:** hippocampal episodic recall, sleep replay, PE-driven forgetting, bounce path alone, multi-scale alone.
+* **Hurts:** winner-take-all workspace (+0.6%), softer workspace (+0.6%), wide field mouths (+0.3%), curvature ball (+0.05%).
+* **PFC (encoder picks the best mechanism set per image):** -0.01% beyond `stack5`, not worth the encode time.
+
 ## 6. Next steps, ranked by expected value
 
 1. **Real coder + decoder + round-trip test** (must precede any claim). Small, and it fixes the numbers.
