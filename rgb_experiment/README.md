@@ -4,8 +4,6 @@
 
 - `layer_1_red/`, `layer_2_green/`, `layer_3_blue/`: `<name>_layer.png/.npy` (raw values 0-255), `_tinted.png`
   - `band_1_darkest_0-63/`, `band_2_dark_64-127/`, `band_3_light_128-191/`, `band_4_lightest_192-255/`
-    - `_band.png`: tinted shades, transparent where pixel is outside the band
-    - `_band_grey.png`: same shades as greyscale (0 outside the band)
-    - `_band_values.npy`: values (0 outside the band)
+    - `<name>_band.png`: tinted shades, transparent where pixel is outside the band
 
 Summing the 4 bands of a layer gives back that layer exactly.
