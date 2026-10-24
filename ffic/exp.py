@@ -53,7 +53,8 @@ def load_log():
 
 
 def run_experiment(D, exp):
-    ref = json.load(open(os.path.join(D, "ref.json"))); fz = funnelzip_sizes(D)
+    if exp.get("data"): D = os.path.join(os.path.dirname(D.rstrip('/')), exp["data"])
+    ref = json.load(open(os.path.join(D, "ref.json"))); fz = funnelzip_sizes(os.path.join(os.path.dirname(D.rstrip('/')), 'ffic_data'))
     t0 = time.time()
     with ThreadPoolExecutor(4) as pool:
         futs = {n: pool.submit(run_one, D, ref, n, exp["cfg"]) for n in ref}
@@ -64,7 +65,7 @@ def run_experiment(D, exp):
     pex = [n for n in ref if n in fz]
     rec = {
         "id": exp["id"], "group": exp.get("group", ""), "mechanism": exp["mechanism"], "funnelbrain": exp["funnelbrain"],
-        "hypothesis": exp["hypothesis"], "cfg": exp["cfg"], "code_sha1": fp, "git_head": head,
+        "hypothesis": exp["hypothesis"], "cfg": exp["cfg"], "data": exp.get("data", "ffic_data"), "code_sha1": fp, "git_head": head,
         "date": time.strftime("%Y-%m-%d %H:%M:%S"), "wall_s": round(wall, 1),
         "cpu_s": round(sum(v["ms"] for v in per.values()) / 1000, 1),
         "total_bytes": int(tot), "vs_jxl9_pct": round(100 * (tot / jxl - 1), 3),

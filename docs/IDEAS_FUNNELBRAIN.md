@@ -122,6 +122,21 @@ Pexels images (310 kB vs 318 kB, 158 kB vs 160 kB).
   JXL e9 (Kodak +1.23%, Pexels -2.81%). Adding brightness to the landing removed most of the gain: materials are grouped
   by colour, not by how lit they are, as the physics says. Mouth size, memory length, cap and ridge barely matter.
 
+## 5d. Gravity, time and parallel worlds
+
+| Hypothesis | Mechanism | Result vs best single coder (`matf_ctx`, -1.47% vs JXL) |
+|---|---|---|
+| Gravity | each funnel's histogram of landed values acts as masses; inverse-square centre of mass near the prediction = RLS tap (`gmass`) | **-0.03%** (range/forgetting variants -0.03% to +0.01%): negligible |
+| Time: coarse past | even rows first, odd rows also see the row below (`ilace`) | **+3.2% worse**: even rows lose more from distance-2 neighbours than odd rows gain |
+| Time: arrow of time | encoder picks the best scan direction per image (4 options, 2 bits) | **-0.09%** for 4x encode time; 12 of 20 images prefer a flipped direction, by at most 0.43% |
+| **Parallel worlds** | K complete coders run side by side; each pixel coded with their mixture, weights from evidence (`worlds.py`, `worlds_mix.c`) | 2 worlds, Bayes: 0.00%. 2 worlds, local: -0.39%. 3 worlds: -0.78%. **5 worlds, local decoherence: -1.07% -> -2.52% vs JXL e9** |
+
+Parallel worlds is the largest gain since salience. Worlds that are individually worse (the old model is +2.6%) still add,
+because they are right in different regions: weighting each world by its cost on the W, N, NW, NE pixels ("decoherence")
+beats global Bayesian weighting, which settles on one world. **Caveat:** these are exact ideal code lengths of the mixture,
+but a real decoder must run all K worlds and evaluate each world's probability for every candidate value (about 500 decision
+nodes per world per pixel), so encode is about K x slower and decode much slower than one coder. Implementable, not cheap.
+
 ## 6. Next steps, ranked by expected value
 
 1. **Real coder + decoder + round-trip test** (must precede any claim). Small, and it fixes the numbers.

@@ -9,66 +9,84 @@ Verdict compares with the reference experiment **ref_best** (current best, befor
 
 | # | id | group | vs JXL e9 | vs ref | vs FunnelZip (Pexels) | Pexels vs JXL | Kodak vs JXL | CPU s | x ref time | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `matf_ctx` | material funnels | -1.47% | -2.58% | -1.24% | -2.81% | +1.23% | 128 | 1.60 | helps |
-| 2 | `matf_lam5` | material funnels | -1.34% | -2.46% | -1.09% | -2.67% | +1.30% | 127 | 1.59 | helps |
-| 3 | `matf` | material funnels | -1.34% | -2.46% | -1.09% | -2.67% | +1.30% | 124 | 1.56 | helps |
-| 4 | `matf_m128` | material funnels | -1.34% | -2.45% | -1.08% | -2.66% | +1.30% | 139 | 1.74 | helps |
-| 5 | `matf_short` | material funnels | -1.34% | -2.45% | -1.09% | -2.67% | +1.32% | 127 | 1.60 | helps |
-| 6 | `matf_r01` | material funnels | -1.34% | -2.45% | -1.08% | -2.66% | +1.30% | 126 | 1.58 | helps |
-| 7 | `matf_r04` | material funnels | -1.33% | -2.44% | -1.08% | -2.66% | +1.33% | 138 | 1.74 | helps |
-| 8 | `matf_long` | material funnels | -1.33% | -2.44% | -1.08% | -2.66% | +1.33% | 136 | 1.71 | helps |
-| 9 | `matf_bright` | material funnels | -1.29% | -2.41% | -1.04% | -2.62% | +1.36% | 123 | 1.55 | helps |
-| 10 | `mline2` | colour physics | -1.28% | -2.39% | -1.05% | -2.63% | +1.42% | 117 | 1.47 | helps |
-| 11 | `mline` | colour physics | -1.26% | -2.37% | -1.05% | -2.63% | +1.48% | 125 | 1.57 | helps |
-| 12 | `mline_l5` | colour physics | -1.25% | -2.37% | -1.05% | -2.63% | +1.51% | 122 | 1.54 | helps |
-| 13 | `mline_l80` | colour physics | -1.24% | -2.35% | -1.02% | -2.60% | +1.48% | 124 | 1.56 | helps |
-| 14 | `mline_w12` | colour physics | -1.24% | -2.35% | -1.10% | -2.68% | +1.65% | 126 | 1.59 | helps |
-| 15 | `stack5` | combo | -1.20% | -2.31% | -1.09% | -2.67% | +1.74% | 124 | 1.55 | helps |
-| 16 | `stack4` | combo | -1.09% | -2.21% | -0.98% | -2.56% | +1.84% | 109 | 1.37 | helps |
-| 17 | `mix2` | coder | -0.83% | -1.95% | -0.60% | -2.20% | +1.90% | 105 | 1.32 | helps |
-| 18 | `acc` | coder | -0.80% | -1.92% | -0.57% | -2.17% | +1.92% | 111 | 1.39 | helps |
-| 19 | `stack3` | combo | -0.73% | -1.85% | -0.50% | -2.09% | +1.99% | 104 | 1.30 | helps |
-| 20 | `stack2` | combo | -0.62% | -1.74% | -0.38% | -1.98% | +2.09% | 95 | 1.19 | helps |
-| 21 | `stack1` | combo | -0.51% | -1.63% | -0.26% | -1.86% | +2.18% | 78 | 0.98 | helps |
-| 22 | `salall2` | salience | -0.35% | -1.47% | -0.24% | -1.85% | +2.65% | 79 | 0.99 | helps |
-| 23 | `sal_p3` | salience | -0.34% | -1.46% | -0.26% | -1.87% | +2.72% | 79 | 0.99 | helps |
-| 24 | `sal_p2_max8` | salience | -0.24% | -1.37% | -0.04% | -1.65% | +2.58% | 77 | 0.97 | helps |
-| 25 | `salall3` | salience | -0.23% | -1.36% | -0.08% | -1.69% | +2.69% | 78 | 0.98 | helps |
-| 26 | `sal_p2_max16` | salience | -0.22% | -1.34% | -0.03% | -1.64% | +2.63% | 85 | 1.06 | helps |
-| 27 | `sal_p2` | salience | -0.21% | -1.33% | -0.02% | -1.63% | +2.64% | 81 | 1.02 | helps |
-| 28 | `r_field_m08_k1_sleep` | field | -0.08% | -1.21% | +0.29% | -1.31% | +2.39% | 99 | 1.24 | helps |
-| 29 | `r_register` | registers | +0.08% | -1.05% | +0.48% | -1.11% | +2.45% | 80 | 1.00 | helps |
-| 30 | `r_grav05` | gravity | +0.15% | -0.98% | +0.53% | -1.06% | +2.59% | 78 | 0.98 | helps |
-| 31 | `r_ms_bounce` | combo | +0.17% | -0.96% | +0.53% | -1.06% | +2.65% | 84 | 1.06 | helps |
-| 32 | `r_field_m08` | field | +0.18% | -0.95% | +0.50% | -1.13% | +2.81% | 135 | 1.69 | helps |
-| 33 | `sal_max8` | salience | +0.19% | -0.94% | +0.56% | -1.04% | +2.65% | 78 | 0.98 | helps |
-| 34 | `sal_bias` | salience | +0.21% | -0.92% | +0.59% | -1.01% | +2.64% | 79 | 0.99 | helps |
-| 35 | `sal_robust` | plasticity | +0.24% | -0.89% | +0.62% | -0.98% | +2.69% | 77 | 0.96 | helps |
-| 36 | `r_curve` | spin | +0.29% | -0.84% | +0.63% | -0.97% | +2.79% | 76 | 0.96 | helps |
-| 37 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
-| 38 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
-| 39 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
-| 40 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
-| 41 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
-| 42 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
-| 43 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
-| 44 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
-| 45 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
-| 46 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
-| 47 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
-| 48 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
-| 49 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
-| 50 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
-| 51 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
-| 52 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
-| 53 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
-| 54 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
-| 55 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
-| 56 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
+| 1 | `worlds5_local` | parallel worlds | -2.52% | -3.62% | -2.35% | -3.93% | +0.28% | 529 | 6.64 | helps |
+| 2 | `worlds5_localfs_b1` | parallel worlds | -2.36% | -3.46% | -2.22% | -3.80% | +0.53% | 529 | 6.64 | helps |
+| 3 | `worlds5_localfs` | parallel worlds | -2.33% | -3.43% | -2.19% | -3.77% | +0.55% | 529 | 6.64 | helps |
+| 4 | `worlds5_fs` | parallel worlds | -2.28% | -3.38% | -2.14% | -3.72% | +0.59% | 529 | 6.64 | helps |
+| 5 | `worlds3_local` | parallel worlds | -2.23% | -3.33% | -2.08% | -3.66% | +0.63% | 349 | 4.38 | helps |
+| 6 | `worlds2_local` | parallel worlds | -1.85% | -2.95% | -1.66% | -3.24% | +0.93% | 212 | 2.66 | helps |
+| 7 | `worlds2_fs` | parallel worlds | -1.80% | -2.91% | -1.61% | -3.18% | +0.96% | 212 | 2.66 | helps |
+| 8 | `worlds5_bayes` | parallel worlds | -1.62% | -2.73% | -1.44% | -3.03% | +1.20% | 529 | 6.64 | helps |
+| 9 | `gmass` | gravity | -1.49% | -2.60% | -1.25% | -2.83% | +1.18% | 162 | 2.04 | helps |
+| 10 | `gmass_r16` | gravity | -1.49% | -2.60% | -1.26% | -2.83% | +1.20% | 144 | 1.82 | helps |
+| 11 | `gmass_fast` | gravity | -1.47% | -2.58% | -1.26% | -2.83% | +1.25% | 146 | 1.84 | helps |
+| 12 | `worlds2_bayes` | parallel worlds | -1.47% | -2.58% | -1.25% | -2.82% | +1.23% | 212 | 2.66 | helps |
+| 13 | `matf_ctx` | material funnels | -1.47% | -2.58% | -1.24% | -2.81% | +1.23% | 128 | 1.60 | helps |
+| 14 | `best_now` | reference | -1.47% | -2.58% | -1.24% | -2.81% | +1.23% | 140 | 1.76 | helps |
+| 15 | `gmass_r3` | gravity | -1.45% | -2.56% | -1.24% | -2.82% | +1.27% | 154 | 1.93 | helps |
+| 16 | `time_hflip` | time | -1.39% | -2.51% | -1.19% | -2.76% | +1.34% | 133 | 1.67 | helps |
+| 17 | `time_rot180` | time | -1.35% | -2.46% | -1.09% | -2.65% | +1.24% | 129 | 1.62 | helps |
+| 18 | `matf_lam5` | material funnels | -1.34% | -2.46% | -1.09% | -2.67% | +1.30% | 127 | 1.59 | helps |
+| 19 | `matf` | material funnels | -1.34% | -2.46% | -1.09% | -2.67% | +1.30% | 124 | 1.56 | helps |
+| 20 | `matf_m128` | material funnels | -1.34% | -2.45% | -1.08% | -2.66% | +1.30% | 139 | 1.74 | helps |
+| 21 | `matf_short` | material funnels | -1.34% | -2.45% | -1.09% | -2.67% | +1.32% | 127 | 1.60 | helps |
+| 22 | `matf_r01` | material funnels | -1.34% | -2.45% | -1.08% | -2.66% | +1.30% | 126 | 1.58 | helps |
+| 23 | `matf_r04` | material funnels | -1.33% | -2.44% | -1.08% | -2.66% | +1.33% | 138 | 1.74 | helps |
+| 24 | `time_vflip` | time | -1.33% | -2.44% | -1.08% | -2.64% | +1.28% | 136 | 1.70 | helps |
+| 25 | `matf_long` | material funnels | -1.33% | -2.44% | -1.08% | -2.66% | +1.33% | 136 | 1.71 | helps |
+| 26 | `matf_bright` | material funnels | -1.29% | -2.41% | -1.04% | -2.62% | +1.36% | 123 | 1.55 | helps |
+| 27 | `mline2` | colour physics | -1.28% | -2.39% | -1.05% | -2.63% | +1.42% | 117 | 1.47 | helps |
+| 28 | `mline` | colour physics | -1.26% | -2.37% | -1.05% | -2.63% | +1.48% | 125 | 1.57 | helps |
+| 29 | `mline_l5` | colour physics | -1.25% | -2.37% | -1.05% | -2.63% | +1.51% | 122 | 1.54 | helps |
+| 30 | `mline_l80` | colour physics | -1.24% | -2.35% | -1.02% | -2.60% | +1.48% | 124 | 1.56 | helps |
+| 31 | `mline_w12` | colour physics | -1.24% | -2.35% | -1.10% | -2.68% | +1.65% | 126 | 1.59 | helps |
+| 32 | `stack5` | combo | -1.20% | -2.31% | -1.09% | -2.67% | +1.74% | 124 | 1.55 | helps |
+| 33 | `stack4` | combo | -1.09% | -2.21% | -0.98% | -2.56% | +1.84% | 109 | 1.37 | helps |
+| 34 | `mix2` | coder | -0.83% | -1.95% | -0.60% | -2.20% | +1.90% | 105 | 1.32 | helps |
+| 35 | `acc` | coder | -0.80% | -1.92% | -0.57% | -2.17% | +1.92% | 111 | 1.39 | helps |
+| 36 | `stack3` | combo | -0.73% | -1.85% | -0.50% | -2.09% | +1.99% | 104 | 1.30 | helps |
+| 37 | `stack2` | combo | -0.62% | -1.74% | -0.38% | -1.98% | +2.09% | 95 | 1.19 | helps |
+| 38 | `stack1` | combo | -0.51% | -1.63% | -0.26% | -1.86% | +2.18% | 78 | 0.98 | helps |
+| 39 | `salall2` | salience | -0.35% | -1.47% | -0.24% | -1.85% | +2.65% | 79 | 0.99 | helps |
+| 40 | `sal_p3` | salience | -0.34% | -1.46% | -0.26% | -1.87% | +2.72% | 79 | 0.99 | helps |
+| 41 | `sal_p2_max8` | salience | -0.24% | -1.37% | -0.04% | -1.65% | +2.58% | 77 | 0.97 | helps |
+| 42 | `salall3` | salience | -0.23% | -1.36% | -0.08% | -1.69% | +2.69% | 78 | 0.98 | helps |
+| 43 | `sal_p2_max16` | salience | -0.22% | -1.34% | -0.03% | -1.64% | +2.63% | 85 | 1.06 | helps |
+| 44 | `sal_p2` | salience | -0.21% | -1.33% | -0.02% | -1.63% | +2.64% | 81 | 1.02 | helps |
+| 45 | `r_field_m08_k1_sleep` | field | -0.08% | -1.21% | +0.29% | -1.31% | +2.39% | 99 | 1.24 | helps |
+| 46 | `r_register` | registers | +0.08% | -1.05% | +0.48% | -1.11% | +2.45% | 80 | 1.00 | helps |
+| 47 | `r_grav05` | gravity | +0.15% | -0.98% | +0.53% | -1.06% | +2.59% | 78 | 0.98 | helps |
+| 48 | `r_ms_bounce` | combo | +0.17% | -0.96% | +0.53% | -1.06% | +2.65% | 84 | 1.06 | helps |
+| 49 | `r_field_m08` | field | +0.18% | -0.95% | +0.50% | -1.13% | +2.81% | 135 | 1.69 | helps |
+| 50 | `sal_max8` | salience | +0.19% | -0.94% | +0.56% | -1.04% | +2.65% | 78 | 0.98 | helps |
+| 51 | `sal_bias` | salience | +0.21% | -0.92% | +0.59% | -1.01% | +2.64% | 79 | 0.99 | helps |
+| 52 | `sal_robust` | plasticity | +0.24% | -0.89% | +0.62% | -0.98% | +2.69% | 77 | 0.96 | helps |
+| 53 | `r_curve` | spin | +0.29% | -0.84% | +0.63% | -0.97% | +2.79% | 76 | 0.96 | helps |
+| 54 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
+| 55 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
+| 56 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
+| 57 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
+| 58 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
+| 59 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
+| 60 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
+| 61 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
+| 62 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
+| 63 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
+| 64 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
+| 65 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
+| 66 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
+| 67 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
+| 68 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
+| 69 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
+| 70 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
+| 71 | `ilace` | time | +1.68% | +0.54% | +2.27% | +0.67% | +3.70% | 145 | 1.82 | hurts |
+| 72 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
+| 73 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
+| 74 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
 
 ## PFC goal bias: best mechanism set per image (encoder tries all, signals the choice in 1 byte)
 
-Total 10,327,017 B = -1.47% vs JXL e9, -2.58% vs `ref_best`. Encode cost = sum of all experiments' time (decode = one). Picks: `matf_ctx` x14, `matf_short` x2, `matf_lam5` x2, `mline_w12` x1, `matf_long` x1
+Total 10,215,908 B = -2.53% vs JXL e9, -3.63% vs `ref_best`. Encode cost = sum of all experiments' time (decode = one). Picks: `worlds5_local` x18, `worlds5_localfs_b1` x2
 
 
 ## Details
@@ -1921,6 +1939,600 @@ Better than the reference on 20 of 20 images.
 
 Better than the reference on 20 of 20 images.
 
+### `best_now`
+
+* **Mechanism:** Current best single coder (= matf_ctx), re-run on the current code version.
+* **FunnelBrain source:** -
+* **Hypothesis:** Reproduces matf_ctx: 10,327,702 B.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:08:20
+* **Result:** 10,327,702 B = -1.47% vs JXL e9, -2.58% vs `ref_best`, -1.24% vs FunnelZip (Pexels). Planes R/G/B = 2,432,155 / 5,699,365 / 2,196,183. CPU 140.4 s (wall 38.2 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,722 | -11.04% | -2.73% | funnels=27, field_born=576, field_max=192, prune=227 |
+| pex_p1287145 | 513,092 | -0.43% | -3.23% | funnels=27, field_born=576, field_max=192, prune=251 |
+| pex_p1366919 | 619,940 | -3.33% | -3.09% | funnels=27, field_born=576, field_max=192, prune=323 |
+| pex_p1612351 | 586,379 | -1.24% | -4.34% | funnels=27, field_born=576, field_max=192, prune=350 |
+| pex_p1770809 | 1,227,152 | -5.12% | -1.66% | funnels=27, field_born=576, field_max=192, prune=378 |
+| pex_p2014422 | 152,834 | -12.11% | -3.14% | funnels=27, field_born=576, field_max=192, prune=266 |
+| pex_p2166711 | 377,229 | -2.68% | -4.24% | funnels=27, field_born=576, field_max=192, prune=227 |
+| pex_p2253275 | 470,090 | -0.22% | -5.10% | funnels=27, field_born=576, field_max=192, prune=247 |
+| pex_p3225517 | 847,626 | -0.62% | -1.56% | funnels=27, field_born=576, field_max=192, prune=389 |
+| pex_p417074 | 671,431 | -0.61% | -3.32% | funnels=27, field_born=576, field_max=192, prune=386 |
+| pex_p462162 | 761,687 | -1.50% | -3.04% | funnels=27, field_born=576, field_max=192, prune=393 |
+| pex_p933054 | 260,694 | -3.15% | -3.90% | funnels=27, field_born=576, field_max=192, prune=242 |
+| kod_kodim01 | 471,026 | +3.58% | -1.38% | funnels=27, field_born=576, field_max=192, prune=410 |
+| kod_kodim03 | 328,489 | +0.11% | -3.75% | funnels=27, field_born=576, field_max=192, prune=195 |
+| kod_kodim05 | 496,054 | +2.27% | -1.64% | funnels=27, field_born=576, field_max=192, prune=289 |
+| kod_kodim08 | 512,758 | +2.21% | -1.93% | funnels=27, field_born=576, field_max=192, prune=406 |
+| kod_kodim13 | 552,344 | +0.63% | -0.95% | funnels=27, field_born=576, field_max=192, prune=427 |
+| kod_kodim15 | 383,527 | +0.16% | -2.87% | funnels=27, field_born=576, field_max=192, prune=353 |
+| kod_kodim20 | 320,358 | -1.48% | -1.06% | funnels=27, field_born=576, field_max=192, prune=560 |
+| kod_kodim22 | 473,270 | +1.05% | -1.01% | funnels=27, field_born=576, field_max=192, prune=414 |
+
+Better than the reference on 20 of 20 images.
+
+### `gmass`
+
+* **Mechanism:** Gravity mass ball: each funnel keeps a histogram of values that landed in it; the inverse-square-weighted centre of mass within +-8 of the prediction becomes an RLS tap.
+* **FunnelBrain source:** Gravity: masses pull with inverse-square force; physics.py GRAVITY / depth pull. Here the masses are pixel values the funnel has landed on before.
+* **Hypothesis:** Values that recur (JPEG plateaus, flat sky, saturated highlights) pull predictions; helps Pexels more.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 gmass=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:09:01
+* **Result:** 10,325,063 B = -1.49% vs JXL e9, -2.60% vs `ref_best`, -1.25% vs FunnelZip (Pexels). Planes R/G/B = 2,432,715 / 5,695,970 / 2,196,382. CPU 162.0 s (wall 41.6 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,454 | -11.12% | -2.81% | funnels=27, field_born=576, field_max=192, prune=242 |
+| pex_p1287145 | 512,687 | -0.51% | -3.31% | funnels=27, field_born=576, field_max=192, prune=263 |
+| pex_p1366919 | 619,694 | -3.36% | -3.13% | funnels=27, field_born=576, field_max=192, prune=320 |
+| pex_p1612351 | 585,986 | -1.31% | -4.41% | funnels=27, field_born=576, field_max=192, prune=357 |
+| pex_p1770809 | 1,227,828 | -5.06% | -1.61% | funnels=27, field_born=576, field_max=192, prune=373 |
+| pex_p2014422 | 152,714 | -12.18% | -3.22% | funnels=27, field_born=576, field_max=192, prune=284 |
+| pex_p2166711 | 377,307 | -2.66% | -4.22% | funnels=27, field_born=576, field_max=192, prune=225 |
+| pex_p2253275 | 470,149 | -0.21% | -5.08% | funnels=27, field_born=576, field_max=192, prune=250 |
+| pex_p3225517 | 847,509 | -0.63% | -1.57% | funnels=27, field_born=576, field_max=192, prune=384 |
+| pex_p417074 | 671,157 | -0.65% | -3.36% | funnels=27, field_born=576, field_max=192, prune=398 |
+| pex_p462162 | 761,968 | -1.46% | -3.00% | funnels=27, field_born=576, field_max=192, prune=395 |
+| pex_p933054 | 260,342 | -3.29% | -4.03% | funnels=27, field_born=576, field_max=192, prune=264 |
+| kod_kodim01 | 470,858 | +3.54% | -1.42% | funnels=27, field_born=576, field_max=192, prune=407 |
+| kod_kodim03 | 328,176 | +0.02% | -3.84% | funnels=27, field_born=576, field_max=192, prune=190 |
+| kod_kodim05 | 496,001 | +2.26% | -1.65% | funnels=27, field_born=576, field_max=192, prune=294 |
+| kod_kodim08 | 512,408 | +2.15% | -1.99% | funnels=27, field_born=576, field_max=192, prune=412 |
+| kod_kodim13 | 552,143 | +0.59% | -0.98% | funnels=27, field_born=576, field_max=192, prune=423 |
+| kod_kodim15 | 383,019 | +0.02% | -3.00% | funnels=27, field_born=576, field_max=192, prune=339 |
+| kod_kodim20 | 320,242 | -1.51% | -1.10% | funnels=27, field_born=576, field_max=192, prune=559 |
+| kod_kodim22 | 473,421 | +1.09% | -0.97% | funnels=27, field_born=576, field_max=192, prune=406 |
+
+Better than the reference on 20 of 20 images.
+
+### `gmass_r3`
+
+* **Mechanism:** Gravity with short range (+-3, softening 1).
+* **FunnelBrain source:** Gravity: masses pull with inverse-square force; physics.py GRAVITY / depth pull. Here the masses are pixel values the funnel has landed on before.
+* **Hypothesis:** Only very close masses should pull.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 gmass=1 gmr=3 gsig=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:09:43
+* **Result:** 10,328,977 B = -1.45% vs JXL e9, -2.56% vs `ref_best`, -1.24% vs FunnelZip (Pexels). Planes R/G/B = 2,433,716 / 5,698,206 / 2,197,052. CPU 153.5 s (wall 42.1 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,529 | -11.10% | -2.79% | funnels=27, field_born=576, field_max=192, prune=247 |
+| pex_p1287145 | 512,703 | -0.51% | -3.31% | funnels=27, field_born=576, field_max=192, prune=272 |
+| pex_p1366919 | 619,745 | -3.36% | -3.12% | funnels=27, field_born=576, field_max=192, prune=327 |
+| pex_p1612351 | 585,853 | -1.33% | -4.43% | funnels=27, field_born=576, field_max=192, prune=344 |
+| pex_p1770809 | 1,228,369 | -5.02% | -1.56% | funnels=27, field_born=576, field_max=192, prune=373 |
+| pex_p2014422 | 152,596 | -12.25% | -3.29% | funnels=27, field_born=576, field_max=192, prune=276 |
+| pex_p2166711 | 377,219 | -2.68% | -4.25% | funnels=27, field_born=576, field_max=192, prune=227 |
+| pex_p2253275 | 470,266 | -0.18% | -5.06% | funnels=27, field_born=576, field_max=192, prune=244 |
+| pex_p3225517 | 847,830 | -0.60% | -1.53% | funnels=27, field_born=576, field_max=192, prune=388 |
+| pex_p417074 | 671,557 | -0.59% | -3.30% | funnels=27, field_born=576, field_max=192, prune=397 |
+| pex_p462162 | 761,828 | -1.48% | -3.02% | funnels=27, field_born=576, field_max=192, prune=403 |
+| pex_p933054 | 260,167 | -3.35% | -4.10% | funnels=27, field_born=576, field_max=192, prune=266 |
+| kod_kodim01 | 470,820 | +3.53% | -1.43% | funnels=27, field_born=576, field_max=192, prune=406 |
+| kod_kodim03 | 328,501 | +0.12% | -3.75% | funnels=27, field_born=576, field_max=192, prune=198 |
+| kod_kodim05 | 496,717 | +2.40% | -1.51% | funnels=27, field_born=576, field_max=192, prune=284 |
+| kod_kodim08 | 512,891 | +2.24% | -1.90% | funnels=27, field_born=576, field_max=192, prune=407 |
+| kod_kodim13 | 552,182 | +0.60% | -0.98% | funnels=27, field_born=576, field_max=192, prune=425 |
+| kod_kodim15 | 384,573 | +0.43% | -2.61% | funnels=27, field_born=576, field_max=192, prune=342 |
+| kod_kodim20 | 320,270 | -1.50% | -1.09% | funnels=27, field_born=576, field_max=192, prune=560 |
+| kod_kodim22 | 473,361 | +1.07% | -0.99% | funnels=27, field_born=576, field_max=192, prune=412 |
+
+Better than the reference on 20 of 20 images.
+
+### `gmass_r16`
+
+* **Mechanism:** Gravity with long range (+-16, softening 4).
+* **FunnelBrain source:** Gravity: masses pull with inverse-square force; physics.py GRAVITY / depth pull. Here the masses are pixel values the funnel has landed on before.
+* **Hypothesis:** Far masses matter for flat regions.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 gmass=1 gmr=16 gsig=4`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:10:21
+* **Result:** 10,325,334 B = -1.49% vs JXL e9, -2.60% vs `ref_best`, -1.26% vs FunnelZip (Pexels). Planes R/G/B = 2,432,087 / 5,695,761 / 2,197,484. CPU 144.5 s (wall 37.8 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,532 | -11.10% | -2.79% | funnels=27, field_born=576, field_max=192, prune=237 |
+| pex_p1287145 | 512,461 | -0.55% | -3.35% | funnels=27, field_born=576, field_max=192, prune=259 |
+| pex_p1366919 | 619,795 | -3.35% | -3.11% | funnels=27, field_born=576, field_max=192, prune=320 |
+| pex_p1612351 | 585,903 | -1.32% | -4.42% | funnels=27, field_born=576, field_max=192, prune=345 |
+| pex_p1770809 | 1,227,097 | -5.12% | -1.67% | funnels=27, field_born=576, field_max=192, prune=381 |
+| pex_p2014422 | 152,660 | -12.21% | -3.25% | funnels=27, field_born=576, field_max=192, prune=268 |
+| pex_p2166711 | 377,438 | -2.63% | -4.19% | funnels=27, field_born=576, field_max=192, prune=234 |
+| pex_p2253275 | 470,157 | -0.21% | -5.08% | funnels=27, field_born=576, field_max=192, prune=256 |
+| pex_p3225517 | 847,904 | -0.59% | -1.52% | funnels=27, field_born=576, field_max=192, prune=387 |
+| pex_p417074 | 671,419 | -0.61% | -3.32% | funnels=27, field_born=576, field_max=192, prune=392 |
+| pex_p462162 | 761,829 | -1.48% | -3.02% | funnels=27, field_born=576, field_max=192, prune=395 |
+| pex_p933054 | 260,244 | -3.32% | -4.07% | funnels=27, field_born=576, field_max=192, prune=263 |
+| kod_kodim01 | 470,310 | +3.42% | -1.53% | funnels=27, field_born=576, field_max=192, prune=415 |
+| kod_kodim03 | 328,376 | +0.08% | -3.78% | funnels=27, field_born=576, field_max=192, prune=190 |
+| kod_kodim05 | 496,115 | +2.28% | -1.62% | funnels=27, field_born=576, field_max=192, prune=289 |
+| kod_kodim08 | 512,694 | +2.20% | -1.94% | funnels=27, field_born=576, field_max=192, prune=403 |
+| kod_kodim13 | 552,276 | +0.61% | -0.96% | funnels=27, field_born=576, field_max=192, prune=422 |
+| kod_kodim15 | 383,472 | +0.14% | -2.89% | funnels=27, field_born=576, field_max=192, prune=338 |
+| kod_kodim20 | 320,279 | -1.50% | -1.09% | funnels=27, field_born=576, field_max=192, prune=559 |
+| kod_kodim22 | 473,373 | +1.08% | -0.98% | funnels=27, field_born=576, field_max=192, prune=407 |
+
+Better than the reference on 20 of 20 images.
+
+### `gmass_fast`
+
+* **Mechanism:** Gravity with fast-forgetting masses (histogram halves at 512).
+* **FunnelBrain source:** Gravity: masses pull with inverse-square force; physics.py GRAVITY / depth pull. Here the masses are pixel values the funnel has landed on before.
+* **Hypothesis:** Local recent values pull more than old ones.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 gmass=1 glim=512`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:11:00
+* **Result:** 10,327,243 B = -1.47% vs JXL e9, -2.58% vs `ref_best`, -1.26% vs FunnelZip (Pexels). Planes R/G/B = 2,432,611 / 5,696,595 / 2,198,038. CPU 146.3 s (wall 38.6 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,480 | -11.11% | -2.81% | funnels=27, field_born=576, field_max=192, prune=236 |
+| pex_p1287145 | 512,491 | -0.55% | -3.35% | funnels=27, field_born=576, field_max=192, prune=267 |
+| pex_p1366919 | 619,774 | -3.35% | -3.11% | funnels=27, field_born=576, field_max=192, prune=320 |
+| pex_p1612351 | 585,946 | -1.32% | -4.41% | funnels=27, field_born=576, field_max=192, prune=351 |
+| pex_p1770809 | 1,227,642 | -5.08% | -1.62% | funnels=27, field_born=576, field_max=192, prune=371 |
+| pex_p2014422 | 152,651 | -12.21% | -3.26% | funnels=27, field_born=576, field_max=192, prune=293 |
+| pex_p2166711 | 377,328 | -2.66% | -4.22% | funnels=27, field_born=576, field_max=192, prune=229 |
+| pex_p2253275 | 470,151 | -0.21% | -5.08% | funnels=27, field_born=576, field_max=192, prune=247 |
+| pex_p3225517 | 847,665 | -0.62% | -1.55% | funnels=27, field_born=576, field_max=192, prune=387 |
+| pex_p417074 | 671,324 | -0.63% | -3.33% | funnels=27, field_born=576, field_max=192, prune=402 |
+| pex_p462162 | 761,932 | -1.46% | -3.01% | funnels=27, field_born=576, field_max=192, prune=396 |
+| pex_p933054 | 260,220 | -3.33% | -4.08% | funnels=27, field_born=576, field_max=192, prune=258 |
+| kod_kodim01 | 470,811 | +3.53% | -1.43% | funnels=27, field_born=576, field_max=192, prune=411 |
+| kod_kodim03 | 328,378 | +0.08% | -3.78% | funnels=27, field_born=576, field_max=192, prune=198 |
+| kod_kodim05 | 496,090 | +2.27% | -1.63% | funnels=27, field_born=576, field_max=192, prune=295 |
+| kod_kodim08 | 512,535 | +2.17% | -1.97% | funnels=27, field_born=576, field_max=192, prune=412 |
+| kod_kodim13 | 552,909 | +0.73% | -0.85% | funnels=27, field_born=576, field_max=192, prune=420 |
+| kod_kodim15 | 384,364 | +0.38% | -2.66% | funnels=27, field_born=576, field_max=192, prune=349 |
+| kod_kodim20 | 320,192 | -1.53% | -1.11% | funnels=27, field_born=576, field_max=192, prune=559 |
+| kod_kodim22 | 473,360 | +1.07% | -0.99% | funnels=27, field_born=576, field_max=192, prune=407 |
+
+Better than the reference on 20 of 20 images.
+
+### `ilace`
+
+* **Mechanism:** Coarse-to-fine time: even rows first (own funnels/contexts), then odd rows that also see the row below (3 taps + interpolation ball).
+* **FunnelBrain source:** Time: the laws are symmetric (arrow of time chosen by the coder); the early universe is coarse and detail comes later (coarse-to-fine).
+* **Hypothesis:** Odd rows gain from two-sided context; even rows lose from distance-2 neighbours. kodim20 quick test: +1.8%.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 ilace=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:11:38
+* **Result:** 10,657,746 B = +1.68% vs JXL e9, +0.54% vs `ref_best`, +2.27% vs FunnelZip (Pexels). Planes R/G/B = 2,572,328 / 5,757,128 / 2,328,289. CPU 144.8 s (wall 38.5 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 316,228 | -6.76% | +1.95% | funnels=27, field_born=576, field_max=192, prune=269 |
+| pex_p1287145 | 531,801 | +3.20% | +0.30% | funnels=27, field_born=576, field_max=192, prune=328 |
+| pex_p1366919 | 641,232 | -0.01% | +0.24% | funnels=27, field_born=576, field_max=192, prune=363 |
+| pex_p1612351 | 617,852 | +4.06% | +0.79% | funnels=27, field_born=576, field_max=192, prune=404 |
+| pex_p1770809 | 1,255,075 | -2.96% | +0.58% | funnels=27, field_born=576, field_max=192, prune=398 |
+| pex_p2014422 | 159,915 | -8.04% | +1.35% | funnels=27, field_born=576, field_max=192, prune=307 |
+| pex_p2166711 | 395,206 | +1.96% | +0.32% | funnels=27, field_born=576, field_max=192, prune=272 |
+| pex_p2253275 | 497,446 | +5.58% | +0.43% | funnels=27, field_born=576, field_max=192, prune=286 |
+| pex_p3225517 | 859,586 | +0.78% | -0.17% | funnels=27, field_born=576, field_max=192, prune=435 |
+| pex_p417074 | 696,451 | +3.09% | +0.28% | funnels=27, field_born=576, field_max=192, prune=421 |
+| pex_p462162 | 791,061 | +2.30% | +0.70% | funnels=27, field_born=576, field_max=192, prune=439 |
+| pex_p933054 | 271,522 | +0.87% | +0.09% | funnels=27, field_born=576, field_max=192, prune=258 |
+| kod_kodim01 | 480,747 | +5.72% | +0.65% | funnels=27, field_born=576, field_max=192, prune=373 |
+| kod_kodim03 | 339,530 | +3.48% | -0.52% | funnels=27, field_born=576, field_max=192, prune=146 |
+| kod_kodim05 | 515,363 | +6.25% | +2.19% | funnels=27, field_born=576, field_max=192, prune=232 |
+| kod_kodim08 | 529,686 | +5.59% | +1.31% | funnels=27, field_born=576, field_max=192, prune=293 |
+| kod_kodim13 | 561,643 | +2.32% | +0.72% | funnels=27, field_born=576, field_max=192, prune=335 |
+| kod_kodim15 | 393,539 | +2.77% | -0.34% | funnels=27, field_born=576, field_max=192, prune=179 |
+| kod_kodim20 | 325,982 | +0.25% | +0.68% | funnels=27, field_born=576, field_max=192, prune=481 |
+| kod_kodim22 | 477,881 | +2.04% | -0.04% | funnels=27, field_born=576, field_max=192, prune=425 |
+
+Better than the reference on 4 of 20 images.
+
+### `time_hflip`
+
+* **Mechanism:** Arrow of time: the same coder on every photo mirrored left-right (scan from the right).
+* **FunnelBrain source:** Time: the laws are symmetric (arrow of time chosen by the coder); the early universe is coarse and detail comes later (coarse-to-fine).
+* **Hypothesis:** Some photos are more predictable in another direction.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:12:12
+* **Result:** 10,335,235 B = -1.39% vs JXL e9, -2.51% vs `ref_best`, -1.19% vs FunnelZip (Pexels). Planes R/G/B = 2,431,519 / 5,702,206 / 2,201,506. CPU 132.7 s (wall 34.2 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,473 | -11.11% | -2.81% | funnels=27, field_born=576, field_max=192, prune=244 |
+| pex_p1287145 | 512,096 | -0.62% | -3.42% | funnels=27, field_born=576, field_max=192, prune=259 |
+| pex_p1366919 | 621,534 | -3.08% | -2.84% | funnels=27, field_born=576, field_max=192, prune=303 |
+| pex_p1612351 | 586,662 | -1.20% | -4.30% | funnels=27, field_born=576, field_max=192, prune=341 |
+| pex_p1770809 | 1,227,633 | -5.08% | -1.62% | funnels=27, field_born=576, field_max=192, prune=349 |
+| pex_p2014422 | 152,500 | -12.30% | -3.35% | funnels=27, field_born=576, field_max=192, prune=245 |
+| pex_p2166711 | 377,790 | -2.54% | -4.10% | funnels=27, field_born=576, field_max=192, prune=287 |
+| pex_p2253275 | 470,281 | -0.18% | -5.06% | funnels=27, field_born=576, field_max=192, prune=250 |
+| pex_p3225517 | 848,332 | -0.54% | -1.47% | funnels=27, field_born=576, field_max=192, prune=358 |
+| pex_p417074 | 672,241 | -0.49% | -3.20% | funnels=27, field_born=576, field_max=192, prune=385 |
+| pex_p462162 | 762,276 | -1.42% | -2.96% | funnels=27, field_born=576, field_max=192, prune=391 |
+| pex_p933054 | 260,785 | -3.12% | -3.87% | funnels=27, field_born=576, field_max=192, prune=199 |
+| kod_kodim01 | 471,848 | +3.76% | -1.21% | funnels=27, field_born=576, field_max=192, prune=375 |
+| kod_kodim03 | 330,679 | +0.78% | -3.11% | funnels=27, field_born=576, field_max=192, prune=200 |
+| kod_kodim05 | 497,212 | +2.51% | -1.41% | funnels=27, field_born=576, field_max=192, prune=310 |
+| kod_kodim08 | 510,545 | +1.77% | -2.35% | funnels=27, field_born=576, field_max=192, prune=421 |
+| kod_kodim13 | 551,686 | +0.51% | -1.06% | funnels=27, field_born=576, field_max=192, prune=433 |
+| kod_kodim15 | 384,505 | +0.41% | -2.63% | funnels=27, field_born=576, field_max=192, prune=356 |
+| kod_kodim20 | 322,196 | -0.91% | -0.49% | funnels=27, field_born=576, field_max=192, prune=567 |
+| kod_kodim22 | 472,961 | +0.99% | -1.07% | funnels=27, field_born=576, field_max=192, prune=416 |
+
+Better than the reference on 20 of 20 images.
+
+### `time_vflip`
+
+* **Mechanism:** Arrow of time: photos upside down (scan from the bottom).
+* **FunnelBrain source:** Time: the laws are symmetric (arrow of time chosen by the coder); the early universe is coarse and detail comes later (coarse-to-fine).
+* **Hypothesis:** Light from above: scanning from below may predict shading differently.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:12:49
+* **Result:** 10,341,754 B = -1.33% vs JXL e9, -2.44% vs `ref_best`, -1.08% vs FunnelZip (Pexels). Planes R/G/B = 2,432,230 / 5,707,323 / 2,202,201. CPU 135.7 s (wall 36.5 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 302,714 | -10.75% | -2.41% | funnels=27, field_born=576, field_max=192, prune=225 |
+| pex_p1287145 | 512,823 | -0.48% | -3.28% | funnels=27, field_born=576, field_max=192, prune=295 |
+| pex_p1366919 | 623,298 | -2.80% | -2.56% | funnels=27, field_born=576, field_max=192, prune=283 |
+| pex_p1612351 | 586,049 | -1.30% | -4.40% | funnels=27, field_born=576, field_max=192, prune=331 |
+| pex_p1770809 | 1,227,064 | -5.12% | -1.67% | funnels=27, field_born=576, field_max=192, prune=415 |
+| pex_p2014422 | 153,609 | -11.66% | -2.65% | funnels=27, field_born=576, field_max=192, prune=309 |
+| pex_p2166711 | 377,758 | -2.54% | -4.11% | funnels=27, field_born=576, field_max=192, prune=314 |
+| pex_p2253275 | 470,993 | -0.03% | -4.91% | funnels=27, field_born=576, field_max=192, prune=279 |
+| pex_p3225517 | 851,626 | -0.15% | -1.09% | funnels=27, field_born=576, field_max=192, prune=314 |
+| pex_p417074 | 669,431 | -0.91% | -3.61% | funnels=27, field_born=576, field_max=192, prune=356 |
+| pex_p462162 | 764,585 | -1.12% | -2.67% | funnels=27, field_born=576, field_max=192, prune=277 |
+| pex_p933054 | 262,059 | -2.65% | -3.40% | funnels=27, field_born=576, field_max=192, prune=334 |
+| kod_kodim01 | 471,179 | +3.61% | -1.35% | funnels=27, field_born=576, field_max=192, prune=216 |
+| kod_kodim03 | 329,779 | +0.51% | -3.37% | funnels=27, field_born=576, field_max=192, prune=421 |
+| kod_kodim05 | 497,625 | +2.59% | -1.32% | funnels=27, field_born=576, field_max=192, prune=312 |
+| kod_kodim08 | 511,530 | +1.97% | -2.16% | funnels=27, field_born=576, field_max=192, prune=282 |
+| kod_kodim13 | 551,789 | +0.53% | -1.05% | funnels=27, field_born=576, field_max=192, prune=250 |
+| kod_kodim15 | 383,930 | +0.26% | -2.77% | funnels=27, field_born=576, field_max=192, prune=407 |
+| kod_kodim20 | 321,188 | -1.22% | -0.81% | funnels=27, field_born=576, field_max=192, prune=422 |
+| kod_kodim22 | 472,725 | +0.94% | -1.12% | funnels=27, field_born=576, field_max=192, prune=470 |
+
+Better than the reference on 20 of 20 images.
+
+### `time_rot180`
+
+* **Mechanism:** Arrow of time: photos rotated 180 degrees.
+* **FunnelBrain source:** Time: the laws are symmetric (arrow of time chosen by the coder); the early universe is coarse and detail comes later (coarse-to-fine).
+* **Hypothesis:** Combination of both.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1`   code `807c877676` (git 7ea9bc5), run 2026-10-24 12:13:22
+* **Result:** 10,339,682 B = -1.35% vs JXL e9, -2.46% vs `ref_best`, -1.09% vs FunnelZip (Pexels). Planes R/G/B = 2,431,795 / 5,706,726 / 2,201,162. CPU 129.0 s (wall 33.1 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 302,416 | -10.84% | -2.50% | funnels=27, field_born=576, field_max=192, prune=333 |
+| pex_p1287145 | 513,319 | -0.39% | -3.19% | funnels=27, field_born=576, field_max=192, prune=377 |
+| pex_p1366919 | 622,554 | -2.92% | -2.68% | funnels=27, field_born=576, field_max=192, prune=267 |
+| pex_p1612351 | 588,328 | -0.92% | -4.03% | funnels=27, field_born=576, field_max=192, prune=349 |
+| pex_p1770809 | 1,227,152 | -5.12% | -1.66% | funnels=27, field_born=576, field_max=192, prune=441 |
+| pex_p2014422 | 153,465 | -11.75% | -2.74% | funnels=27, field_born=576, field_max=192, prune=326 |
+| pex_p2166711 | 378,820 | -2.27% | -3.84% | funnels=27, field_born=576, field_max=192, prune=284 |
+| pex_p2253275 | 469,971 | -0.25% | -5.12% | funnels=27, field_born=576, field_max=192, prune=286 |
+| pex_p3225517 | 848,543 | -0.51% | -1.45% | funnels=27, field_born=576, field_max=192, prune=395 |
+| pex_p417074 | 669,963 | -0.83% | -3.53% | funnels=27, field_born=576, field_max=192, prune=368 |
+| pex_p462162 | 764,980 | -1.07% | -2.62% | funnels=27, field_born=576, field_max=192, prune=289 |
+| pex_p933054 | 261,798 | -2.74% | -3.50% | funnels=27, field_born=576, field_max=192, prune=309 |
+| kod_kodim01 | 471,820 | +3.75% | -1.22% | funnels=27, field_born=576, field_max=192, prune=194 |
+| kod_kodim03 | 327,902 | -0.06% | -3.92% | funnels=27, field_born=576, field_max=192, prune=420 |
+| kod_kodim05 | 497,385 | +2.54% | -1.37% | funnels=27, field_born=576, field_max=192, prune=274 |
+| kod_kodim08 | 513,160 | +2.30% | -1.85% | funnels=27, field_born=576, field_max=192, prune=235 |
+| kod_kodim13 | 551,320 | +0.44% | -1.13% | funnels=27, field_born=576, field_max=192, prune=205 |
+| kod_kodim15 | 384,038 | +0.29% | -2.74% | funnels=27, field_born=576, field_max=192, prune=417 |
+| kod_kodim20 | 319,941 | -1.61% | -1.19% | funnels=27, field_born=576, field_max=192, prune=408 |
+| kod_kodim22 | 472,807 | +0.96% | -1.10% | funnels=27, field_born=576, field_max=192, prune=463 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds2_bayes`
+
+* **Mechanism:** Parallel worlds: 2 complete coders (best, old) run side by side; each pixel is coded with their weighted mixture (bayes: weights = cumulative evidence).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb   mix=bayes alpha=0.002 beta=1.0`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:05:40
+* **Result:** 10,327,478 B = -1.47% vs JXL e9, -2.58% vs `ref_best`, -1.25% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 211.6 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 301,659 | -11.06% | -2.75% | best_single_world_bytes=301722 |
+| pex_p1287145 | 512,971 | -0.45% | -3.26% | best_single_world_bytes=513092 |
+| pex_p1366919 | 619,940 | -3.33% | -3.09% | best_single_world_bytes=619940 |
+| pex_p1612351 | 586,379 | -1.24% | -4.34% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,227,153 | -5.12% | -1.66% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 152,834 | -12.11% | -3.14% | best_single_world_bytes=152834 |
+| pex_p2166711 | 377,229 | -2.68% | -4.24% | best_single_world_bytes=377229 |
+| pex_p2253275 | 470,090 | -0.22% | -5.10% | best_single_world_bytes=470090 |
+| pex_p3225517 | 847,627 | -0.62% | -1.56% | best_single_world_bytes=847626 |
+| pex_p417074 | 671,431 | -0.61% | -3.32% | best_single_world_bytes=671431 |
+| pex_p462162 | 761,687 | -1.50% | -3.04% | best_single_world_bytes=761687 |
+| pex_p933054 | 260,648 | -3.17% | -3.92% | best_single_world_bytes=260694 |
+| kod_kodim01 | 471,026 | +3.58% | -1.38% | best_single_world_bytes=471026 |
+| kod_kodim03 | 328,489 | +0.11% | -3.75% | best_single_world_bytes=328489 |
+| kod_kodim05 | 496,055 | +2.27% | -1.64% | best_single_world_bytes=496054 |
+| kod_kodim08 | 512,759 | +2.22% | -1.93% | best_single_world_bytes=512758 |
+| kod_kodim13 | 552,345 | +0.63% | -0.95% | best_single_world_bytes=552344 |
+| kod_kodim15 | 383,528 | +0.16% | -2.87% | best_single_world_bytes=383527 |
+| kod_kodim20 | 320,358 | -1.48% | -1.06% | best_single_world_bytes=320358 |
+| kod_kodim22 | 473,270 | +1.05% | -1.01% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds2_fs`
+
+* **Mechanism:** Parallel worlds: 2 complete coders (best, old) run side by side; each pixel is coded with their weighted mixture (fixedshare: evidence with fixed-share switching alpha=0.002).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb   mix=fixedshare alpha=0.002 beta=1.0`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:05:45
+* **Result:** 10,292,409 B = -1.80% vs JXL e9, -2.91% vs `ref_best`, -1.61% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 211.6 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 299,458 | -11.71% | -3.46% | best_single_world_bytes=301722 |
+| pex_p1287145 | 510,158 | -1.00% | -3.79% | best_single_world_bytes=513092 |
+| pex_p1366919 | 617,688 | -3.68% | -3.44% | best_single_world_bytes=619940 |
+| pex_p1612351 | 584,266 | -1.60% | -4.69% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,225,516 | -5.24% | -1.79% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 150,562 | -13.42% | -4.58% | best_single_world_bytes=152834 |
+| pex_p2166711 | 375,276 | -3.19% | -4.74% | best_single_world_bytes=377229 |
+| pex_p2253275 | 468,767 | -0.50% | -5.36% | best_single_world_bytes=470090 |
+| pex_p3225517 | 845,616 | -0.86% | -1.79% | best_single_world_bytes=847626 |
+| pex_p417074 | 669,047 | -0.97% | -3.66% | best_single_world_bytes=671431 |
+| pex_p462162 | 758,830 | -1.87% | -3.40% | best_single_world_bytes=761687 |
+| pex_p933054 | 258,795 | -3.86% | -4.60% | best_single_world_bytes=260694 |
+| kod_kodim01 | 470,091 | +3.37% | -1.58% | best_single_world_bytes=471026 |
+| kod_kodim03 | 327,512 | -0.18% | -4.04% | best_single_world_bytes=328489 |
+| kod_kodim05 | 494,783 | +2.00% | -1.89% | best_single_world_bytes=496054 |
+| kod_kodim08 | 511,367 | +1.94% | -2.19% | best_single_world_bytes=512758 |
+| kod_kodim13 | 550,954 | +0.37% | -1.20% | best_single_world_bytes=552344 |
+| kod_kodim15 | 382,296 | -0.16% | -3.19% | best_single_world_bytes=383527 |
+| kod_kodim20 | 319,277 | -1.81% | -1.40% | best_single_world_bytes=320358 |
+| kod_kodim22 | 472,150 | +0.82% | -1.24% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds2_local`
+
+* **Mechanism:** Parallel worlds: 2 complete coders (best, old) run side by side; each pixel is coded with their weighted mixture (local_fs: local (beta=0.5) x fixed-share (alpha=0.002)).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb   mix=local_fs alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:05:50
+* **Result:** 10,287,716 B = -1.85% vs JXL e9, -2.95% vs `ref_best`, -1.66% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 211.6 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 299,227 | -11.78% | -3.53% | best_single_world_bytes=301722 |
+| pex_p1287145 | 509,765 | -1.08% | -3.86% | best_single_world_bytes=513092 |
+| pex_p1366919 | 617,203 | -3.75% | -3.52% | best_single_world_bytes=619940 |
+| pex_p1612351 | 583,900 | -1.66% | -4.75% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,225,113 | -5.27% | -1.83% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 150,433 | -13.49% | -4.66% | best_single_world_bytes=152834 |
+| pex_p2166711 | 374,993 | -3.26% | -4.81% | best_single_world_bytes=377229 |
+| pex_p2253275 | 468,448 | -0.57% | -5.43% | best_single_world_bytes=470090 |
+| pex_p3225517 | 845,436 | -0.88% | -1.81% | best_single_world_bytes=847626 |
+| pex_p417074 | 668,759 | -1.01% | -3.70% | best_single_world_bytes=671431 |
+| pex_p462162 | 758,492 | -1.91% | -3.44% | best_single_world_bytes=761687 |
+| pex_p933054 | 258,537 | -3.96% | -4.70% | best_single_world_bytes=260694 |
+| kod_kodim01 | 469,943 | +3.34% | -1.61% | best_single_world_bytes=471026 |
+| kod_kodim03 | 327,358 | -0.23% | -4.08% | best_single_world_bytes=328489 |
+| kod_kodim05 | 494,583 | +1.96% | -1.93% | best_single_world_bytes=496054 |
+| kod_kodim08 | 511,255 | +1.92% | -2.21% | best_single_world_bytes=512758 |
+| kod_kodim13 | 550,881 | +0.36% | -1.21% | best_single_world_bytes=552344 |
+| kod_kodim15 | 382,142 | -0.20% | -3.23% | best_single_world_bytes=383527 |
+| kod_kodim20 | 319,173 | -1.84% | -1.43% | best_single_world_bytes=320358 |
+| kod_kodim22 | 472,075 | +0.80% | -1.26% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds3_local`
+
+* **Mechanism:** Parallel worlds: 3 complete coders (best, old, fastforget) run side by side; each pixel is coded with their weighted mixture (local_fs: local (beta=0.5) x fixed-share (alpha=0.002)).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99   mix=local_fs alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:05:56
+* **Result:** 10,247,751 B = -2.23% vs JXL e9, -3.33% vs `ref_best`, -2.08% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 348.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 297,667 | -12.24% | -4.03% | best_single_world_bytes=301722 |
+| pex_p1287145 | 507,090 | -1.60% | -4.36% | best_single_world_bytes=513092 |
+| pex_p1366919 | 616,070 | -3.93% | -3.69% | best_single_world_bytes=619940 |
+| pex_p1612351 | 580,666 | -2.21% | -5.28% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,224,075 | -5.35% | -1.91% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 147,920 | -14.94% | -6.25% | best_single_world_bytes=151393 |
+| pex_p2166711 | 372,560 | -3.89% | -5.43% | best_single_world_bytes=377229 |
+| pex_p2253275 | 465,583 | -1.18% | -6.01% | best_single_world_bytes=470090 |
+| pex_p3225517 | 842,750 | -1.19% | -2.12% | best_single_world_bytes=847626 |
+| pex_p417074 | 664,353 | -1.66% | -4.34% | best_single_world_bytes=670712 |
+| pex_p462162 | 755,224 | -2.33% | -3.86% | best_single_world_bytes=761687 |
+| pex_p933054 | 256,731 | -4.63% | -5.36% | best_single_world_bytes=260694 |
+| kod_kodim01 | 468,358 | +2.99% | -1.94% | best_single_world_bytes=471026 |
+| kod_kodim03 | 326,163 | -0.59% | -4.43% | best_single_world_bytes=328489 |
+| kod_kodim05 | 493,407 | +1.72% | -2.16% | best_single_world_bytes=496054 |
+| kod_kodim08 | 509,387 | +1.54% | -2.57% | best_single_world_bytes=512758 |
+| kod_kodim13 | 549,740 | +0.15% | -1.41% | best_single_world_bytes=552344 |
+| kod_kodim15 | 379,848 | -0.80% | -3.81% | best_single_world_bytes=383527 |
+| kod_kodim20 | 318,750 | -1.97% | -1.56% | best_single_world_bytes=320358 |
+| kod_kodim22 | 471,409 | +0.66% | -1.40% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds5_bayes`
+
+* **Mechanism:** Parallel worlds: 5 complete coders (best, old, fastforget, nofield, salonly) run side by side; each pixel is coded with their weighted mixture (bayes: weights = cumulative evidence).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99 | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb sal=-1 salp=3   mix=bayes alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:06:07
+* **Result:** 10,311,733 B = -1.62% vs JXL e9, -2.73% vs `ref_best`, -1.44% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 528.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 300,469 | -11.41% | -3.13% | best_single_world_bytes=301722 |
+| pex_p1287145 | 512,106 | -0.62% | -3.42% | best_single_world_bytes=513092 |
+| pex_p1366919 | 619,941 | -3.33% | -3.09% | best_single_world_bytes=619940 |
+| pex_p1612351 | 584,299 | -1.59% | -4.68% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,227,153 | -5.12% | -1.66% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 151,262 | -13.01% | -4.14% | best_single_world_bytes=151393 |
+| pex_p2166711 | 376,298 | -2.92% | -4.48% | best_single_world_bytes=377229 |
+| pex_p2253275 | 468,219 | -0.62% | -5.47% | best_single_world_bytes=470090 |
+| pex_p3225517 | 845,529 | -0.87% | -1.80% | best_single_world_bytes=847626 |
+| pex_p417074 | 669,626 | -0.88% | -3.58% | best_single_world_bytes=670712 |
+| pex_p462162 | 761,360 | -1.54% | -3.08% | best_single_world_bytes=761687 |
+| pex_p933054 | 258,740 | -3.88% | -4.62% | best_single_world_bytes=260604 |
+| kod_kodim01 | 470,651 | +3.50% | -1.46% | best_single_world_bytes=471026 |
+| kod_kodim03 | 328,489 | +0.11% | -3.75% | best_single_world_bytes=328489 |
+| kod_kodim05 | 495,913 | +2.24% | -1.66% | best_single_world_bytes=496054 |
+| kod_kodim08 | 512,226 | +2.11% | -2.03% | best_single_world_bytes=512758 |
+| kod_kodim13 | 552,345 | +0.63% | -0.95% | best_single_world_bytes=552344 |
+| kod_kodim15 | 383,528 | +0.16% | -2.87% | best_single_world_bytes=383527 |
+| kod_kodim20 | 320,344 | -1.48% | -1.07% | best_single_world_bytes=320358 |
+| kod_kodim22 | 473,235 | +1.05% | -1.01% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds5_fs`
+
+* **Mechanism:** Parallel worlds: 5 complete coders (best, old, fastforget, nofield, salonly) run side by side; each pixel is coded with their weighted mixture (fixedshare: evidence with fixed-share switching alpha=0.002).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99 | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb sal=-1 salp=3   mix=fixedshare alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:06:18
+* **Result:** 10,242,010 B = -2.28% vs JXL e9, -3.38% vs `ref_best`, -2.14% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 528.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 297,532 | -12.28% | -4.08% | best_single_world_bytes=301722 |
+| pex_p1287145 | 506,815 | -1.65% | -4.42% | best_single_world_bytes=513092 |
+| pex_p1366919 | 615,709 | -3.99% | -3.75% | best_single_world_bytes=619940 |
+| pex_p1612351 | 580,245 | -2.28% | -5.34% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,223,024 | -5.44% | -1.99% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 147,855 | -14.97% | -6.30% | best_single_world_bytes=151393 |
+| pex_p2166711 | 372,406 | -3.93% | -5.47% | best_single_world_bytes=377229 |
+| pex_p2253275 | 465,280 | -1.24% | -6.07% | best_single_world_bytes=470090 |
+| pex_p3225517 | 842,154 | -1.26% | -2.19% | best_single_world_bytes=847626 |
+| pex_p417074 | 663,966 | -1.72% | -4.39% | best_single_world_bytes=670712 |
+| pex_p462162 | 755,085 | -2.35% | -3.88% | best_single_world_bytes=761687 |
+| pex_p933054 | 256,395 | -4.75% | -5.49% | best_single_world_bytes=260604 |
+| kod_kodim01 | 468,321 | +2.98% | -1.95% | best_single_world_bytes=471026 |
+| kod_kodim03 | 325,923 | -0.67% | -4.50% | best_single_world_bytes=328489 |
+| kod_kodim05 | 493,126 | +1.66% | -2.22% | best_single_world_bytes=496054 |
+| kod_kodim08 | 509,272 | +1.52% | -2.59% | best_single_world_bytes=512758 |
+| kod_kodim13 | 549,527 | +0.11% | -1.45% | best_single_world_bytes=552344 |
+| kod_kodim15 | 379,731 | -0.83% | -3.84% | best_single_world_bytes=383527 |
+| kod_kodim20 | 318,540 | -2.04% | -1.62% | best_single_world_bytes=320358 |
+| kod_kodim22 | 471,104 | +0.59% | -1.46% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds5_local`
+
+* **Mechanism:** Parallel worlds: 5 complete coders (best, old, fastforget, nofield, salonly) run side by side; each pixel is coded with their weighted mixture (local: weights from each world's cost on the W,N,NW,NE pixels, beta=0.5).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99 | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb sal=-1 salp=3   mix=local alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:06:29
+* **Result:** 10,216,680 B = -2.52% vs JXL e9, -3.62% vs `ref_best`, -2.35% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 528.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 297,196 | -12.38% | -4.19% | best_single_world_bytes=301722 |
+| pex_p1287145 | 505,831 | -1.84% | -4.60% | best_single_world_bytes=513092 |
+| pex_p1366919 | 613,662 | -4.31% | -4.07% | best_single_world_bytes=619940 |
+| pex_p1612351 | 579,149 | -2.46% | -5.52% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,217,894 | -5.83% | -2.40% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 148,447 | -14.63% | -5.92% | best_single_world_bytes=151393 |
+| pex_p2166711 | 371,699 | -4.11% | -5.65% | best_single_world_bytes=377229 |
+| pex_p2253275 | 464,321 | -1.45% | -6.26% | best_single_world_bytes=470090 |
+| pex_p3225517 | 840,567 | -1.45% | -2.38% | best_single_world_bytes=847626 |
+| pex_p417074 | 663,433 | -1.80% | -4.47% | best_single_world_bytes=670712 |
+| pex_p462162 | 753,869 | -2.51% | -4.03% | best_single_world_bytes=761687 |
+| pex_p933054 | 256,046 | -4.88% | -5.62% | best_single_world_bytes=260604 |
+| kod_kodim01 | 467,097 | +2.71% | -2.21% | best_single_world_bytes=471026 |
+| kod_kodim03 | 324,315 | -1.16% | -4.97% | best_single_world_bytes=328489 |
+| kod_kodim05 | 491,099 | +1.25% | -2.62% | best_single_world_bytes=496054 |
+| kod_kodim08 | 507,865 | +1.24% | -2.86% | best_single_world_bytes=512758 |
+| kod_kodim13 | 548,047 | -0.16% | -1.72% | best_single_world_bytes=552344 |
+| kod_kodim15 | 378,876 | -1.06% | -4.05% | best_single_world_bytes=383527 |
+| kod_kodim20 | 317,501 | -2.36% | -1.94% | best_single_world_bytes=320358 |
+| kod_kodim22 | 469,766 | +0.31% | -1.74% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds5_localfs`
+
+* **Mechanism:** Parallel worlds: 5 complete coders (best, old, fastforget, nofield, salonly) run side by side; each pixel is coded with their weighted mixture (local_fs: local (beta=0.5) x fixed-share (alpha=0.002)).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99 | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb sal=-1 salp=3   mix=local_fs alpha=0.002 beta=0.5`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:06:40
+* **Result:** 10,237,118 B = -2.33% vs JXL e9, -3.43% vs `ref_best`, -2.19% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 528.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 297,335 | -12.33% | -4.14% | best_single_world_bytes=301722 |
+| pex_p1287145 | 506,490 | -1.71% | -4.48% | best_single_world_bytes=513092 |
+| pex_p1366919 | 615,322 | -4.05% | -3.81% | best_single_world_bytes=619940 |
+| pex_p1612351 | 579,888 | -2.34% | -5.40% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,222,649 | -5.46% | -2.02% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 147,726 | -15.05% | -6.38% | best_single_world_bytes=151393 |
+| pex_p2166711 | 372,126 | -4.00% | -5.54% | best_single_world_bytes=377229 |
+| pex_p2253275 | 464,943 | -1.31% | -6.13% | best_single_world_bytes=470090 |
+| pex_p3225517 | 841,895 | -1.29% | -2.22% | best_single_world_bytes=847626 |
+| pex_p417074 | 663,669 | -1.76% | -4.44% | best_single_world_bytes=670712 |
+| pex_p462162 | 754,697 | -2.40% | -3.93% | best_single_world_bytes=761687 |
+| pex_p933054 | 256,161 | -4.84% | -5.57% | best_single_world_bytes=260604 |
+| kod_kodim01 | 468,132 | +2.94% | -1.99% | best_single_world_bytes=471026 |
+| kod_kodim03 | 325,739 | -0.72% | -4.56% | best_single_world_bytes=328489 |
+| kod_kodim05 | 492,888 | +1.61% | -2.26% | best_single_world_bytes=496054 |
+| kod_kodim08 | 509,118 | +1.49% | -2.62% | best_single_world_bytes=512758 |
+| kod_kodim13 | 549,434 | +0.10% | -1.47% | best_single_world_bytes=552344 |
+| kod_kodim15 | 379,502 | -0.89% | -3.89% | best_single_world_bytes=383527 |
+| kod_kodim20 | 318,403 | -2.08% | -1.67% | best_single_world_bytes=320358 |
+| kod_kodim22 | 471,001 | +0.57% | -1.48% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
+### `worlds5_localfs_b1`
+
+* **Mechanism:** Parallel worlds: 5 complete coders (best, old, fastforget, nofield, salonly) run side by side; each pixel is coded with their weighted mixture (local_fs: local (beta=1.0) x fixed-share (alpha=0.002)).
+* **FunnelBrain source:** Many-worlds / Born rule: every branch exists with a weight; evidence updates the weights; decoherence = branches stop interfering locally.
+* **Hypothesis:** Worlds that are right in different places add up; the mixture beats the best single world by a margin that grows with diversity.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 lam=0.99 | ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 | ltpcrewb sal=-1 salp=3   mix=local_fs alpha=0.002 beta=1.0`   code `9995f04ae3` (git 7ea9bc5), run 2026-10-24 12:06:51
+* **Result:** 10,234,332 B = -2.36% vs JXL e9, -3.46% vs `ref_best`, -2.22% vs FunnelZip (Pexels). Planes R/G/B = 0 / 0 / 0. CPU 528.8 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 297,238 | -12.36% | -4.17% | best_single_world_bytes=301722 |
+| pex_p1287145 | 506,299 | -1.75% | -4.51% | best_single_world_bytes=513092 |
+| pex_p1366919 | 615,101 | -4.08% | -3.84% | best_single_world_bytes=619940 |
+| pex_p1612351 | 579,680 | -2.37% | -5.44% | best_single_world_bytes=586379 |
+| pex_p1770809 | 1,222,397 | -5.48% | -2.04% | best_single_world_bytes=1.22715e+06 |
+| pex_p2014422 | 147,684 | -15.07% | -6.40% | best_single_world_bytes=151393 |
+| pex_p2166711 | 371,990 | -4.03% | -5.57% | best_single_world_bytes=377229 |
+| pex_p2253275 | 464,732 | -1.36% | -6.18% | best_single_world_bytes=470090 |
+| pex_p3225517 | 841,734 | -1.31% | -2.24% | best_single_world_bytes=847626 |
+| pex_p417074 | 663,500 | -1.79% | -4.46% | best_single_world_bytes=670712 |
+| pex_p462162 | 754,453 | -2.43% | -3.96% | best_single_world_bytes=761687 |
+| pex_p933054 | 256,017 | -4.89% | -5.63% | best_single_world_bytes=260604 |
+| kod_kodim01 | 468,019 | +2.92% | -2.01% | best_single_world_bytes=471026 |
+| kod_kodim03 | 325,643 | -0.75% | -4.59% | best_single_world_bytes=328489 |
+| kod_kodim05 | 492,722 | +1.58% | -2.30% | best_single_world_bytes=496054 |
+| kod_kodim08 | 509,046 | +1.47% | -2.64% | best_single_world_bytes=512758 |
+| kod_kodim13 | 549,409 | +0.09% | -1.47% | best_single_world_bytes=552344 |
+| kod_kodim15 | 379,384 | -0.92% | -3.92% | best_single_world_bytes=383527 |
+| kod_kodim20 | 318,338 | -2.10% | -1.69% | best_single_world_bytes=320358 |
+| kod_kodim22 | 470,946 | +0.56% | -1.49% | best_single_world_bytes=473270 |
+
+Better than the reference on 20 of 20 images.
+
 ## All runs (chronological)
 
 | date | id | code | total bytes | vs JXL e9 | CPU s |
@@ -1989,3 +2601,21 @@ Better than the reference on 20 of 20 images.
 | 2026-10-24 11:48:45 | `matf_bright` | a782f57f3e | 10,345,754 | -1.29% | 123.4 |
 | 2026-10-24 11:49:19 | `matf_ctx` | a782f57f3e | 10,327,702 | -1.47% | 127.6 |
 | 2026-10-24 11:49:52 | `matf_lam5` | a782f57f3e | 10,340,369 | -1.34% | 126.8 |
+| 2026-10-24 12:05:40 | `worlds2_bayes` | 9995f04ae3 | 10,327,478 | -1.47% | 211.6 |
+| 2026-10-24 12:05:45 | `worlds2_fs` | 9995f04ae3 | 10,292,409 | -1.80% | 211.6 |
+| 2026-10-24 12:05:50 | `worlds2_local` | 9995f04ae3 | 10,287,716 | -1.85% | 211.6 |
+| 2026-10-24 12:05:56 | `worlds3_local` | 9995f04ae3 | 10,247,751 | -2.23% | 348.8 |
+| 2026-10-24 12:06:07 | `worlds5_bayes` | 9995f04ae3 | 10,311,733 | -1.62% | 528.8 |
+| 2026-10-24 12:06:18 | `worlds5_fs` | 9995f04ae3 | 10,242,010 | -2.28% | 528.8 |
+| 2026-10-24 12:06:29 | `worlds5_local` | 9995f04ae3 | 10,216,680 | -2.52% | 528.8 |
+| 2026-10-24 12:06:40 | `worlds5_localfs` | 9995f04ae3 | 10,237,118 | -2.33% | 528.8 |
+| 2026-10-24 12:06:51 | `worlds5_localfs_b1` | 9995f04ae3 | 10,234,332 | -2.36% | 528.8 |
+| 2026-10-24 12:08:20 | `best_now` | 807c877676 | 10,327,702 | -1.47% | 140.4 |
+| 2026-10-24 12:09:01 | `gmass` | 807c877676 | 10,325,063 | -1.49% | 162.0 |
+| 2026-10-24 12:09:43 | `gmass_r3` | 807c877676 | 10,328,977 | -1.45% | 153.5 |
+| 2026-10-24 12:10:21 | `gmass_r16` | 807c877676 | 10,325,334 | -1.49% | 144.5 |
+| 2026-10-24 12:11:00 | `gmass_fast` | 807c877676 | 10,327,243 | -1.47% | 146.3 |
+| 2026-10-24 12:11:38 | `ilace` | 807c877676 | 10,657,746 | +1.68% | 144.8 |
+| 2026-10-24 12:12:12 | `time_hflip` | 807c877676 | 10,335,235 | -1.39% | 132.7 |
+| 2026-10-24 12:12:49 | `time_vflip` | 807c877676 | 10,341,754 | -1.33% | 135.7 |
+| 2026-10-24 12:13:22 | `time_rot180` | 807c877676 | 10,339,682 | -1.35% | 129.0 |

@@ -167,3 +167,21 @@ EXPERIMENTS += [
     dict(id="matf_ctx", cfg=M2 + " matf=1 mctx=1", mechanism="Material funnels + material id as a residual-coder context.", hypothesis="Different materials have different noise; the coder benefits from knowing which material.", **_mf),
     dict(id="matf_lam5", cfg=M2 + " matf=1 matlam=5", mechanism="Material funnels with a weak ridge (slope learned freely).", hypothesis="Each material's real slope differs from 1; letting it free helps.", **_mf),
 ]
+
+MB = M2 + " matf=1 mctx=1"   # = matf_ctx, current best single coder
+_g = dict(group="gravity", funnelbrain="Gravity: masses pull with inverse-square force; physics.py GRAVITY / depth pull. Here the masses are pixel values the funnel has landed on before.")
+_t = dict(group="time", funnelbrain="Time: the laws are symmetric (arrow of time chosen by the coder); the early universe is coarse and detail comes later (coarse-to-fine).")
+EXPERIMENTS += [
+    dict(id="best_now", group="reference", cfg=MB, mechanism="Current best single coder (= matf_ctx), re-run on the current code version.", funnelbrain="-",
+         hypothesis="Reproduces matf_ctx: 10,327,702 B."),
+    dict(id="gmass", cfg=MB + " gmass=1", mechanism="Gravity mass ball: each funnel keeps a histogram of values that landed in it; the inverse-square-weighted centre of mass within +-8 of the prediction becomes an RLS tap.",
+         hypothesis="Values that recur (JPEG plateaus, flat sky, saturated highlights) pull predictions; helps Pexels more.", **_g),
+    dict(id="gmass_r3", cfg=MB + " gmass=1 gmr=3 gsig=1", mechanism="Gravity with short range (+-3, softening 1).", hypothesis="Only very close masses should pull.", **_g),
+    dict(id="gmass_r16", cfg=MB + " gmass=1 gmr=16 gsig=4", mechanism="Gravity with long range (+-16, softening 4).", hypothesis="Far masses matter for flat regions.", **_g),
+    dict(id="gmass_fast", cfg=MB + " gmass=1 glim=512", mechanism="Gravity with fast-forgetting masses (histogram halves at 512).", hypothesis="Local recent values pull more than old ones.", **_g),
+    dict(id="ilace", cfg=MB + " ilace=1", mechanism="Coarse-to-fine time: even rows first (own funnels/contexts), then odd rows that also see the row below (3 taps + interpolation ball).",
+         hypothesis="Odd rows gain from two-sided context; even rows lose from distance-2 neighbours. kodim20 quick test: +1.8%.", **_t),
+    dict(id="time_hflip", data="ffic_data_hflip", cfg=MB, mechanism="Arrow of time: the same coder on every photo mirrored left-right (scan from the right).", hypothesis="Some photos are more predictable in another direction.", **_t),
+    dict(id="time_vflip", data="ffic_data_vflip", cfg=MB, mechanism="Arrow of time: photos upside down (scan from the bottom).", hypothesis="Light from above: scanning from below may predict shading differently.", **_t),
+    dict(id="time_rot180", data="ffic_data_rot180", cfg=MB, mechanism="Arrow of time: photos rotated 180 degrees.", hypothesis="Combination of both.", **_t),
+]

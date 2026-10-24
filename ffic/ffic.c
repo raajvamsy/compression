@@ -35,6 +35,12 @@
  *                     pixel's own R:G balance); each funnel learns its material line over the whole image (R ~ a*G + b,
  *                     B ~ a*G + c*R + b, decayed by mdec, ridge matlam toward the difference model), giving a ball + tap.
  *                     mrad = mouth, mmax = cap, mbw = weight of brightness in the landing, mctx=1 = material id as coder context
+ *   gmass=1           GRAVITY: each funnel (field landing, else activity class) keeps a mass histogram of the values that
+ *                     landed in it; the prediction's inverse-square-weighted centre of mass within +-gmr becomes an RLS tap
+ *                     (gsig = softening length, glim = mass at which the histogram halves = forgetting)
+ *   ilace=1           TIME AS SCALE: code even rows first (a coarser picture, its own funnels and contexts), then odd rows,
+ *                     which also see the decoded row BELOW (3 extra taps + a vertical-interpolation ball)
+ *   FFIC_PIXCOST=path  write each pixel's code length (float32, planes R,G,B) for the parallel-worlds analysis
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
  *
  * usage: ffic file.rgb W H [flags] [key=value...]   letters: l learn t spin v level p nesting c cross e energy w blend r RLS b CM f future
@@ -46,11 +52,11 @@
 #include <time.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
-#define NSUBX (NSUB + 5)
+#define NSUBX (NSUB + 6)
 #define NNB 12                    /* neighbour taps (causal window) */
 #define CK 4                      /* neighbours used for cross-plane taps (W N NW NE) */
 #define NF 4                      /* non-causal neighbours of an already-decoded plane: E S SE SW */
-#define NX 4                      /* extra feature taps (hippocampal recall, material lines, material funnel) */
+#define NX 8                      /* extra feature taps (hippocampal recall, material lines, material funnel, gravity, 3 'below' taps) */
 #define NT (NNB + 2 * (CK + 1 + NF) + NX)
 #define NA 8                      /* activity levels */
 #define NTH 9                     /* spin states: 8 orientations + flat */
@@ -79,6 +85,9 @@ static int MLINE = 0, MWIN = 6; static float MLAM = 20.f;
 typedef struct { float c[3]; int n; double S[9], St[3]; } Mat;
 static int MATF = 0, MMAX = 64, MCTX = 0; static float MRAD = 0.02f, MDEC = 0.999f, MATLAM = 30.f, MBW = 0.f;
 static long long st_mat_born;
+/* gravity: values the image keeps landing on act as masses; a prediction is pulled toward nearby heavy values */
+static int ILACE = 0, RS = 1;   /* TIME as scale: even rows first (the coarse past), then odd rows, which also see the row below */
+static int GMASS = 0, GMR = 8; static float GSIG = 2.f, GLIM = 4096.f;
 /* solve (S + ridge) w = St + ridge*w0 for k regressors (+ intercept), k <= 3 */
 static void mat_solve(const Mat *m, int k, const double *w0, double *w) {
     double A[3][4];
@@ -270,7 +279,7 @@ int main(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 1; }
             continue;
@@ -288,6 +297,7 @@ int main(int argc, char **argv) {
     static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
     const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
     double bits[3] = {0, 0, 0}; clock_t t0 = clock(); long long born = 0; int field_max = 0;
+    float *pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
     const int nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); const int icurve = NSUB + (HIPPO ? 1 : 0);
 
     Funnel *gl[MAXLV] = {0};                                                  /* G plane's trained grid funnels (Main register) */
@@ -297,10 +307,11 @@ int main(int argc, char **argv) {
         const int hasmat = MATF && oi >= 1, imat = iml + nml;
         const int nsubp = nsub + nml + hasmat;
         Mat *mats = hasmat ? calloc(MMAXC, sizeof(Mat)) : NULL; int nmat = 0;
-        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat;
+        float *gmt = GMASS ? calloc(256 * 256, sizeof(float)) : NULL, *gtot = GMASS ? calloc(256, sizeof(float)) : NULL; int gkey = 0;
+        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
-        Mouth *mouth = malloc(NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
+        Mouth *mouth = malloc(2 * NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < 2 * NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
         float *esub[NSUBX]; for (int k = 0; k < NSUBX; k++) esub[k] = calloc(N, sizeof(float));
         float *efin = calloc(N, sizeof(float)), *actm = calloc(N, sizeof(float));
         short *fid = calloc(N, sizeof(short));
@@ -309,20 +320,24 @@ int main(int argc, char **argv) {
         Funnel **rp_f = REPLAY ? malloc(W * sizeof(Funnel *)) : NULL; float *rp_u = REPLAY ? malloc((size_t)W * NT * sizeof(float)) : NULL;
         float *rp_t = REPLAY ? malloc(W * sizeof(float)) : NULL;
         CM cm; int ncx;
-        { int sizes[NCX] = {NA * NEN * NCE, NA * NTH * NL, 625 * 3, 4 * NEN * NL * 3, 9 * 9 * 5, 6 * NEN * 3 * 3}; ncx = 6;
+        { int sizes[NCX] = {2 * NA * NEN * NCE, NA * NTH * NL, 625 * 3, 4 * NEN * NL * 3, 9 * 9 * 5, 6 * NEN * 3 * 3}; ncx = 6;
           if (BOUNCE) sizes[ncx++] = 1 << 14;
           if (HIPPO) sizes[ncx++] = 9 * 3 * NEN;
           if (MS) sizes[ncx++] = 8 * NA * NEN;
           if (MCTX && MATF && oi >= 1) sizes[ncx++] = MMAXC * NEN;
           cm_init(&cm, sizes, ncx, NA_SEL); }
-        for (int y = 0; y < H; y++) {
+        const int HE = (H + 1) / 2;
+        for (int yi = 0; yi < H; yi++) {
+          const int y = ILACE ? (yi < HE ? 2 * yi : 2 * (yi - HE) + 1) : yi, pass = ILACE && yi >= HE;
+          RS = (ILACE && !pass) ? 2 : 1;
+          const int nsubq = nsubp + (pass ? 1 : 0), ivb = nsubp;
           for (int x = 0; x < W; x++) {
             size_t idx = (size_t)y * W + x;
             int nbv[NNB]; size_t nbi[NNB];                                        /* causal fetch with fallbacks at the borders */
             for (int k = 0; k < NNB; k++) {
-                int xx = x + TAPX[k], yy = y + TAPY[k]; size_t ii;
-                if (yy < 0) ii = x > 0 ? idx - 1 : (y > 0 ? idx - W : idx);
-                else { xx = clampi(xx, 0, W - 1); ii = (yy == y && xx >= x) ? (x > 0 ? idx - 1 : (y > 0 ? idx - W : idx)) : (size_t)yy * W + xx; }
+                int xx = x + TAPX[k], yy = y + TAPY[k] * RS; size_t ii;
+                if (yy < 0) ii = x > 0 ? idx - 1 : (y >= RS ? idx - (size_t)RS * W : idx);
+                else { xx = clampi(xx, 0, W - 1); ii = (yy == y && xx >= x) ? (x > 0 ? idx - 1 : (y >= RS ? idx - (size_t)RS * W : idx)) : (size_t)yy * W + xx; }
                 nbi[k] = ii; nbv[k] = (ii == idx) ? 128 : P[ii];
             }
             int Wv = nbv[0], Nv = nbv[1], NWv = nbv[2], NEv = nbv[3], WWv = nbv[4], NNv = nbv[5], NNEv = nbv[6];
@@ -359,6 +374,12 @@ int main(int argc, char **argv) {
                 float slope = (cv_ + MLAM) / (gv + MLAM);
                 sp[iml + q] = clampf(rm + slope * (Q[idx] - gm), 0, 255);
             }
+            int Sv = 0, SWv = 0, SEv = 0;
+            if (pass) {                                                           /* the row below is already decoded (coarse past) */
+                int yb = y + 1 < H ? y + 1 : y - 1;
+                Sv = P[(size_t)yb * W + x]; SWv = P[(size_t)yb * W + (x > 0 ? x - 1 : x)]; SEv = P[(size_t)yb * W + (x < W - 1 ? x + 1 : x)];
+                sp[ivb] = 0.5f * (Nv + Sv);
+            }
             int mland = -1; float md[3] = {0, 0, 0};
             if (hasmat) {                                                         /* land in a material funnel (colour space) */
                 int *Gp = pl[1], *Rp = pl[0]; float rs = 0, gs = 0, bs = 0;
@@ -379,8 +400,8 @@ int main(int argc, char **argv) {
             float base;
             if (opt_w) {
                 float sw = 0, sv = 0;
-                for (int k = 0; k < nsubp; k++) {
-                    float S = emap(esub[k], x - 1, y) + emap(esub[k], x, y - 1) + emap(esub[k], x - 1, y - 1) + emap(esub[k], x + 1, y - 1) + 0.5f;
+                for (int k = 0; k < nsubq; k++) {
+                    float S = emap(esub[k], x - 1, y) + emap(esub[k], x, y - RS) + emap(esub[k], x - 1, y - RS) + emap(esub[k], x + 1, y - RS) + 0.5f;
                     float wk = 1.f / (S * S); sw += wk; sv += wk * sp[k];
                 }
                 base = sv / sw;
@@ -395,7 +416,7 @@ int main(int argc, char **argv) {
             if (opt_t) { if (gm < 9.f) TH = 8; else { float a = atan2f(gy, gx); TH = ((int)floorf((a + 3.14159265f) / 0.78539816f)) & 7; } }
             float en = 0.f; int EN = 0;
             if (opt_e) {
-                en = emap(efin, x - 1, y) + emap(efin, x, y - 1) + 0.5f * (emap(efin, x - 1, y - 1) + emap(efin, x + 1, y - 1)) + 0.5f * (emap(efin, x - 2, y) + emap(efin, x, y - 2));
+                en = emap(efin, x - 1, y) + emap(efin, x, y - RS) + 0.5f * (emap(efin, x - 1, y - RS) + emap(efin, x + 1, y - RS)) + 0.5f * (emap(efin, x - 2, y) + emap(efin, x, y - 2 * RS));
                 static const float ETH[NEN - 1] = {0.6f, 1.2f, 2.f, 3.2f, 5.f, 8.f, 13.f, 22.f, 40.f};
                 while (EN < NEN - 1 && en > ETH[EN]) EN++;
             }
@@ -407,7 +428,7 @@ int main(int argc, char **argv) {
             }
             float wide = 0.f; int AW = 0;
             if (MS || FIELD) {
-                int cnt = 0; for (int k = 0; k < 8; k++) { int xx = x + WOFX[k], yy = y + WOFY[k]; if (xx >= 0 && xx < W && yy >= 0 && (yy < y || xx < x)) { wide += actm[(size_t)yy * W + xx]; cnt++; } }
+                int cnt = 0; for (int k = 0; k < 8; k++) { int xx = x + WOFX[k], yy = y + WOFY[k] * RS; if (xx >= 0 && xx < W && yy >= 0 && (yy < y || xx < x)) { wide += actm[(size_t)yy * W + xx]; cnt++; } }
                 wide = cnt ? wide / cnt : (float)act;
                 while (AW < 7 && wide > ATH[AW]) AW++;
             }
@@ -433,7 +454,7 @@ int main(int argc, char **argv) {
             if (FIELD) {                                                          /* launch: descriptor, find resonant funnels, land or create */
                 float s = fminf(1.f, gm / 30.f), ang = atan2f(gy, gx);
                 D[0] = log2f(1.f + act) / 9.f; D[1] = log2f(1.f + 4.f * en) / 8.f; D[2] = log2f(1.f + wide) / 9.f;
-                D[3] = 0.5f + 0.5f * s * cosf(ang); D[4] = 0.5f + 0.5f * s * sinf(ang); D[5] = base / 255.f; D[6] = log2f(1.f + 4.f * ce) / 8.f;
+                D[3] = 0.5f + 0.5f * s * cosf(ang); D[4] = 0.5f + 0.5f * s * sinf(ang); D[5] = base / 255.f + 2.f * pass; D[6] = log2f(1.f + 4.f * ce) / 8.f;
                 int best[KMAX]; float bd[KMAX]; for (int k = 0; k < KRES; k++) { best[k] = -1; bd[k] = 1e30f; }
                 for (int i = 0; i < nfld; i++) {
                     if (fld[i].n < 0) continue;
@@ -475,10 +496,18 @@ int main(int argc, char **argv) {
             if (HIPPO) u[nu++] = sp[NSUB] - base;
             for (int q = 0; q < nml; q++) u[nu++] = sp[iml + q] - base;
             if (hasmat) u[nu++] = sp[imat] - base;
-            float un2 = 1.f; for (int k = 0; k < nact; k++) un2 += u[k] * u[k];
+            if (GMASS) {                                                          /* gravity: pull toward heavy values near the prediction */
+                gkey = (FIELD && land >= 0 ? land : A) & 255; const float *M = gmt + gkey * 256;
+                int v0 = (int)lrintf(base); float sw = 0, sv = 0;
+                for (int v = v0 - GMR; v <= v0 + GMR; v++) { if (v < 0 || v > 255 || M[v] <= 0) continue; float d = (v - base) / GSIG, w = M[v] / (1.f + d * d); sw += w; sv += w * v; }
+                u[nu++] = sw > 1e-3f ? sv / sw - base : 0.f;
+            }
+            if (pass) { u[nu++] = Sv - base; u[nu++] = SWv - base; u[nu++] = SEv - base; }
+            const int nactp = nact + (pass ? 3 : 0);
+            float un2 = 1.f; for (int k = 0; k < nactp; k++) un2 += u[k] * u[k];
             float pj[MAXLV + KMAX], sw2 = 0.f, sv2 = 0.f;
             for (int j = 0; j < nset; j++) {                                      /* global workspace */
-                float d = 0.f; for (int k = 0; k < nact; k++) d += path[j]->w[k] * u[k];
+                float d = 0.f; for (int k = 0; k < nactp; k++) d += path[j]->w[k] * u[k];
                 pj[j] = base + (opt_l ? d : 0.f) + path[j]->bias;
                 float pe_ = path[j]->perf + 0.05f, wj = resw[j] / (WST == 2.f ? pe_ * pe_ : powf(pe_, WST));
                 if (GRAV > 0.f) wj *= 1.f + GRAV * logf(2.f + path[j]->n);
@@ -491,7 +520,7 @@ int main(int argc, char **argv) {
             float pc = clampf(pfv, 0, 255);
             pfin[c][idx] = pc;
 
-            Mouth *mo = &mouth[(A * NEN + EN) * NCE + CE];
+            Mouth *mo = &mouth[((pass * NA + A) * NEN + EN) * NCE + CE];
             float sb = mo->scale < 0.25f ? 0.25f : mo->scale;
 
             /* ---- ideal code length ---- */
@@ -505,7 +534,7 @@ int main(int argc, char **argv) {
                 int cx[NCX];
                 int fr = (int)floorf((pc - r + 0.5f) * 3.999f);
                 int cfl = (opt_c && oi > 0) ? (CE >= 3 ? 2 : CE >= 1 ? 1 : 0) : 0;
-                cx[0] = (A * NEN + EN) * NCE + CE;
+                cx[0] = ((pass * NA + A) * NEN + EN) * NCE + CE;
                 cx[1] = (int)((path[nlv - 1] - lv[lvidx[nlv - 1]]) % (NA * NTH * NL));
                 cx[2] = (((CL2(Wv - r) * 5 + CL2(Nv - r)) * 5 + CL2(NWv - r)) * 5 + CL2(NEv - r)) * 3 + cfl;
                 cx[3] = ((fr * NEN + EN) * NL + L) * 3 + cfl;
@@ -516,21 +545,23 @@ int main(int argc, char **argv) {
                 cx[5] = ((SQ * NEN + EN) * 3 + cfl) * 3 + (TH == 8 ? 0 : (TH & 1) + 1);
                 int ci = 6;
                 if (BOUNCE) {                                                     /* where did the neighbours' balls land? */
-                    unsigned fw = x > 0 ? fid[idx - 1] : 0, fn = y > 0 ? fid[idx - W] : 0, fc = fid[idx];
+                    unsigned fw = x > 0 ? fid[idx - 1] : 0, fn = y >= RS ? fid[idx - (size_t)RS * W] : 0, fc = fid[idx];
                     cx[ci++] = (int)((((fw * 1031u + fn) * 1031u + fc) * 2654435761u) >> 18);
                 }
                 if (HIPPO) cx[ci++] = ((CL2((int)lrintf(sp[NSUB] - pc)) + (hhit ? 5 : 0)) % 9 * 3 + (hhit ? (hcnt[hkey] > 3 ? 2 : 1) : 0)) * NEN + EN;
                 if (MS) cx[ci++] = (AW * NA + A) * NEN + EN;
                 if (MCTX && hasmat) cx[ci++] = mland * NEN + EN;
                 g_sel2 = EN * 3 + cfl; g_actx = EN * 3 + (SQ < 2 ? 0 : SQ < 4 ? 1 : 2);
+                double b0_ = cm.bits;
                 cm_residual(&cm, cx, A, e, r, (double)(pc - r), (double)sb);
+                if (pixcost) pixcost[(size_t)c * N + idx] = (float)(cm.bits - b0_);
             }
 
             /* ---- prediction error: everything adapts ---- */
             float ef = fabsf(xv - pc); efin[idx] = ef;
-            for (int k = 0; k < nsubp; k++) esub[k][idx] = fabsf(xv - sp[k]);
+            for (int k = 0; k < nsubq; k++) esub[k][idx] = fabsf(xv - sp[k]);
             { float a = 1.f / (mo->n + 1.5f); if (a < 1.f / 96) a = 1.f / 96; float eu = SALALL > 0.f ? fminf(ef, SALALL * (mo->scale + 0.3f)) : ef; mo->scale += a * (eu - mo->scale); mo->n++; }
-            for (int j = 0; j < nlearn; j++) funnel_learn(path[j], u, nact, xv - pj[j], un2, j >= nlv ? 1 : (RLMASK >> (nlv - 1 - j)) & 1);
+            for (int j = 0; j < nlearn; j++) funnel_learn(path[j], u, nactp, xv - pj[j], un2, j >= nlv ? 1 : (RLMASK >> (nlv - 1 - j)) & 1);
             if (FIELD && land >= 0) {                                             /* landing funnel drifts toward the ball, mouth follows its spread */
                 Funnel *f = &fld[land]; float a = 1.f / (f->n + 1.f); if (a < 1.f / 256) a = 1.f / 256;
                 float d = sqrtf(dist2(D, f->c));
@@ -538,6 +569,7 @@ int main(int argc, char **argv) {
                 f->nsl++;
                 float tgt = fmaxf(MERGE * 0.5f, 1.5f * d); f->mouth += (tgt - f->mouth) * 0.01f; f->mouth = clampf(f->mouth, MERGE * 0.5f, MERGE * 2.f);
             }
+            if (GMASS) { float *M = gmt + gkey * 256; M[xv] += 1.f; if ((gtot[gkey] += 1.f) > GLIM) { for (int v = 0; v < 256; v++) M[v] *= 0.5f; gtot[gkey] *= 0.5f; } }
             if (hasmat) {                                                         /* the landing material learns this pixel; centre drifts toward it */
                 Mat *mm = &mats[mland]; int kk = oi == 1 ? 2 : 3; double z[3] = {1.0, (double)pl[1][idx], (double)pl[0][idx]};
                 for (int i = 0; i < 9; i++) mm->S[i] *= MDEC; for (int i = 0; i < 3; i++) mm->St[i] *= MDEC;
@@ -552,7 +584,7 @@ int main(int argc, char **argv) {
               for (int k = 0; k < nact; k++) { d += f->w[k] * uu[k]; n2 += uu[k] * uu[k]; }
               funnel_learn(f, uu, nact, rp_t[x] - d - f->bias, n2, 1); f->n--; st_replay++;
           }
-          if (FIELD && SLEEP > 0 && (y + 1) % SLEEP == 0) field_sleep(fld, &nfld);
+          if (FIELD && SLEEP > 0 && (yi + 1) % SLEEP == 0) field_sleep(fld, &nfld);
         }
         if (getenv("FFIC_DUMP") && oi == 0 && fld) {                           /* explainer data: learned field + landing map of the first plane */
             char pth[512]; snprintf(pth, sizeof pth, "%s.fid", getenv("FFIC_DUMP")); FILE *fo = fopen(pth, "wb"); fwrite(fid, sizeof(short), N, fo); fclose(fo);
@@ -564,9 +596,10 @@ int main(int argc, char **argv) {
         if (opt_b) bits[c] = cm.bits;
         cm_free(&cm);
         for (int k = 0; k < NSUBX; k++) free(esub[k]);
-        free(mats); free(efin); free(actm); free(fid); free(hmem); free(hcnt); free(rp_f); free(rp_u); free(rp_t); free(fld);
+        free(mats); free(gmt); free(gtot); free(efin); free(actm); free(fid); free(hmem); free(hcnt); free(rp_f); free(rp_u); free(rp_t); free(fld);
         for (int j = 0; j < MAXLV; j++) { if (REGISTER && oi == 0) gl[j] = lv[j]; else if (!(REGISTER && gl[j] == lv[j])) free(lv[j]); } free(mouth);
     }
+    if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
     printf("bytes=%.0f bpp=%.4f ms=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld\n",
            tot / 8, tot / N, ms, born, bits[0] / 8, bits[1] / 8, bits[2] / 8, st_field_born, field_max, st_fission, st_prune,
