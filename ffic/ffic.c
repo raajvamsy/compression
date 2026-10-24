@@ -31,6 +31,10 @@
  *   mline=1|2         COLOUR PHYSICS, material lines: under one material and light, shading moves a pixel along a line in
  *                     colour space (dichromatic model + camera offset): R ~ a*G + b. The line is fitted on the mwin decoded
  *                     neighbours (ridge mlam toward slope 1) and gives an extra ball + tap for R and B; 2 = B also from R
+ *   matf=1            MATERIAL FUNNELS: R and B pixels land in funnels in colour space (neighbourhood chromaticity, and for B the
+ *                     pixel's own R:G balance); each funnel learns its material line over the whole image (R ~ a*G + b,
+ *                     B ~ a*G + c*R + b, decayed by mdec, ridge matlam toward the difference model), giving a ball + tap.
+ *                     mrad = mouth, mmax = cap, mbw = weight of brightness in the landing, mctx=1 = material id as coder context
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
  *
  * usage: ffic file.rgb W H [flags] [key=value...]   letters: l learn t spin v level p nesting c cross e energy w blend r RLS b CM f future
@@ -42,11 +46,11 @@
 #include <time.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
-#define NSUBX (NSUB + 4)
+#define NSUBX (NSUB + 5)
 #define NNB 12                    /* neighbour taps (causal window) */
 #define CK 4                      /* neighbours used for cross-plane taps (W N NW NE) */
 #define NF 4                      /* non-causal neighbours of an already-decoded plane: E S SE SW */
-#define NX 3                      /* extra feature taps (hippocampal recall, material lines) */
+#define NX 4                      /* extra feature taps (hippocampal recall, material lines, material funnel) */
 #define NT (NNB + 2 * (CK + 1 + NF) + NX)
 #define NA 8                      /* activity levels */
 #define NTH 9                     /* spin states: 8 orientations + flat */
@@ -70,6 +74,23 @@ static int opt_l = 1, opt_t = 1, opt_v = 1, opt_p = 1, opt_c = 1, opt_e = 1, opt
 static float MU = 0.01f, LAM = 0.998f, P0 = 50.f, GATE = 0.f; static int RLMASK = 15;
 static int FIELD = 0, SLEEP = 0, BOUNCE = 0, HIPPO = 0, LAMPE = 0, REPLAY = 0, MS = 0, KRES = 3, FMAX = 192;
 static int MLINE = 0, MWIN = 6; static float MLAM = 20.f;
+/* material funnels: points in colour space (brightness ignored), each remembering its own material line over the whole image */
+#define MMAXC 256
+typedef struct { float c[3]; int n; double S[9], St[3]; } Mat;
+static int MATF = 0, MMAX = 64, MCTX = 0; static float MRAD = 0.02f, MDEC = 0.999f, MATLAM = 30.f, MBW = 0.f;
+static long long st_mat_born;
+/* solve (S + ridge) w = St + ridge*w0 for k regressors (+ intercept), k <= 3 */
+static void mat_solve(const Mat *m, int k, const double *w0, double *w) {
+    double A[3][4];
+    for (int i = 0; i < k; i++) { for (int j = 0; j < k; j++) A[i][j] = m->S[i * 3 + j]; A[i][k] = m->St[i]; }
+    for (int i = 0; i < k; i++) { double l = i == 0 ? 1e-3 : MATLAM; A[i][i] += l; A[i][k] += l * w0[i]; }
+    for (int i = 0; i < k; i++) {                                              /* Gaussian elimination with partial pivoting */
+        int p = i; for (int r = i + 1; r < k; r++) if (fabs(A[r][i]) > fabs(A[p][i])) p = r;
+        if (p != i) for (int c = 0; c <= k; c++) { double t = A[i][c]; A[i][c] = A[p][c]; A[p][c] = t; }
+        for (int r = 0; r < k; r++) if (r != i) { double f = A[r][i] / A[i][i]; for (int c = i; c <= k; c++) A[r][c] -= f * A[i][c]; }
+    }
+    for (int i = 0; i < k; i++) w[i] = A[i][k] / A[i][i];
+}
 static float SAL = 0.f, WST = 2.f, MERGE = 0.12f, GRAV = 0.f, SALP = 1.f, SALMAX = 4.f, SALBIAS = 0.f, SALALL = 0.f; static int REGISTER = 0, CURVE = 0;
 static const int ATH[NA - 1] = {3, 6, 12, 24, 48, 96, 192};
 static const int TAPX[NNB] = {-1, 0, -1, 1, -2, 0, 1, -1, -2, 2, -3, 2};
@@ -87,7 +108,7 @@ static inline float emap(const float *m, int x, int y) { return (x < 0 || x >= W
 #define NA_SEL 8
 
 /* ---- residual coder: adaptive binary decisions, each predicted by mixing counters from several funnel contexts ---- */
-#define NCX 9                     /* max contexts: 6 core + bounce + hippo + multi-scale */
+#define NCX 10                    /* max contexts: 6 core + bounce + hippo + multi-scale + material */
 #define NIN (NCX + 2)             /* mixer inputs: counters + parametric prior + bias */
 #define SLOTS 19                  /* 0 zero?  1 sign  2..9 unary bucket  10..17 first mantissa bit per bucket  18 other mantissa bits */
 typedef struct { float p; unsigned short n; } Ctr;
@@ -249,7 +270,7 @@ int main(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 1; }
             continue;
@@ -273,8 +294,10 @@ int main(int argc, char **argv) {
     for (int oi = 0; oi < 3; oi++) {
         int c = order[oi]; int *P = pl[c];
         const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
-        const int nsubp = nsub + nml;
-        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml;
+        const int hasmat = MATF && oi >= 1, imat = iml + nml;
+        const int nsubp = nsub + nml + hasmat;
+        Mat *mats = hasmat ? calloc(MMAXC, sizeof(Mat)) : NULL; int nmat = 0;
+        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat;
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
         Mouth *mouth = malloc(NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
@@ -290,6 +313,7 @@ int main(int argc, char **argv) {
           if (BOUNCE) sizes[ncx++] = 1 << 14;
           if (HIPPO) sizes[ncx++] = 9 * 3 * NEN;
           if (MS) sizes[ncx++] = 8 * NA * NEN;
+          if (MCTX && MATF && oi >= 1) sizes[ncx++] = MMAXC * NEN;
           cm_init(&cm, sizes, ncx, NA_SEL); }
         for (int y = 0; y < H; y++) {
           for (int x = 0; x < W; x++) {
@@ -334,6 +358,23 @@ int main(int argc, char **argv) {
                 for (int k = 0; k < MWIN; k++) { float dg = Q[nbi[k]] - gm; gv += dg * dg; cv_ += dg * (nbv[k] - rm); }
                 float slope = (cv_ + MLAM) / (gv + MLAM);
                 sp[iml + q] = clampf(rm + slope * (Q[idx] - gm), 0, 255);
+            }
+            int mland = -1; float md[3] = {0, 0, 0};
+            if (hasmat) {                                                         /* land in a material funnel (colour space) */
+                int *Gp = pl[1], *Rp = pl[0]; float rs = 0, gs = 0, bs = 0;
+                for (int k = 0; k < CK; k++) { rs += oi == 1 ? nbv[k] : Rp[nbi[k]]; gs += Gp[nbi[k]]; if (oi == 2) bs += nbv[k]; }
+                if (oi == 1) md[0] = (rs + 4.f) / (rs + gs + 8.f);
+                else { md[0] = (bs + 4.f) / (bs + rs + gs + 12.f); md[1] = (Rp[idx] + 2.f) / (Rp[idx] + Gp[idx] + 4.f); }
+                md[2] = MBW * gs / (4.f * 255.f);
+                float bd = 1e30f; for (int i = 0; i < nmat; i++) { float d = 0; for (int k = 0; k < 3; k++) { float t = md[k] - mats[i].c[k]; d += t * t; } if (d < bd) { bd = d; mland = i; } }
+                if ((mland < 0 || sqrtf(bd) > MRAD) && nmat < MMAX) {            /* a new material: born as a copy of the nearest */
+                    int ni = nmat++; if (mland >= 0) mats[ni] = mats[mland]; else memset(&mats[ni], 0, sizeof(Mat));
+                    memcpy(mats[ni].c, md, sizeof md); mats[ni].n = 0; mland = ni; st_mat_born++;
+                }
+                int kk = oi == 1 ? 2 : 3; double z[3] = {1.0, (double)Gp[idx], (double)Rp[idx]}, w0[3] = {0.0, 1.0, 0.0}, w[3];
+                mat_solve(&mats[mland], kk, w0, w);
+                double pr = 0; for (int k = 0; k < kk; k++) pr += w[k] * z[k];
+                sp[imat] = clampf((float)pr, 0, 255);
             }
             float base;
             if (opt_w) {
@@ -433,6 +474,7 @@ int main(int argc, char **argv) {
             }
             if (HIPPO) u[nu++] = sp[NSUB] - base;
             for (int q = 0; q < nml; q++) u[nu++] = sp[iml + q] - base;
+            if (hasmat) u[nu++] = sp[imat] - base;
             float un2 = 1.f; for (int k = 0; k < nact; k++) un2 += u[k] * u[k];
             float pj[MAXLV + KMAX], sw2 = 0.f, sv2 = 0.f;
             for (int j = 0; j < nset; j++) {                                      /* global workspace */
@@ -479,6 +521,7 @@ int main(int argc, char **argv) {
                 }
                 if (HIPPO) cx[ci++] = ((CL2((int)lrintf(sp[NSUB] - pc)) + (hhit ? 5 : 0)) % 9 * 3 + (hhit ? (hcnt[hkey] > 3 ? 2 : 1) : 0)) * NEN + EN;
                 if (MS) cx[ci++] = (AW * NA + A) * NEN + EN;
+                if (MCTX && hasmat) cx[ci++] = mland * NEN + EN;
                 g_sel2 = EN * 3 + cfl; g_actx = EN * 3 + (SQ < 2 ? 0 : SQ < 4 ? 1 : 2);
                 cm_residual(&cm, cx, A, e, r, (double)(pc - r), (double)sb);
             }
@@ -494,6 +537,12 @@ int main(int argc, char **argv) {
                 for (int k = 0; k < DIM; k++) { f->c[k] += (D[k] - f->c[k]) * a; f->s1[k] += D[k]; f->s2[k] += D[k] * D[k]; }
                 f->nsl++;
                 float tgt = fmaxf(MERGE * 0.5f, 1.5f * d); f->mouth += (tgt - f->mouth) * 0.01f; f->mouth = clampf(f->mouth, MERGE * 0.5f, MERGE * 2.f);
+            }
+            if (hasmat) {                                                         /* the landing material learns this pixel; centre drifts toward it */
+                Mat *mm = &mats[mland]; int kk = oi == 1 ? 2 : 3; double z[3] = {1.0, (double)pl[1][idx], (double)pl[0][idx]};
+                for (int i = 0; i < 9; i++) mm->S[i] *= MDEC; for (int i = 0; i < 3; i++) mm->St[i] *= MDEC;
+                for (int i = 0; i < kk; i++) { for (int j = 0; j < kk; j++) mm->S[i * 3 + j] += z[i] * z[j]; mm->St[i] += z[i] * xv; }
+                mm->n++; float a = 1.f / (mm->n < 256 ? mm->n : 256); for (int k = 0; k < 3; k++) mm->c[k] += (md[k] - mm->c[k]) * a;
             }
             if (HIPPO) { float tr = (float)xv - (Wv + Nv) * 0.5f; if (!hcnt[hkey]) hmem[hkey] = tr; else hmem[hkey] += (tr - hmem[hkey]) * 0.35f; if (hcnt[hkey] < 255) hcnt[hkey]++; }
             if (REPLAY) { Funnel *f = path[nlearn - 1]; rp_f[x] = f; memcpy(rp_u + (size_t)x * NT, u, sizeof(float) * nact); rp_t[x] = (float)xv - base; }
@@ -515,12 +564,12 @@ int main(int argc, char **argv) {
         if (opt_b) bits[c] = cm.bits;
         cm_free(&cm);
         for (int k = 0; k < NSUBX; k++) free(esub[k]);
-        free(efin); free(actm); free(fid); free(hmem); free(hcnt); free(rp_f); free(rp_u); free(rp_t); free(fld);
+        free(mats); free(efin); free(actm); free(fid); free(hmem); free(hcnt); free(rp_f); free(rp_u); free(rp_t); free(fld);
         for (int j = 0; j < MAXLV; j++) { if (REGISTER && oi == 0) gl[j] = lv[j]; else if (!(REGISTER && gl[j] == lv[j])) free(lv[j]); } free(mouth);
     }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
-    printf("bytes=%.0f bpp=%.4f ms=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld\n",
+    printf("bytes=%.0f bpp=%.4f ms=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld\n",
            tot / 8, tot / N, ms, born, bits[0] / 8, bits[1] / 8, bits[2] / 8, st_field_born, field_max, st_fission, st_prune,
-           st_hippo_q ? (double)st_hippo_hit / st_hippo_q : 0.0, st_replay);
+           st_hippo_q ? (double)st_hippo_hit / st_hippo_q : 0.0, st_replay, st_mat_born);
     return 0;
 }

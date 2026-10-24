@@ -110,6 +110,18 @@ Pexels images (310 kB vs 318 kB, 158 kB vs 160 kB).
 * **Hurts:** winner-take-all workspace (+0.6%), softer workspace (+0.6%), wide field mouths (+0.3%), curvature ball (+0.05%).
 * **PFC (encoder picks the best mechanism set per image):** -0.01% beyond `stack5`, not worth the encode time.
 
+## 5c. Colour physics: material lines and material funnels
+
+* Pure colour-ratio constancy (R/G fixed per material) is **worse** than plain differences on both sets, even in linear light.
+  The dichromatic model (body colour + light-coloured shine + camera offset) makes each material a *line* in colour space,
+  R ~ a*G + b; fitted on 6 decoded neighbours it cut raw R error 12% on Kodak. In the coder (`mline=2`): -0.08% overall,
+  -0.31% on Kodak, neutral on Pexels; the funnels' RLS colour taps had already learned most of it.
+* **Material funnels** (`matf=1`): funnels in colour space (neighbourhood chromaticity; for B also the pixel's own R:G),
+  each learning its material line across the whole image. As a ball: -0.07%. **The material's identity as a coder
+  context (`mctx=1`): -0.19% more, on both sets, 18 of 20 images, B plane -0.52%.** Best so far: `matf_ctx`, -1.47% vs
+  JXL e9 (Kodak +1.23%, Pexels -2.81%). Adding brightness to the landing removed most of the gain: materials are grouped
+  by colour, not by how lit they are, as the physics says. Mouth size, memory length, cap and ridge barely matter.
+
 ## 6. Next steps, ranked by expected value
 
 1. **Real coder + decoder + round-trip test** (must precede any claim). Small, and it fixes the numbers.

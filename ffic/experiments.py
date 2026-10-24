@@ -152,3 +152,18 @@ EXPERIMENTS += [
     dict(id="mline_l80", group="colour physics", cfg=S5 + " mline=1 mlam=80", mechanism="Material lines, strong ridge (slope near 1 unless the evidence is strong).", funnelbrain="Colour formation.",
          hypothesis="Closer to the difference model; tells whether the slope matters."),
 ]
+
+M2 = S5 + " mline=2"   # current best (stack5 + material lines)
+_mf = dict(group="material funnels", funnelbrain="Funnel field in colour space: a material is an attractor; shading (brightness) is the ball's energy, not its position. Colour formation: pixel = light x material x shading.")
+EXPERIMENTS += [
+    dict(id="matf", cfg=M2 + " matf=1", mechanism="Material funnels (mouth 0.02, cap 64, memory ~1000 px, ridge 30) as an extra ball + tap for R and B.",
+         hypothesis="Remembering each material's line across the whole image beats refitting it from 6 neighbours; expect a Kodak gain beyond mline.", **_mf),
+    dict(id="matf_r01", cfg=M2 + " matf=1 mrad=0.01", mechanism="Material funnels with narrower mouths (more materials).", hypothesis="Finer materials separate similar colours.", **_mf),
+    dict(id="matf_r04", cfg=M2 + " matf=1 mrad=0.04", mechanism="Material funnels with wider mouths (fewer materials).", hypothesis="Fewer materials learn faster.", **_mf),
+    dict(id="matf_m128", cfg=M2 + " matf=1 mrad=0.01 mmax=128", mechanism="Narrow mouths and room for 128 materials.", hypothesis="The cap of 64 limits narrow mouths.", **_mf),
+    dict(id="matf_long", cfg=M2 + " matf=1 mdec=0.9999", mechanism="Material funnels with long memory (~10,000 px).", hypothesis="Materials recur across the image; longer memory helps.", **_mf),
+    dict(id="matf_short", cfg=M2 + " matf=1 mdec=0.995", mechanism="Material funnels with short memory (~200 px).", hypothesis="Light changes across the image; short memory adapts.", **_mf),
+    dict(id="matf_bright", cfg=M2 + " matf=1 mbw=0.5", mechanism="Material landing also uses brightness (weight 0.5).", hypothesis="Control: if brightness helps, the 'material ignores shading' idea is incomplete (e.g. shadows change the light).", **_mf),
+    dict(id="matf_ctx", cfg=M2 + " matf=1 mctx=1", mechanism="Material funnels + material id as a residual-coder context.", hypothesis="Different materials have different noise; the coder benefits from knowing which material.", **_mf),
+    dict(id="matf_lam5", cfg=M2 + " matf=1 matlam=5", mechanism="Material funnels with a weak ridge (slope learned freely).", hypothesis="Each material's real slope differs from 1; letting it free helps.", **_mf),
+]
