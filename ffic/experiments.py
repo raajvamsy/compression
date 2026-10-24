@@ -185,3 +185,9 @@ EXPERIMENTS += [
     dict(id="time_vflip", data="ffic_data_vflip", cfg=MB, mechanism="Arrow of time: photos upside down (scan from the bottom).", hypothesis="Light from above: scanning from below may predict shading differently.", **_t),
     dict(id="time_rot180", data="ffic_data_rot180", cfg=MB, mechanism="Arrow of time: photos rotated 180 degrees.", hypothesis="Combination of both.", **_t),
 ]
+
+EXPERIMENTS += [
+    dict(id="layers_independent", group="layers", cfg=MB.replace("ltpcrewb", "ltprewb") + " register=0",
+         mechanism="Colour layers fully independent: R, G and B planes each coded with no information from the others (no colour taps, no registers; material funnels still read G).",
+         funnelbrain="Parallel layers that never interact.", hypothesis="Much worse: the colour links were the biggest single lever (+18% -> +5% when added)."),
+]

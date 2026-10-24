@@ -42,47 +42,50 @@ Verdict compares with the reference experiment **ref_best** (current best, befor
 | 31 | `mline_w12` | colour physics | -1.24% | -2.35% | -1.10% | -2.68% | +1.65% | 126 | 1.59 | helps |
 | 32 | `stack5` | combo | -1.20% | -2.31% | -1.09% | -2.67% | +1.74% | 124 | 1.55 | helps |
 | 33 | `stack4` | combo | -1.09% | -2.21% | -0.98% | -2.56% | +1.84% | 109 | 1.37 | helps |
-| 34 | `mix2` | coder | -0.83% | -1.95% | -0.60% | -2.20% | +1.90% | 105 | 1.32 | helps |
-| 35 | `acc` | coder | -0.80% | -1.92% | -0.57% | -2.17% | +1.92% | 111 | 1.39 | helps |
-| 36 | `stack3` | combo | -0.73% | -1.85% | -0.50% | -2.09% | +1.99% | 104 | 1.30 | helps |
-| 37 | `stack2` | combo | -0.62% | -1.74% | -0.38% | -1.98% | +2.09% | 95 | 1.19 | helps |
-| 38 | `stack1` | combo | -0.51% | -1.63% | -0.26% | -1.86% | +2.18% | 78 | 0.98 | helps |
-| 39 | `salall2` | salience | -0.35% | -1.47% | -0.24% | -1.85% | +2.65% | 79 | 0.99 | helps |
-| 40 | `sal_p3` | salience | -0.34% | -1.46% | -0.26% | -1.87% | +2.72% | 79 | 0.99 | helps |
-| 41 | `sal_p2_max8` | salience | -0.24% | -1.37% | -0.04% | -1.65% | +2.58% | 77 | 0.97 | helps |
-| 42 | `salall3` | salience | -0.23% | -1.36% | -0.08% | -1.69% | +2.69% | 78 | 0.98 | helps |
-| 43 | `sal_p2_max16` | salience | -0.22% | -1.34% | -0.03% | -1.64% | +2.63% | 85 | 1.06 | helps |
-| 44 | `sal_p2` | salience | -0.21% | -1.33% | -0.02% | -1.63% | +2.64% | 81 | 1.02 | helps |
-| 45 | `r_field_m08_k1_sleep` | field | -0.08% | -1.21% | +0.29% | -1.31% | +2.39% | 99 | 1.24 | helps |
-| 46 | `r_register` | registers | +0.08% | -1.05% | +0.48% | -1.11% | +2.45% | 80 | 1.00 | helps |
-| 47 | `r_grav05` | gravity | +0.15% | -0.98% | +0.53% | -1.06% | +2.59% | 78 | 0.98 | helps |
-| 48 | `r_ms_bounce` | combo | +0.17% | -0.96% | +0.53% | -1.06% | +2.65% | 84 | 1.06 | helps |
-| 49 | `r_field_m08` | field | +0.18% | -0.95% | +0.50% | -1.13% | +2.81% | 135 | 1.69 | helps |
-| 50 | `sal_max8` | salience | +0.19% | -0.94% | +0.56% | -1.04% | +2.65% | 78 | 0.98 | helps |
-| 51 | `sal_bias` | salience | +0.21% | -0.92% | +0.59% | -1.01% | +2.64% | 79 | 0.99 | helps |
-| 52 | `sal_robust` | plasticity | +0.24% | -0.89% | +0.62% | -0.98% | +2.69% | 77 | 0.96 | helps |
-| 53 | `r_curve` | spin | +0.29% | -0.84% | +0.63% | -0.97% | +2.79% | 76 | 0.96 | helps |
-| 54 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
-| 55 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
-| 56 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
-| 57 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
-| 58 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
-| 59 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
-| 60 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
-| 61 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
-| 62 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
-| 63 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
-| 64 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
-| 65 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
-| 66 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
-| 67 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
-| 68 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
-| 69 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
-| 70 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
-| 71 | `ilace` | time | +1.68% | +0.54% | +2.27% | +0.67% | +3.70% | 145 | 1.82 | hurts |
-| 72 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
-| 73 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
-| 74 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
+| 34 | `strips2` | layers | -0.99% | -2.11% | -0.82% | -2.40% | +1.81% | 68 | 0.85 | helps |
+| 35 | `mix2` | coder | -0.83% | -1.95% | -0.60% | -2.20% | +1.90% | 105 | 1.32 | helps |
+| 36 | `acc` | coder | -0.80% | -1.92% | -0.57% | -2.17% | +1.92% | 111 | 1.39 | helps |
+| 37 | `stack3` | combo | -0.73% | -1.85% | -0.50% | -2.09% | +1.99% | 104 | 1.30 | helps |
+| 38 | `stack2` | combo | -0.62% | -1.74% | -0.38% | -1.98% | +2.09% | 95 | 1.19 | helps |
+| 39 | `stack1` | combo | -0.51% | -1.63% | -0.26% | -1.86% | +2.18% | 78 | 0.98 | helps |
+| 40 | `salall2` | salience | -0.35% | -1.47% | -0.24% | -1.85% | +2.65% | 79 | 0.99 | helps |
+| 41 | `sal_p3` | salience | -0.34% | -1.46% | -0.26% | -1.87% | +2.72% | 79 | 0.99 | helps |
+| 42 | `strips4` | layers | -0.30% | -1.43% | -0.20% | -1.78% | +2.65% | 36 | 0.45 | helps |
+| 43 | `sal_p2_max8` | salience | -0.24% | -1.37% | -0.04% | -1.65% | +2.58% | 77 | 0.97 | helps |
+| 44 | `salall3` | salience | -0.23% | -1.36% | -0.08% | -1.69% | +2.69% | 78 | 0.98 | helps |
+| 45 | `sal_p2_max16` | salience | -0.22% | -1.34% | -0.03% | -1.64% | +2.63% | 85 | 1.06 | helps |
+| 46 | `sal_p2` | salience | -0.21% | -1.33% | -0.02% | -1.63% | +2.64% | 81 | 1.02 | helps |
+| 47 | `r_field_m08_k1_sleep` | field | -0.08% | -1.21% | +0.29% | -1.31% | +2.39% | 99 | 1.24 | helps |
+| 48 | `r_register` | registers | +0.08% | -1.05% | +0.48% | -1.11% | +2.45% | 80 | 1.00 | helps |
+| 49 | `r_grav05` | gravity | +0.15% | -0.98% | +0.53% | -1.06% | +2.59% | 78 | 0.98 | helps |
+| 50 | `r_ms_bounce` | combo | +0.17% | -0.96% | +0.53% | -1.06% | +2.65% | 84 | 1.06 | helps |
+| 51 | `r_field_m08` | field | +0.18% | -0.95% | +0.50% | -1.13% | +2.81% | 135 | 1.69 | helps |
+| 52 | `sal_max8` | salience | +0.19% | -0.94% | +0.56% | -1.04% | +2.65% | 78 | 0.98 | helps |
+| 53 | `sal_bias` | salience | +0.21% | -0.92% | +0.59% | -1.01% | +2.64% | 79 | 0.99 | helps |
+| 54 | `sal_robust` | plasticity | +0.24% | -0.89% | +0.62% | -0.98% | +2.69% | 77 | 0.96 | helps |
+| 55 | `r_curve` | spin | +0.29% | -0.84% | +0.63% | -0.97% | +2.79% | 76 | 0.96 | helps |
+| 56 | `sal_max2` | salience | +0.55% | -0.58% | +1.00% | -0.60% | +2.85% | 76 | 0.95 | helps |
+| 57 | `sal_p05` | salience | +0.63% | -0.51% | +1.15% | -0.44% | +2.77% | 81 | 1.02 | helps |
+| 58 | `field_m08` | field | +0.81% | -0.32% | +1.36% | -0.27% | +2.97% | 124 | 1.56 | helps |
+| 59 | `field_f96` | field | +0.96% | -0.18% | +1.48% | -0.16% | +3.18% | 108 | 1.36 | neutral |
+| 60 | `field_k1` | field | +0.99% | -0.14% | +1.61% | -0.01% | +3.00% | 114 | 1.43 | neutral |
+| 61 | `ms` | transduction | +1.09% | -0.05% | +1.72% | +0.14% | +2.99% | 72 | 0.91 | neutral |
+| 62 | `combo_a` | combo | +1.10% | -0.04% | +1.59% | -0.06% | +3.42% | 126 | 1.59 | neutral |
+| 63 | `bounce` | association | +1.11% | -0.03% | +1.74% | +0.16% | +3.00% | 77 | 0.97 | neutral |
+| 64 | `ws4` | workspace | +1.13% | -0.01% | +1.75% | +0.18% | +3.04% | 76 | 0.95 | neutral |
+| 65 | `ref_best` | reference | +1.14% | +0.00% | +1.78% | +0.20% | +3.02% | 80 | 1.00 | reference |
+| 66 | `field_sleep` | field | +1.14% | +0.00% | +1.66% | +0.01% | +3.40% | 110 | 1.39 | neutral |
+| 67 | `hippo` | memory | +1.16% | +0.02% | +1.77% | +0.19% | +3.09% | 90 | 1.13 | neutral |
+| 68 | `replay` | sleep | +1.17% | +0.03% | +1.88% | +0.30% | +2.91% | 90 | 1.12 | neutral |
+| 69 | `lampe` | plasticity | +1.18% | +0.04% | +1.84% | +0.26% | +3.04% | 70 | 0.89 | neutral |
+| 70 | `field_bounce` | association | +1.28% | +0.14% | +1.83% | +0.17% | +3.50% | 144 | 1.82 | neutral |
+| 71 | `field` | field | +1.30% | +0.16% | +1.85% | +0.19% | +3.52% | 127 | 1.60 | neutral |
+| 72 | `field_m18` | field | +1.43% | +0.29% | +1.94% | +0.27% | +3.75% | 124 | 1.56 | hurts |
+| 73 | `ilace` | time | +1.68% | +0.54% | +2.27% | +0.67% | +3.70% | 145 | 1.82 | hurts |
+| 74 | `ws0` | workspace | +1.75% | +0.61% | +2.42% | +0.84% | +3.57% | 71 | 0.89 | hurts |
+| 75 | `ws1` | workspace | +1.79% | +0.64% | +2.30% | +0.69% | +3.97% | 73 | 0.92 | hurts |
+| 76 | `sal_amp` | plasticity | +2.59% | +1.43% | +3.53% | +1.96% | +3.84% | 70 | 0.88 | hurts |
+| 77 | `layers_independent` | layers | +11.01% | +9.76% | +14.72% | +12.97% | +7.08% | 96 | 1.21 | hurts |
 
 ## PFC goal bias: best mechanism set per image (encoder tries all, signals the choice in 1 byte)
 
@@ -2236,6 +2239,39 @@ Better than the reference on 20 of 20 images.
 
 Better than the reference on 20 of 20 images.
 
+### `layers_independent`
+
+* **Mechanism:** Colour layers fully independent: R, G and B planes each coded with no information from the others (no colour taps, no registers; material funnels still read G).
+* **FunnelBrain source:** Parallel layers that never interact.
+* **Hypothesis:** Much worse: the colour links were the biggest single lever (+18% -> +5% when added).
+* **Config:** `ltprewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 register=0`   code `807c877676` (git 853f469), run 2026-10-24 12:47:29
+* **Result:** 11,635,149 B = +11.01% vs JXL e9, +9.76% vs `ref_best`, +14.72% vs FunnelZip (Pexels). Planes R/G/B = 3,072,891 / 5,699,365 / 2,862,892. CPU 96.0 s (wall 25.7 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 349,834 | +3.14% | +12.78% | funnels=27, field_born=576, field_max=192, prune=208 |
+| pex_p1287145 | 612,298 | +18.82% | +15.48% | funnels=27, field_born=576, field_max=192, prune=183 |
+| pex_p1366919 | 707,831 | +10.38% | +10.65% | funnels=27, field_born=576, field_max=192, prune=274 |
+| pex_p1612351 | 697,035 | +17.39% | +13.71% | funnels=27, field_born=576, field_max=192, prune=374 |
+| pex_p1770809 | 1,372,706 | +6.14% | +10.00% | funnels=27, field_born=576, field_max=192, prune=394 |
+| pex_p2014422 | 193,032 | +11.01% | +22.34% | funnels=27, field_born=576, field_max=192, prune=245 |
+| pex_p2166711 | 458,733 | +18.35% | +16.44% | funnels=27, field_born=576, field_max=192, prune=222 |
+| pex_p2253275 | 549,622 | +16.66% | +10.96% | funnels=27, field_born=576, field_max=192, prune=285 |
+| pex_p3225517 | 986,291 | +15.64% | +14.55% | funnels=27, field_born=576, field_max=192, prune=410 |
+| pex_p417074 | 773,581 | +14.51% | +11.39% | funnels=27, field_born=576, field_max=192, prune=417 |
+| pex_p462162 | 883,959 | +14.32% | +12.53% | funnels=27, field_born=576, field_max=192, prune=354 |
+| pex_p933054 | 307,773 | +14.34% | +13.45% | funnels=27, field_born=576, field_max=192, prune=102 |
+| kod_kodim01 | 499,706 | +9.88% | +4.62% | funnels=27, field_born=576, field_max=192, prune=375 |
+| kod_kodim03 | 339,480 | +3.46% | -0.53% | funnels=27, field_born=576, field_max=192, prune=210 |
+| kod_kodim05 | 525,949 | +8.43% | +4.29% | funnels=27, field_born=576, field_max=192, prune=245 |
+| kod_kodim08 | 545,844 | +8.81% | +4.40% | funnels=27, field_born=576, field_max=192, prune=385 |
+| kod_kodim13 | 590,520 | +7.58% | +5.90% | funnels=27, field_born=576, field_max=192, prune=413 |
+| kod_kodim15 | 402,274 | +5.05% | +1.87% | funnels=27, field_born=576, field_max=192, prune=347 |
+| kod_kodim20 | 333,425 | +2.54% | +2.97% | funnels=27, field_born=576, field_max=192, prune=549 |
+| kod_kodim22 | 505,256 | +7.88% | +5.68% | funnels=27, field_born=576, field_max=192, prune=436 |
+
+Better than the reference on 1 of 20 images.
+
 ### `worlds2_bayes`
 
 * **Mechanism:** Parallel worlds: 2 complete coders (best, old) run side by side; each pixel is coded with their weighted mixture (bayes: weights = cumulative evidence).
@@ -2533,6 +2569,72 @@ Better than the reference on 20 of 20 images.
 
 Better than the reference on 20 of 20 images.
 
+### `strips2`
+
+* **Mechanism:** Spatial layers in parallel: each photo cut into 2 horizontal strips, each coded independently with the best single coder on its own core.
+* **FunnelBrain source:** Parallel worlds read as parallel layers: independent regions processed at once, combined afterwards.
+* **Hypothesis:** About 2x less wall time; size grows because each strip relearns from zero.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1   strips=2`   code `807c877676` (git 853f469), run 2026-10-24 12:48:04
+* **Result:** 10,377,104 B = -0.99% vs JXL e9, -2.11% vs `ref_best`, -0.82% vs FunnelZip (Pexels). Planes R/G/B = 2,448,477 / 5,714,348 / 2,214,113. CPU 68.0 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 302,999 | -10.66% | -2.32% | cpu_ms_all_strips=7467 |
+| pex_p1287145 | 515,890 | +0.11% | -2.70% | cpu_ms_all_strips=8308 |
+| pex_p1366919 | 622,816 | -2.88% | -2.64% | cpu_ms_all_strips=7982 |
+| pex_p1612351 | 588,625 | -0.87% | -3.98% | cpu_ms_all_strips=8076 |
+| pex_p1770809 | 1,231,437 | -4.79% | -1.32% | cpu_ms_all_strips=9692 |
+| pex_p2014422 | 153,210 | -11.89% | -2.90% | cpu_ms_all_strips=7153 |
+| pex_p2166711 | 379,697 | -2.04% | -3.62% | cpu_ms_all_strips=8699 |
+| pex_p2253275 | 472,870 | +0.37% | -4.53% | cpu_ms_all_strips=8785 |
+| pex_p3225517 | 851,241 | -0.20% | -1.14% | cpu_ms_all_strips=8516 |
+| pex_p417074 | 672,879 | -0.40% | -3.11% | cpu_ms_all_strips=8143 |
+| pex_p462162 | 765,733 | -0.97% | -2.52% | cpu_ms_all_strips=7792 |
+| pex_p933054 | 261,592 | -2.82% | -3.57% | cpu_ms_all_strips=7092 |
+| kod_kodim01 | 473,039 | +4.02% | -0.96% | cpu_ms_all_strips=4101 |
+| kod_kodim03 | 330,354 | +0.68% | -3.20% | cpu_ms_all_strips=4061 |
+| kod_kodim05 | 498,777 | +2.83% | -1.10% | cpu_ms_all_strips=4178 |
+| kod_kodim08 | 517,151 | +3.09% | -1.09% | cpu_ms_all_strips=4044 |
+| kod_kodim13 | 555,623 | +1.22% | -0.36% | cpu_ms_all_strips=4608 |
+| kod_kodim15 | 386,240 | +0.87% | -2.19% | cpu_ms_all_strips=4208 |
+| kod_kodim20 | 321,562 | -1.11% | -0.69% | cpu_ms_all_strips=3795 |
+| kod_kodim22 | 475,369 | +1.50% | -0.57% | cpu_ms_all_strips=4233 |
+
+Better than the reference on 20 of 20 images.
+
+### `strips4`
+
+* **Mechanism:** Spatial layers in parallel: each photo cut into 4 horizontal strips, each coded independently with the best single coder on its own core.
+* **FunnelBrain source:** Parallel worlds read as parallel layers: independent regions processed at once, combined afterwards.
+* **Hypothesis:** About 4x less wall time; size grows because each strip relearns from zero.
+* **Config:** `ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1   strips=4`   code `807c877676` (git 853f469), run 2026-10-24 12:48:39
+* **Result:** 10,449,328 B = -0.30% vs JXL e9, -1.43% vs `ref_best`, -0.20% vs FunnelZip (Pexels). Planes R/G/B = 2,472,664 / 5,736,007 / 2,240,335. CPU 36.2 s (wall 0 s).
+
+| image | bytes | vs JXL | vs ref | stats |
+|---|---|---|---|---|
+| pex_p1054218 | 305,195 | -10.02% | -1.61% | cpu_ms_all_strips=8080 |
+| pex_p1287145 | 518,840 | +0.68% | -2.15% | cpu_ms_all_strips=7718 |
+| pex_p1366919 | 627,130 | -2.20% | -1.96% | cpu_ms_all_strips=8321 |
+| pex_p1612351 | 591,653 | -0.36% | -3.48% | cpu_ms_all_strips=9156 |
+| pex_p1770809 | 1,237,114 | -4.35% | -0.86% | cpu_ms_all_strips=8957 |
+| pex_p2014422 | 154,727 | -11.02% | -1.94% | cpu_ms_all_strips=7037 |
+| pex_p2166711 | 383,030 | -1.18% | -2.77% | cpu_ms_all_strips=7435 |
+| pex_p2253275 | 476,272 | +1.09% | -3.85% | cpu_ms_all_strips=7722 |
+| pex_p3225517 | 856,066 | +0.37% | -0.58% | cpu_ms_all_strips=8495 |
+| pex_p417074 | 676,643 | +0.16% | -2.57% | cpu_ms_all_strips=8037 |
+| pex_p462162 | 771,688 | -0.20% | -1.76% | cpu_ms_all_strips=7548 |
+| pex_p933054 | 263,535 | -2.10% | -2.86% | cpu_ms_all_strips=7011 |
+| kod_kodim01 | 476,658 | +4.82% | -0.21% | cpu_ms_all_strips=4152 |
+| kod_kodim03 | 334,140 | +1.84% | -2.10% | cpu_ms_all_strips=4720 |
+| kod_kodim05 | 502,586 | +3.61% | -0.34% | cpu_ms_all_strips=5176 |
+| kod_kodim08 | 521,829 | +4.02% | -0.19% | cpu_ms_all_strips=4283 |
+| kod_kodim13 | 557,998 | +1.66% | +0.07% | cpu_ms_all_strips=4601 |
+| kod_kodim15 | 391,740 | +2.30% | -0.79% | cpu_ms_all_strips=4512 |
+| kod_kodim20 | 324,399 | -0.23% | +0.19% | cpu_ms_all_strips=4376 |
+| kod_kodim22 | 478,085 | +2.08% | +0.00% | cpu_ms_all_strips=4525 |
+
+Better than the reference on 17 of 20 images.
+
 ## All runs (chronological)
 
 | date | id | code | total bytes | vs JXL e9 | CPU s |
@@ -2619,3 +2721,6 @@ Better than the reference on 20 of 20 images.
 | 2026-10-24 12:12:12 | `time_hflip` | 807c877676 | 10,335,235 | -1.39% | 132.7 |
 | 2026-10-24 12:12:49 | `time_vflip` | 807c877676 | 10,341,754 | -1.33% | 135.7 |
 | 2026-10-24 12:13:22 | `time_rot180` | 807c877676 | 10,339,682 | -1.35% | 129.0 |
+| 2026-10-24 12:47:29 | `layers_independent` | 807c877676 | 11,635,149 | +11.01% | 96.0 |
+| 2026-10-24 12:48:04 | `strips2` | 807c877676 | 10,377,104 | -0.99% | 68.0 |
+| 2026-10-24 12:48:39 | `strips4` | 807c877676 | 10,449,328 | -0.30% | 36.2 |
