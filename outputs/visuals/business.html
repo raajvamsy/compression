@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FunnelZip Business Case</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#f6f8fa; --panel:#fff; --panel2:#eef2f6; --line:#d6dde5; --text:#1b2330; --muted:#5b6878; --accent:#0f9d8f; --accent2:#c27c0e; --good:#1a7f37; --bad:#cf222e; --ref:#9aa5b1; --mono:"JetBrains Mono",ui-monospace,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2b3442; --text:#e6edf3; --muted:#8b98a8; --accent:#3dd6c6; --accent2:#f5b74a; --good:#3fb950; --bad:#f0605d; --ref:#6b7686; } }
+:root[data-theme="dark"] { --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2b3442; --text:#e6edf3; --muted:#8b98a8; --accent:#3dd6c6; --accent2:#f5b74a; --good:#3fb950; --bad:#f0605d; --ref:#6b7686; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 Inter,system-ui,sans-serif; }
+main { max-width:1000px; margin:0 auto; padding:0 16px 100px; }
+.hero { padding:70px 0 40px; text-align:center; }
+.hero h1 { font-size:clamp(30px,6vw,52px); margin:0 0 10px; letter-spacing:-.03em; }
+.hero h1 em { font-style:normal; color:var(--accent); }
+.hero p { color:var(--muted); max-width:700px; margin:0 auto; font-size:17px; }
+section { padding:46px 0; border-top:1px solid var(--line); }
+.kicker { font:700 13px var(--mono); color:var(--accent2); letter-spacing:.08em; text-transform:uppercase; }
+h2 { font-size:clamp(22px,4vw,30px); margin:6px 0 10px; letter-spacing:-.02em; }
+.lead { color:var(--muted); max-width:760px; margin:0 0 20px; font-size:16.5px; }
+.box { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; }
+.answer { font-size:19px; line-height:1.5; border-left:4px solid var(--accent); }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; opacity:0; transform:translateY(14px); transition:opacity .5s, transform .5s; }
+.card.in { opacity:1; transform:none; }
+.card h3 { margin:0 0 4px; font-size:17px; }
+.card p { margin:6px 0 0; color:var(--muted); font-size:14.5px; }
+.badge { display:inline-block; font:700 12px var(--mono); padding:3px 9px; border-radius:999px; border:1px solid; margin-bottom:6px; }
+.go { color:var(--good); border-color:var(--good); } .maybe { color:var(--accent2); border-color:var(--accent2); } .no { color:var(--bad); border-color:var(--bad); }
+.meter { display:flex; gap:3px; margin-top:10px; }
+.meter i { flex:1; height:6px; border-radius:3px; background:var(--panel2); }
+.meter i.on { background:var(--accent); }
+.mlabel { font-size:12px; color:var(--muted); margin-top:3px; }
+.row { display:grid; grid-template-columns:200px 1fr 150px; gap:12px; align-items:center; font-size:14px; margin:8px 0; }
+.bars { display:grid; gap:3px; }
+.bars div { height:10px; border-radius:0 4px 4px 0; width:0; transition:width 1.1s cubic-bezier(.2,.8,.2,1); }
+.v { font:600 13px var(--mono); text-align:right; }
+.win { color:var(--good); } .lose { color:var(--bad); }
+.legend { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-bottom:10px; }
+.legend i { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.calc { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+.calc label { font-size:13px; color:var(--muted); display:block; }
+.calc input, .calc select { width:100%; margin-top:4px; }
+.out { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px; }
+.stat { background:var(--panel2); border-radius:12px; padding:12px 14px; }
+.stat b { display:block; font:800 22px var(--mono); color:var(--accent); }
+.stat span { font-size:13px; color:var(--muted); }
+.steps { counter-reset:s; display:grid; gap:10px; }
+.step { display:grid; grid-template-columns:44px 1fr; gap:12px; align-items:start; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.step:before { counter-increment:s; content:counter(s); font:800 20px var(--mono); color:var(--accent); }
+.step p { margin:2px 0 0; color:var(--muted); font-size:14.5px; }
+table { border-collapse:collapse; width:100%; font-size:14px; }
+td, th { padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+th { color:var(--muted); font-weight:500; font-size:12.5px; }
+.src { font-size:13px; color:var(--muted); }
+.src a { color:var(--accent); }
+@media (max-width:700px) { .row { grid-template-columns:1fr; gap:3px; } .v { text-align:left; } }
+</style>
+</head>
+<body>
+<main>
+<div class="hero">
+  <div class="kicker">FunnelZip · can it make money?</div>
+  <h1>Not as a <em>product</em>. Maybe as a <em>cost cutter</em>.</h1>
+  <p>Streaming, PaaS and consumer storage don't fit. One business does: cutting a company's cloud storage bill for data that has to stay exact (logs, sensor data, audio masters, scientific and medical images). You'd charge a share of what they save. It's a known business model, it needs proof on real customer data, and the speed has to improve first.</p>
+</div>
+
+<section>
+  <div class="kicker">The short answer</div>
+  <h2>What has been sold before, and what we have</h2>
+  <div class="box answer">Nobody has built a big business by selling compression to the public. The money has gone to companies that <b>store huge amounts of data</b>. <b>Dropbox</b> built Lepton (lossless JPEG, ~22% smaller) and saved <b>46 PiB</b> on 150 billion files. <b>Granica</b> raised <b>$45M</b> to cut AI training data in S3 by up to 80%, and charges <b>a share of the savings</b>. FunnelZip's best results are on exactly that kind of data: sensor logs −52%, server logs −30%, audio −44% vs FLAC. But it runs at about 1 MB/s, while Lepton does 5 MB/s compress and 15 MB/s decompress.</div>
+</section>
+
+<section>
+  <div class="kicker">Every idea, scored</div>
+  <h2>PaaS, SaaS, streaming, storage: which fits?</h2>
+  <p class="lead">Scored on two things: does FunnelZip's strength (smallest exact files) matter there, and does its weakness (slow, ~1 MB/s, slow decompress too) kill it there?</p>
+  <div class="grid" id="ideas"></div>
+</section>
+
+<section>
+  <div class="kicker">Reality check</div>
+  <h2>Against the free tools a buyer already has</h2>
+  <p class="lead">Measured today on this Mac. Every tool rebuilds the exact original file. JPEG XL's lossless JPEG repack is free and open, and it's the honest competitor for photos. It wins on the 4K photo, so FunnelZip only wins photos on some files.</p>
+  <div class="box">
+    <div class="legend"><span><i style="background:var(--accent)"></i>FunnelZip</span><span><i style="background:var(--ref)"></i>best free tool</span></div>
+    <div id="vs"></div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Does it pay?</div>
+  <h2>Storage saved vs compute spent</h2>
+  <p class="lead">A customer gains only if the storage saved costs more than the computer time spent compressing (once) and decompressing (on every read). Move the sliders.</p>
+  <div class="box">
+    <div class="calc">
+      <label>Storage class
+        <select id="cls">
+          <option value="23">S3 Standard (~$23 / TB / month)</option>
+          <option value="12.5">S3 Infrequent Access (~$12.5)</option>
+          <option value="4">Glacier Instant (~$4)</option>
+          <option value="1">Glacier Deep Archive (~$1)</option>
+        </select></label>
+      <label>Data stored: <b id="tbv"></b> TB<input type="range" id="tb" min="10" max="5000" step="10" value="500"></label>
+      <label>Size saved by FunnelZip: <b id="sv"></b>%<input type="range" id="sav" min="5" max="60" value="25"></label>
+      <label>Speed per core: <b id="spv"></b> MB/s<input type="range" id="sp" min="0.3" max="20" step="0.1" value="1"></label>
+      <label>Share of data read back per month: <b id="rdv"></b>%<input type="range" id="rd" min="0" max="100" value="5"></label>
+      <label>Our fee: <b id="fev"></b>% of savings<input type="range" id="fe" min="10" max="50" value="25"></label>
+    </div>
+    <div class="out" id="out"></div>
+    <p class="src" style="margin-top:12px">Assumes ~$0.04 per core-hour (cloud spot/ARM pricing, rough) and that the data stays stored for 12 months. Storage prices are approximate list prices for US East; check current AWS pricing before using these for decisions.</p>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">If you want to try</div>
+  <h2>A 30-day test before anyone spends money</h2>
+  <div class="steps">
+    <div class="step"><div><b>Pick one kind of data where we're far ahead</b><p>Logs and telemetry (−30% to −52% vs the best tool), or audio archives such as broadcast, podcast and music masters (−44% vs FLAC). Not photos: JPEG XL is free and close behind.</p></div></div>
+    <div class="step"><div><b>Benchmark against the strongest tools, not just the common ones</b><p>Logs: zstd with a trained dictionary, and xz. Audio: OptimFROG and Monkey's Audio Extra High, not only FLAC. If the lead shrinks below ~15%, stop.</p></div></div>
+    <div class="step"><div><b>Make it 5–10× faster in that one niche</b><p>Use only the lenses that matter for that data type, split big files into parts that really differ (as we did for JPEG planes), and let the decoder read any chunk on its own. Below ~5 MB/s, the compute bill eats the savings on hot data.</p></div></div>
+    <div class="step"><div><b>Package it as a drop-in S3 gateway</b><p>Compress on write, decompress on read, the same API, and the customer changes nothing. Use outcome pricing: a share of the storage bill saved, as Granica does.</p></div></div>
+    <div class="step"><div><b>Find one design partner with ≥100 TB of that data</b><p>Run it on their real data and measure the real dollars saved. That one number decides whether this is a business.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Risks, honestly</div>
+  <h2>What could stop it</h2>
+  <table>
+    <tr><th>risk</th><th>why it matters</th></tr>
+    <tr><td>Speed</td><td>~1 MB/s per core, and decompress is just as slow. Dropbox required 15 MB/s decode so users never waited. Hot data and streaming are out until this improves 10×.</td></tr>
+    <tr><td>Free competitors</td><td>JPEG XL repacks JPEGs ~20% losslessly for free, and zstd, xz and FLAC are everywhere. Our lead has to be big enough to pay for switching.</td></tr>
+    <tr><td>Cheap cold storage</td><td>Deep Archive is ~$1/TB/month. Saving 25% of $1 rarely pays for the compute. Only hot or warm storage ($4–23/TB) leaves real margin.</td></tr>
+    <tr><td>Trust</td><td>Storage buyers fear losing data more than they want savings. A new format needs a hardened decoder, fuzzing, versioning and years of zero-loss history. The lossless proof is a good start, not enough.</td></tr>
+    <tr><td>Not patentable as a whole</td><td>Context mixing is old, public prior art (PAQ, cmix, Lepton). The moat would be the product, the niche data and the customers, not the algorithm.</td></tr>
+  </table>
+</section>
+
+<section>
+  <div class="kicker">Sources</div>
+  <div class="src">
+    <a href="https://dropbox.tech/infrastructure/lepton-image-compression-saving-22-losslessly-from-images-at-15mbs">Dropbox: Lepton, 22% lossless at 15 MB/s</a> ·
+    <a href="https://blog.acolyer.org/2017/05/01/the-design-implementation-and-deployment-of-a-system-to-transparently-compress-hundreds-of-petabytes-of-image-files-for-a-file-storage-service/">Lepton deployment, hundreds of petabytes</a> ·
+    <a href="https://ar5iv.labs.arxiv.org/html/1704.06192">Lepton paper</a> ·
+    <a href="https://jpeg.org/jpegxl/">JPEG XL overview</a> ·
+    <a href="https://research.google/pubs/benchmarking-jpeg-xl-lossylossless-image-compression/">JPEG XL benchmark (22% lossless JPEG)</a> ·
+    <a href="https://www.businesswire.com/news/home/20230602005411/en/Granica-Launches-Industry-first-AI-Efficiency-Platform-to-Cut-Cloud-Data-Costs-up-to-80-and-Boost-ROI-from-AI-Initiatives">Granica launch</a> ·
+    <a href="https://pulse2.com/granica-ai-45-million-in-funding/amp/">Granica $45M</a> ·
+    <a href="https://www.cloudforecast.io/blog/amazon-s3-pricing-and-optimization-guide/">S3 pricing 2026</a> ·
+    <a href="https://www.usage.ai/blogs/aws/storage-cost/glacier-deep-archive-pricing/">Glacier Deep Archive pricing</a> ·
+    <a href="https://www.techradar.com/pro/british-startup-claims-to-have-developed-tech-that-can-deliver-65-lossless-file-compression-but-you-will-have-to-pay-for-it">CompressionX claims (unverified)</a> ·
+    <a href="https://networkcomputing.com/network-security/storwize-secures-19m">Storwize (later reported acquired by IBM)</a>
+  </div>
+</section>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => Math.round(n).toLocaleString();
+const IDEAS = [
+  ["no", "Video / audio streaming", "Streaming needs lossy codecs (H.264, AV1, AAC) and decoders running at hundreds of MB/s on phones. FunnelZip is lossless and decodes at ~1 MB/s. Wrong tool.", 1],
+  ["no", "Consumer cloud storage app", "Users won't pay for 'smaller files'. Dropbox did this internally, as a cost saving, not as a feature. Competing with Google Drive and iCloud on price is a losing game.", 1],
+  ["no", "Compression PaaS / API for developers", "Developers already have free zstd, xz and brotli built in. Paying per call for a slower compressor is a hard sell, and the data would have to leave their cloud.", 2],
+  ["maybe", "License to a storage company", "Dropbox saved 46 PiB with Lepton. Storage and backup vendors (NetApp's accelerator just picked a compression startup) buy proven tech. Needs a clear lead over free JPEG XL and zstd on their data.", 3],
+  ["go", "S3 cost cutter (SaaS, % of savings)", "Granica's model: a drop-in layer that shrinks object storage, paid from the savings. Our biggest leads are on logs, telemetry and audio, which companies keep in warm storage for years. Needs about 5 MB/s.", 4],
+  ["go", "Lossless-required archives", "Medical imaging, broadcast and music masters, scientific instruments and legal records must stay exact. Here, lossless is a legal or quality requirement, not a preference. Slow is OK when data is written once and read rarely.", 4],
+];
+$("#ideas").innerHTML = IDEAS.map(([c, t, p, s]) => `<div class="card"><span class="badge ${c}">${{go: "✓ best fit", maybe: "◐ possible", no: "✗ poor fit"}[c]}</span><h3>${t}</h3><p>${p}</p>
+  <div class="meter">${[1,2,3,4,5].map((i) => `<i class="${i <= s ? "on" : ""}"></i>`).join("")}</div><div class="mlabel">fit ${s} / 5</div></div>`).join("");
+
+const VS = [
+  ["Sensor log (CSV)", 3135, 6564, "xz -9e"],
+  ["Server log (1.7 MB)", 122610, 176472, "bzip2 -9"],
+  ["Real sounds (1 MB)", 78154, 139535, "FLAC -12"],
+  ["Stereo music (1.3 MB)", 104244, 185351, "FLAC -12"],
+  ["Python code (2 MB)", 362574, 409022, "brotli -11"],
+  ["Program binary (1.4 MB)", 484209, 486188, "xz + BCJ"],
+  ["Raw photo pixels", 94035, 119562, "WebP lossless"],
+  ["JPEG q90", 16931, 18045, "JPEG XL repack"],
+  ["JPEG (Sonoma)", 43604, 48718, "JPEG XL repack"],
+  ["JPEG (beach)", 14149, 13428, "JPEG XL repack"],
+  ["JPEG 4K (5.6 MB)", 4508904, 4425510, "JPEG XL repack"],
+  ["English text (14 KB)", 3354, 3264, "brotli -11"],
+];
+$("#vs").innerHTML = VS.map(([n, a, b, t]) => { const mx = Math.max(a, b), d = a / b - 1;
+  return `<div class="row"><span>${n}</span><div class="bars"><div style="background:var(--accent)" data-w="${100 * a / mx}"></div><div style="background:var(--ref)" data-w="${100 * b / mx}"></div></div>
+  <span class="v ${d < 0 ? "win" : "lose"}">${d < 0 ? "" : "+"}${(100 * d).toFixed(1)}%<br><small style="color:var(--muted);font-weight:500">vs ${t}</small></span></div>`; }).join("");
+
+function calc() {
+  const price = +$("#cls").value, tb = +$("#tb").value, sav = +$("#sav").value / 100, sp = +$("#sp").value, rd = +$("#rd").value / 100, fee = +$("#fe").value / 100;
+  $("#tbv").textContent = fmt(tb); $("#sv").textContent = Math.round(sav * 100); $("#spv").textContent = sp.toFixed(1); $("#rdv").textContent = Math.round(rd * 100); $("#fev").textContent = Math.round(fee * 100);
+  const coreHrsPerTB = 1e6 / sp / 3600, cost = 0.04;
+  const saved = tb * price * sav * 12;
+  const compute = tb * coreHrsPerTB * cost + tb * coreHrsPerTB * cost * rd * 12;
+  const net = saved - compute, ours = Math.max(0, net) * fee;
+  $("#out").innerHTML = [[`$${fmt(saved)}`, "storage saved per year"], [`$${fmt(compute)}`, "compute to compress + decompress"],
+    [`<span class="${net > 0 ? "win" : "lose"}">$${fmt(net)}</span>`, "customer's net gain per year"], [`$${fmt(ours)}`, "our revenue per year at this fee"]]
+    .map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+document.querySelectorAll(".calc input, .calc select").forEach((e) => e.addEventListener("input", calc));
+calc();
+
+const io = new IntersectionObserver((es) => { for (const e of es) { if (!e.isIntersecting) continue; io.unobserve(e.target);
+  e.target.classList.add("in"); e.target.querySelectorAll(".bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); } }, { threshold: 0.2 });
+document.querySelectorAll(".card, .box").forEach((c) => io.observe(c));
+</script>
+</body>
+</html>

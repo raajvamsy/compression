@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EquaFile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --line: #2b3442;
+  --text: #e6edf3; --muted: #8b98a8; --accent: #3dd6c6; --accent2: #f5b74a;
+  --good: #3fb950; --bad: #f0605d; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eef2f6; --line: #d6dde5;
+    --text: #1b2330; --muted: #5b6878; --accent: #0f9d8f; --accent2: #c27c0e;
+    --good: #1a7f37; --bad: #cf222e;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: -0.02em; }
+h1 span { color: var(--accent); }
+h2 { font-size: 22px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 22px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin: 22px 0; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+input[type=text], select { background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+  border-radius: 8px; padding: 9px 12px; font: 16px var(--mono); }
+button { background: var(--accent); color: #04201d; border: 0; border-radius: 8px; padding: 10px 16px;
+  font-weight: 600; cursor: pointer; font-size: 14px; }
+button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+button:disabled { opacity: .5; cursor: wait; }
+.machine { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: center; margin: 22px 0 8px; }
+.label { color: var(--muted); font-size: 13px; text-align: right; white-space: nowrap; }
+.bits { display: flex; gap: 4px; flex-wrap: wrap; }
+.bit { width: 30px; height: 36px; display: grid; place-items: center; border-radius: 6px; font: 600 16px var(--mono);
+  background: var(--panel2); border: 1px solid var(--line); transition: background .12s, border-color .12s; }
+.bit.t { border-color: var(--accent2); color: var(--accent2); }
+.bit.ok { background: color-mix(in srgb, var(--good) 28%, transparent); border-color: var(--good); }
+.bit.no { background: color-mix(in srgb, var(--bad) 18%, transparent); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+.loopviz { display: flex; align-items: center; gap: 14px; font: 15px var(--mono); flex-wrap: wrap; }
+.node { padding: 8px 14px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); }
+.node.f { border-color: var(--accent); color: var(--accent); }
+.counter { font: 700 28px var(--mono); color: var(--accent2); min-width: 160px; }
+.spin { display: inline-block; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+.card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; opacity: 0;
+  transform: translateY(8px); transition: opacity .4s, transform .4s; }
+.card.show { opacity: 1; transform: none; }
+.card h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
+.card .big { font: 700 20px var(--mono); }
+.card pre { white-space: pre-wrap; margin: 6px 0 0; font: 12.5px var(--mono); color: var(--text); }
+.cmp { display: grid; grid-template-columns: 70px 1fr 60px; gap: 6px; align-items: center; font-size: 12.5px; margin-top: 8px; }
+.cmp .bar { height: 12px; border-radius: 4px; background: var(--accent); transition: width .6s; }
+.cmp .bar.alt { background: var(--accent2); }
+.verdict { margin-top: 16px; padding: 12px 14px; border-left: 3px solid var(--accent2); background: var(--panel2);
+  border-radius: 0 8px 8px 0; opacity: 0; transition: opacity .5s; }
+.verdict.show { opacity: 1; }
+.drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); cursor: pointer; }
+.drop.over { border-color: var(--accent); color: var(--accent); }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+td, th { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+td.num { font-family: var(--mono); text-align: right; }
+tr.eq { cursor: pointer; }
+tr.eq:hover td { background: var(--panel2); }
+tr.best td:first-child::after { content: "  best"; color: var(--accent2); font-size: 11px; font-weight: 600; }
+.ratio { position: relative; width: 180px; height: 10px; background: var(--panel2); border-radius: 5px; overflow: hidden; }
+.ratio i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.ratio i.existing { background: var(--muted); }
+.ratio i.over { background: var(--bad); }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--panel2); color: var(--muted); }
+.badge.ok { color: var(--good); }
+.badge.bad { color: var(--bad); }
+pre.eqn { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: 12.5px var(--mono);
+  white-space: pre-wrap; max-height: 260px; overflow: auto; }
+.imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.imgs figure { margin: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.imgs img { width: 100%; display: block; image-rendering: auto; }
+.imgs figcaption { padding: 8px 10px; font-size: 12.5px; }
+.imgs figcaption b { display: block; font-size: 13.5px; }
+.muted { color: var(--muted); }
+input[type=range] { width: 220px; accent-color: var(--accent); }
+@media (max-width: 600px) {
+  h1 { font-size: 26px; }
+  .machine { grid-template-columns: 1fr; }
+  .label { text-align: left; }
+  .bit { width: 18px; height: 26px; font-size: 12px; border-radius: 4px; }
+  .ratio { width: 90px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Equa<span>File</span></h1>
+  <p class="sub">Can a file be stored as an equation? Type something, watch the loop search for it, then compare against the compressors we already use.</p>
+
+  <!-- 1. the loop -->
+  <section>
+    <h2>1 · Raaj's loop</h2>
+    <p class="muted">Start at x = 1, feed the output of f back in, again and again. Stop when the top bits of x spell your file. Store only the loop count L.</p>
+    <div class="row">
+      <input id="txt" type="text" value="hi" maxlength="2" size="4" aria-label="text (1-2 characters)">
+      <button id="go">Find its equation</button>
+      <span class="muted">1–2 characters (16 bits) so the search finishes in a second.</span>
+    </div>
+    <div class="machine">
+      <div class="label">loop</div>
+      <div class="loopviz"><span class="node">x₀ = 1</span>→<span class="node f">f(x) = splitmix64(x)</span><span class="spin" id="spin" style="visibility:hidden">↻</span><span class="counter" id="ctr">L = 0</span></div>
+      <div class="label">your file</div><div class="bits" id="tbits"></div>
+      <div class="label">top bits of x</div><div class="bits" id="xbits"></div>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <!-- 2. any file -->
+  <section>
+    <h2>2 · Any file → every equation family</h2>
+    <p class="muted">Each method encodes, decodes and checks the file bit by bit (SHA-256). Grey bars are existing compressors.</p>
+    <div class="drop" id="drop">Drop a file here, or click to choose one (≤ 512 KB)<input id="file" type="file" hidden></div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted">or try:</span>
+      <button class="ghost" data-s="sentence">a sentence</button>
+      <button class="ghost" data-s="counter">0,1,2…255 ×4</button>
+      <button class="ghost" data-s="random">2 KB random</button>
+      <button class="ghost" data-s="repeat">"ab" × 500</button>
+    </div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <pre class="eqn" id="eqn" hidden></pre>
+  </section>
+
+  <!-- 3. image -->
+  <section>
+    <h2>3 · A picture as a sum of cosine waves</h2>
+    <p class="muted">pixel(x, y) = Σ a · cos(…x…) · cos(…y…). Fewer terms → smaller file, blurrier picture. JPEG and WebP are given the same byte budget.</p>
+    <div class="row">
+      <label class="muted">terms kept <input id="step" type="range" min="0" max="8" value="4"></label>
+      <select id="tile" aria-label="equation layout">
+        <option value="16">16×16 sub-equations</option>
+        <option value="0">one global equation</option>
+      </select>
+      <button class="ghost" id="imgbtn">Use my image…</button><input id="imgfile" type="file" accept="image/*" hidden>
+      <span class="muted" id="imgstat"></span>
+    </div>
+    <div class="imgs" id="imgs"></div>
+  </section>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => n.toLocaleString();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------------------------------------------------------------- 1. loop
+function drawBits(el, bits, target) {
+  el.innerHTML = "";
+  [...bits].forEach((b, i) => {
+    const d = document.createElement("div");
+    d.className = "bit" + (target ? (b === target[i] ? " ok" : " no") : " t");
+    d.textContent = b;
+    el.appendChild(d);
+  });
+}
+function card(title, big, body, extra = "") {
+  const c = document.createElement("div");
+  c.className = "card";
+  c.innerHTML = `<h3>${title}</h3><div class="big">${big}</div>${body ? `<pre>${body}</pre>` : ""}${extra}`;
+  $("#cards").appendChild(c);
+  requestAnimationFrame(() => requestAnimationFrame(() => c.classList.add("show")));
+}
+function cmp(fileBits, storedBits, label) {
+  const m = Math.max(fileBits, storedBits);
+  return `<div class="cmp"><span>file</span><div class="bar alt" style="width:${100 * fileBits / m}%"></div><span>${fileBits} bits</span>
+          <span>${label}</span><div class="bar" style="width:${100 * storedBits / m}%"></div><span>${storedBits} bits</span></div>`;
+}
+async function runLoop() {
+  const btn = $("#go");
+  btn.disabled = true;
+  $("#cards").innerHTML = "";
+  $("#verdict").classList.remove("show");
+  const r = await fetch("/api/loop?text=" + encodeURIComponent($("#txt").value || "hi")).then((x) => x.json());
+  drawBits($("#tbits"), r.target);
+  $("#spin").style.visibility = "visible";
+  for (const [step, bits] of r.trace) {           // the first real steps, slowly
+    $("#ctr").textContent = "L = " + fmt(step);
+    drawBits($("#xbits"), bits, r.target);
+    await sleep(step < 8 ? 260 : 70);
+  }
+  const t0 = performance.now(), from = r.trace.length, dur = 1600;   // fast-forward
+  while (performance.now() - t0 < dur) {
+    const k = (performance.now() - t0) / dur;
+    $("#ctr").textContent = "L = " + fmt(Math.round(from + (r.L - from) * k * k));
+    drawBits($("#xbits"), [...r.target].map(() => (Math.random() < 0.5 ? "0" : "1")).join(""), r.target);
+    await sleep(40);
+  }
+  $("#ctr").textContent = "L = " + fmt(r.L);
+  drawBits($("#xbits"), r.target, r.target);
+  $("#spin").style.visibility = "hidden";
+  await sleep(400);
+  card("V2 · the loop", `L = ${fmt(r.L)}`, `x ← f(x), ${fmt(r.L)} times`, cmp(r.bits, r.L_bits, "store L"));
+  await sleep(250);
+  card("V3 · seed + loop", `s = ${fmt(r.seed)}`, `y = f⁴(s)`, cmp(r.bits, r.seed_bits, "store s"));
+  await sleep(250);
+  card("V1 · one polynomial", "f(x) = …", r.poly);
+  await sleep(250);
+  const tb = r.tree_bits;
+  card("V4 · FunnelBrain tree", `${tb[0]} → ${tb[tb.length - 1]} bits`, r.tree.split("\n").slice(0, 2).join("\n"), cmp(tb[0], tb[tb.length - 1], "level 1"));
+  await sleep(300);
+  $("#verdict").innerHTML = `<b>It works</b> — the loop really prints “${r.text}”. <b>But it does not shrink:</b> L took ${r.L_bits} bits to store a ${r.bits}-bit file.
+    Each extra bit of file doubles the expected loop count, so a 1 KB file would need about 2<sup>8192</sup> steps and a loop count just as long as the file.`;
+  $("#verdict").classList.add("show");
+  btn.disabled = false;
+}
+$("#go").onclick = runLoop;
+$("#txt").addEventListener("keydown", (e) => e.key === "Enter" && runLoop());
+drawBits($("#tbits"), "0110100001101001");
+drawBits($("#xbits"), "????????????????".replace(/\?/g, "0"), "0110100001101001");
+
+// ---------------------------------------------------------------- 2. any file
+async function encodeBytes(bytes, label) {
+  $("#tbl").innerHTML = `<tr><td class="muted">encoding ${label} (${fmt(bytes.length)} bytes)…</td></tr>`;
+  $("#eqn").hidden = true;
+  const r = await fetch("/api/encode", { method: "POST", body: bytes }).then((x) => x.json());
+  if (r.error) { $("#tbl").innerHTML = `<tr><td>${r.error}</td></tr>`; return; }
+  const all = [
+    ...r.variants.filter((v) => v.status === "ok").map((v) => ({ ...v, kind: "eq" })),
+    ...Object.entries(r.baselines).map(([k, n]) => ({ name: k, stored: n, kind: "existing" })),
+  ];
+  const best = Math.min(...all.map((x) => x.stored));
+  const maxR = Math.max(1.3, ...all.map((x) => x.stored / r.size));
+  let html = `<tr><th>method</th><th>stored bytes</th><th>vs original (${fmt(r.size)} B)</th><th>round trip</th></tr>`;
+  for (const v of r.variants) {
+    if (v.status !== "ok" && v.status !== "MISMATCH") {
+      html += `<tr><td>${v.name}</td><td class="num">–</td><td class="muted" colspan="2">${v.status}: ${v.reason}</td></tr>`;
+      continue;
+    }
+    const ratio = v.stored / r.size;
+    html += `<tr class="eq${v.stored === best ? " best" : ""}" data-eq="${encodeURIComponent(v.equation)}" data-name="${v.name}">
+      <td>${v.name}</td><td class="num">${fmt(v.stored)}</td>
+      <td><div class="row" style="gap:8px"><div class="ratio"><i class="${ratio > 1 ? "over" : ""}" style="width:${100 * ratio / maxR}%"></i></div><span class="muted">${ratio.toFixed(3)}×</span></div></td>
+      <td><span class="badge ${v.status === "ok" ? "ok" : "bad"}">${v.status === "ok" ? "✓ bit-exact" : "✗ mismatch"}</span></td></tr>`;
+  }
+  for (const [k, n] of Object.entries(r.baselines)) {
+    const ratio = n / r.size;
+    html += `<tr class="${n === best ? "best" : ""}"><td class="muted">[existing] ${k}</td><td class="num">${fmt(n)}</td>
+      <td><div class="row" style="gap:8px"><div class="ratio"><i class="existing" style="width:${100 * ratio / maxR}%"></i></div><span class="muted">${ratio.toFixed(3)}×</span></div></td><td></td></tr>`;
+  }
+  $("#tbl").innerHTML = html;
+  document.querySelectorAll("tr.eq").forEach((tr) => (tr.onclick = () => {
+    $("#eqn").hidden = false;
+    $("#eqn").textContent = tr.dataset.name + "\n\n" + decodeURIComponent(tr.dataset.eq);
+  }));
+  const first = document.querySelector("tr.eq.best") || document.querySelector("tr.eq");
+  first && first.click();
+}
+const samples = {
+  sentence: () => new TextEncoder().encode("The quick brown fox jumps over the lazy dog. The quick brown fox jumps again."),
+  counter: () => Uint8Array.from({ length: 1024 }, (_, i) => i % 256),
+  random: () => crypto.getRandomValues(new Uint8Array(2048)),
+  repeat: () => new TextEncoder().encode("ab".repeat(500)),
+};
+document.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => encodeBytes(samples[b.dataset.s](), b.textContent)));
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
+$("#file").onchange = (e) => readFile(e.target.files[0]);
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); readFile(e.dataTransfer.files[0]); };
+async function readFile(f) {
+  if (!f) return;
+  if (f.size > 512 * 1024) { $("#tbl").innerHTML = `<tr><td>${f.name} is ${fmt(f.size)} bytes; the pure-Python POC takes ≤ 512 KB here.</td></tr>`; return; }
+  encodeBytes(new Uint8Array(await f.arrayBuffer()), f.name);
+}
+
+// ---------------------------------------------------------------- 3. image
+const STEPS = [96, 64, 48, 32, 24, 16, 12, 8, 4];
+let userImg = null, busy = false, pending = false;
+async function runImage() {
+  if (busy) { pending = true; return; }
+  busy = true;
+  const step = STEPS[+$("#step").value], tile = $("#tile").value;
+  $("#imgstat").textContent = "computing…";
+  const url = `/api/image?step=${step}&tile=${tile}`;
+  const r = await (userImg ? fetch(url, { method: "POST", body: userImg }) : fetch(url)).then((x) => x.json());
+  busy = false;
+  if (r.error) { $("#imgstat").textContent = r.error; return; }
+  $("#imgstat").textContent = `${fmt(r.equation.terms)} cosine terms`;
+  const fig = (img, title, line) => `<figure><img src="${img}" alt="${title}"><figcaption><b>${title}</b>${line}</figcaption></figure>`;
+  $("#imgs").innerHTML =
+    fig(r.original, "Original", `raw ${fmt(r.raw)} B · PNG ${fmt(r.png)} B`) +
+    fig(r.equation.img, "Equation", `${fmt(r.equation.bytes)} B · PSNR ${r.equation.psnr} dB`) +
+    fig(r.jpeg.img, "JPEG, same budget", `${fmt(r.jpeg.bytes)} B · PSNR ${r.jpeg.psnr} dB · q${r.jpeg.q}`) +
+    fig(r.webp.img, "WebP, same budget", `${fmt(r.webp.bytes)} B · PSNR ${r.webp.psnr} dB · q${r.webp.q}`);
+  if (pending) { pending = false; runImage(); }
+}
+$("#step").oninput = runImage;
+$("#tile").onchange = runImage;
+$("#imgbtn").onclick = () => $("#imgfile").click();
+$("#imgfile").onchange = async (e) => { userImg = new Uint8Array(await e.target.files[0].arrayBuffer()); runImage(); };
+runImage();
+</script>
+</body>
+</html>

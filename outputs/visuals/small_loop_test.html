@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Loops Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --line: #2b3442;
+  --text: #e6edf3; --muted: #8b98a8; --accent: #3dd6c6; --accent2: #f5b74a;
+  --good: #3fb950; --bad: #f0605d; --ref: #6b7686; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eef2f6; --line: #d6dde5;
+    --text: #1b2330; --muted: #5b6878; --accent: #0f9d8f; --accent2: #c27c0e;
+    --good: #1a7f37; --bad: #cf222e; --ref: #9aa5b1;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 0 16px 120px; }
+.hero { min-height: 70vh; display: grid; place-content: center; text-align: center; gap: 14px; }
+.hero h1 { font-size: clamp(30px, 5.5vw, 52px); margin: 0; letter-spacing: -0.03em; line-height: 1.08; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 17px; }
+section { padding: 52px 0; border-top: 1px solid var(--line); }
+.kicker { font: 600 13px var(--mono); color: var(--accent2); letter-spacing: .08em; text-transform: uppercase; }
+h2 { font-size: clamp(23px, 4vw, 32px); margin: 6px 0 10px; letter-spacing: -0.02em; }
+.lead { color: var(--muted); max-width: 700px; margin: 0 0 26px; font-size: 17px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.callout { margin-top: 18px; padding: 14px 16px; border-left: 3px solid var(--accent2); background: var(--panel2); border-radius: 0 10px 10px 0; }
+.fade { opacity: 0; transform: translateY(14px); transition: opacity .7s, transform .7s; }
+.in .fade { opacity: 1; transform: none; }
+
+/* recipe */
+.recipe { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.part { flex: 1 1 150px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center;
+  opacity: 0; transform: scale(.92); transition: opacity .5s, transform .5s; }
+.in .part { opacity: 1; transform: none; }
+.part .what { font-size: 13px; color: var(--muted); }
+.part .how { font: 700 18px var(--mono); margin: 6px 0; color: var(--accent); }
+.part .bits { font: 600 13px var(--mono); color: var(--accent2); }
+.plus { align-self: center; font-size: 22px; color: var(--muted); }
+.eqmenu { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.eqmenu span { font: 12px var(--mono); padding: 2px 6px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+.total { margin-top: 16px; display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 17px; }
+.total b { font: 800 26px var(--mono); }
+
+/* reach */
+.reach { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+.bigq { text-align: center; }
+.bigq .n { font: 800 clamp(30px, 6vw, 54px) var(--mono); color: var(--bad); }
+.bigq .s { color: var(--muted); }
+.stack { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 210px 1fr; gap: 12px; align-items: center; font-size: 14px; }
+.row .track { height: 24px; background: var(--panel2); border-radius: 0 6px 6px 0; position: relative; overflow: hidden; }
+.fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 0 6px 6px 0; transition: width 1.3s cubic-bezier(.2,.8,.2,1); }
+.fill.eq { background: var(--accent); } .fill.ex { background: var(--ref); } .fill.bad { background: var(--bad); } .fill.warn { background: var(--accent2); }
+.fill span { position: absolute; left: 8px; top: 3px; font: 600 12px var(--mono); color: #04201d; white-space: nowrap; }
+
+/* coverage table */
+.cov { display: grid; gap: 8px; }
+.cov .r { display: grid; grid-template-columns: 190px 1fr 170px; gap: 12px; align-items: center; font-size: 14px; }
+.cov .bar { height: 22px; display: flex; border-radius: 0 6px 6px 0; overflow: hidden; background: var(--panel2); }
+.cov .bar i { display: block; height: 100%; width: 0; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+.cov .bar i.e { background: var(--accent); } .cov .bar i.l { background: var(--ref); }
+.cov .pct { font: 600 13px var(--mono); text-align: right; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--muted); margin: 0 0 12px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+
+/* size table */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-family: var(--mono); }
+th { color: var(--muted); font: 500 12.5px Inter; }
+th:first-child, td:first-child { text-align: left; font-family: Inter; }
+.tablewrap { overflow-x: auto; }
+
+/* levels */
+.levels { display: flex; align-items: flex-end; gap: 14px; height: 220px; padding-top: 10px; }
+.lv { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 6px; }
+.lv .col { width: 100%; max-width: 110px; background: var(--bad); border-radius: 6px 6px 0 0; height: 0; transition: height 1s cubic-bezier(.2,.8,.2,1); }
+.lv .col.file { background: var(--ref); }
+.lv b { font: 600 13px var(--mono); }
+.lv small { color: var(--muted); font-size: 12.5px; }
+
+/* counter story */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.card h3 { margin: 0 0 6px; font-size: 15px; }
+.card .n { font: 800 28px var(--mono); }
+.dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 10px; }
+.dots i { width: 6px; height: 6px; border-radius: 2px; background: var(--accent2); opacity: 0; transition: opacity .2s; }
+.dots i.on { opacity: 1; }
+.one { font: 700 20px var(--mono); color: var(--accent); margin-top: 12px; }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.v { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.v .t { font: 800 18px var(--mono); margin-bottom: 6px; }
+.v p { margin: 0; color: var(--muted); font-size: 14.5px; }
+@media (max-width: 640px) {
+  .reach, .pair { grid-template-columns: 1fr; }
+  .row, .cov .r { grid-template-columns: 1fr; gap: 4px; }
+  .cov .pct { text-align: left; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <div class="kicker">EquaFile · follow-up test</div>
+    <h1>Tiny loops, simple equations,<br><em>best one for each piece</em></h1>
+    <p>The idea: keep the loop count to a single digit, use only simple equations, and for each part of the file pick whichever works best. Built and tested on every sample.</p>
+  </div>
+
+  <section>
+    <div class="kicker">What was built (V8)</div>
+    <h2>One piece of the file = one small recipe</h2>
+    <p class="lead">For every position in the file, the encoder tries all 524,288 small recipes and keeps the one that prints the longest run of bytes. Where nothing fits, the byte is stored as is.</p>
+    <div class="box">
+      <div class="recipe">
+        <div class="part" style="transition-delay:.1s"><div class="what">pick a simple equation</div><div class="eqmenu" id="menu"></div><div class="bits">3 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.3s"><div class="what">its number a</div><div class="how">0–255</div><div class="bits">8 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.5s"><div class="what">start value x₀</div><div class="how">0–255</div><div class="bits">8 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.7s"><div class="what">loop count L</div><div class="how">2 … 9</div><div class="bits">3 bits</div></div>
+      </div>
+      <div class="total fade"><span>recipe = <b style="color:var(--accent2)">23 bits</b></span><span>→</span><span>prints up to <b style="color:var(--accent)">9 bytes = 72 bits</b></span></div>
+    </div>
+    <div class="callout fade">If every 9 bytes of a file matched a recipe, the file would shrink to a third. Everything depends on how often a recipe matches.</div>
+  </section>
+
+  <section data-anim="reach">
+    <div class="kicker">The catch</div>
+    <h2>The menu is tiny compared with what files contain</h2>
+    <p class="lead">Small loops and simple equations mean few possible recipes. Many of them even print the same thing (short cycles), so only <b id="distinct"></b> different 9-byte pieces can be printed at all.</p>
+    <div class="box reach">
+      <div class="bigq fade"><div class="s">chance that a given 9-byte piece is printable</div><div class="n">1 in <span id="odds">…</span></div><div class="s" id="odds2"></div></div>
+      <div class="stack">
+        <div class="row"><span>possible 3-byte pieces</span><div class="track"><div class="fill ex" data-w="100"><span>16.8 million</span></div></div></div>
+        <div class="row"><span>printable 3-byte pieces</span><div class="track"><div class="fill eq" data-w="2.5"></div></div></div>
+        <div class="row"><span>possible 9-byte pieces</span><div class="track"><div class="fill ex" data-w="100"><span>4.7 × 10²¹</span></div></div></div>
+        <div class="row"><span>printable 9-byte pieces</span><div class="track"><div class="fill bad" data-w="0.3"></div></div></div>
+      </div>
+    </div>
+    <p class="lead" style="font-size:14px;margin:10px 0 0">The 9-byte "printable" bar is drawn at its minimum visible width; the true share is 0.00000000000001%.</p>
+  </section>
+
+  <section data-anim="cov">
+    <div class="kicker">Measured</div>
+    <h2>How much of each file the recipes could print</h2>
+    <p class="lead">Teal = bytes printed by an equation, grey = bytes that had to be stored as they are. On ordinary files 69–86% of the matches are just 3 bytes long, coincidences that save only 4 bits each. The long ones are mostly runs of spaces.</p>
+    <div class="box">
+      <div class="legend"><span><i style="background:var(--accent)"></i>printed by a small equation</span><span><i style="background:var(--ref)"></i>stored as literal</span></div>
+      <div class="cov" id="cov"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Size</div>
+    <h2>Result: bigger than the file on most samples</h2>
+    <p class="lead">Each literal costs 9 bits (a flag plus the byte), so files the recipes can't print grow. Compare with the best of the earlier equation types and with today's best compressor.</p>
+    <div class="box tablewrap"><table id="sizes"></table></div>
+  </section>
+
+  <section data-anim="levels">
+    <div class="kicker">Sub-equations with the same loop count</div>
+    <h2>Feeding the recipes back in: every level grows</h2>
+    <p class="lead">The list of recipes for typing.py was encoded again with the same small recipes, then again. The list itself looks random, so each round adds about 11%.</p>
+    <div class="box"><div class="levels" id="levels"></div></div>
+  </section>
+
+  <section data-anim="counter">
+    <div class="kicker">Where the small loop hurts</div>
+    <h2>The one file that is a pattern got <i>worse</i></h2>
+    <p class="lead">counter.bin is 0, 1, 2 … 255 repeated 16 times. Earlier, one equation with a long run printed it all. With the loop capped at 9, it needs hundreds of recipes.</p>
+    <div class="pair">
+      <div class="card"><h3>Loop capped at 9</h3><div class="n" style="color:var(--accent2)" id="cn">… B</div><div class="dots" id="dots"></div></div>
+      <div class="card"><h3>One equation, long loop (V5b)</h3><div class="n" style="color:var(--accent)">6 B</div><div class="one">f(i) = i mod 256, i = 0 … 4095</div></div>
+    </div>
+    <div class="callout fade">A long loop is fine when the file really follows the equation; the loop count costs only a few bits. What made the first test fail was <b>searching</b> for a loop count that prints a random-looking file, not the length of the loop.</div>
+  </section>
+
+  <section>
+    <div class="kicker">So what's right and what isn't</div>
+    <h2>Takeaways</h2>
+    <div class="verdict">
+      <div class="v"><div class="t good">✓ "Best approach per piece"</div><p>This part is right, and it is where every win came from. Patterns get an equation, text gets prediction. Auto mode already picks the best method per file.</p></div>
+      <div class="v"><div class="t bad">✗ "Small loop + simple equation"</div><p>It makes the recipe cheap, but it also makes the menu tiny. Real files are almost never on the menu, so most bytes fall back to literals.</p></div>
+      <div class="v"><div class="t bad">✗ "Same trick on the sub-equations"</div><p>A list of recipes has no pattern left, so encoding it again grows it ~11% per level.</p></div>
+      <div class="v"><div class="t" style="color:var(--accent2)">→ The rule underneath</div><p>A recipe can only be shorter than what it prints if the data is one of the few things the recipes can print. Short recipes mean few recipes.</p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const D = {"reach": [{"L": 3, "distinct": 425008, "log2_possible": 24, "log2_distinct": 18.697130472044098}, {"L": 4, "distinct": 428127, "log2_possible": 32, "log2_distinct": 18.707679296978867}, {"L": 5, "distinct": 428375, "log2_possible": 40, "log2_distinct": 18.708514761181263}, {"L": 6, "distinct": 428459, "log2_possible": 48, "log2_distinct": 18.708797631337728}, {"L": 7, "distinct": 428487, "log2_possible": 56, "log2_distinct": 18.708891909066217}, {"L": 8, "distinct": 428501, "log2_possible": 64, "log2_distinct": 18.70893904562023}, {"L": 9, "distinct": 428508, "log2_possible": 72, "log2_distinct": 18.70896261331972}], "rows": [{"file": "counter.bin", "size": 4096, "v8": 1314, "coverage": 0.999755859375, "levels": [4096, 1312, 1463, 1632], "best_other_eq": [6, "v5-symbolic"], "best_existing": ["brotli -11", 217], "auto": 6, "example": "4,095 of 4,096 bytes printed by equations (100.0%), the rest stored as literals\n  @0: f(x) = x+1, x0 = 0, L = 9  -> b'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08'\n  @9: f(x) = x+1, x0 = 9, L = 9  -> b'\\t\\n\\x0b\\x0c\\r\\x0e\\x0f\\x10\\x11'\n  @18: f(x) = x+1, x0 = 18, L = 9  -> b'\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a'\n  @27: f(x) = x+1, x0 = 27, L = 9  -> b'\\x1b\\x1c\\x1d\\x1e\\x1f !\"#'\n  @36: f(x) = x+1, x0 = 36, L = 9  -> b\"$%&'()*+,\"\n  @45: f(x) = x+1, x0 = 45, L = 9  -> b'-./012345'\n  @54: f(x) = x+1, x0 = 54, L = 9  -> b'6789:;<=>'\n  @63: f(x) = x+1, x0 = 63, L = 9  -> b'?@ABCDEFG'\nequations used: x+a\u00d7455", "sec": 0.7}, {"file": "hello.txt", "size": 11, "v8": 16, "coverage": 0.0, "levels": [11, 14, 17, 21], "best_other_eq": [13, "v5-symbolic"], "best_existing": ["brotli -11", 15], "auto": 13, "example": "0 of 11 bytes printed by equations (0.0%), the rest stored as literals\nequations used: ", "sec": 0.0}, {"file": "hi.txt", "size": 2, "v8": 6, "coverage": 0.0, "levels": [2, 4, 6, 8], "best_other_eq": [4, "v5-symbolic"], "best_existing": ["brotli -11", 6], "auto": 4, "example": "0 of 2 bytes printed by equations (0.0%), the rest stored as literals\nequations used: ", "sec": 0.0}, {"file": "json_decoder.py", "size": 12872, "v8": 12082, "coverage": 0.3763983840894966, "levels": [12872, 12080, 13429, 14848], "best_other_eq": [4494, "v6-predict"], "best_existing": ["brotli -11", 3158], "auto": 4494, "example": "4,845 of 12,872 bytes printed by equations (37.6%), the rest stored as literals\n  @0: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @7: f(x) = x^8, x0 = 101, L = 3  -> b'eme'\n  @11: f(x) = x^21, x0 = 116, L = 3  -> b'tat'\n  @26: f(x) = rotl(x)^169, x0 = 101, L = 3  -> b'eco'\n  @33: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @78: f(x) = x+0, x0 = 32, L = 4  -> b'    '\n  @107: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @123: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\nequations used: x+a\u00d7529, x^a\u00d7326, a\u00b7x\u00d75, 5x+a\u00d721, x\u00b2+a\u00d727, a\u00b7x+1\u00d784, rotl(x)^a\u00d768", "sec": 1.6}, {"file": "license.txt", "size": 13809, "v8": 14585, "coverage": 0.21189079585777393, "levels": [13809, 14583, 16219, 18025], "best_other_eq": [5305, "v6-predict"], "best_existing": ["brotli -11", 3264], "auto": 5305, "example": "2,926 of 13,809 bytes printed by equations (21.2%), the rest stored as literals\n  @19: f(x) = rotl(x)^216, x0 = 79, L = 3  -> b'OFT'\n  @27: f(x) = x+0, x0 = 61, L = 9  -> b'========='\n  @36: f(x) = x+0, x0 = 61, L = 9  -> b'========='\n  @45: f(x) = x+0, x0 = 61, L = 8  -> b'========'\n  @79: f(x) = x^69, x0 = 101, L = 3  -> b'e e'\n  @111: f(x) = 59\u00b7x+1, x0 = 109, L = 3  -> b'm a'\n  @122: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @133: f(x) = 162\u00b7x+1, x0 = 116, L = 3  -> b'tis'\nequations used: x+a\u00d7178, x^a\u00d7315, a\u00b7x\u00d727, 5x+a\u00d770, x\u00b2+a\u00d730, a\u00b7x+1\u00d784, rotl(x)^a\u00d7109", "sec": 1.8}, {"file": "random.bin", "size": 4096, "v8": 4569, "coverage": 0.063720703125, "levels": [4096, 4567, 5088, 5659], "best_other_eq": [4100, "v5-symbolic"], "best_existing": ["brotli -11", 4100], "auto": 4100, "example": "261 of 4,096 bytes printed by equations (6.4%), the rest stored as literals\n  @15: f(x) = x+247, x0 = 205, L = 3  -> b'\\xcd\\xc4\\xbb'\n  @28: f(x) = rotl(x)^248, x0 = 137, L = 3  -> b'\\x89\\xeb/'\n  @69: f(x) = 5x+8, x0 = 44, L = 3  -> b',\\xe4|'\n  @160: f(x) = x+229, x0 = 185, L = 3  -> b'\\xb9\\x9e\\x83'\n  @223: f(x) = rotl(x)^39, x0 = 195, L = 3  -> b'\\xc3\\xa0f'\n  @270: f(x) = 243\u00b7x+1, x0 = 198, L = 3  -> b'\\xc6\\xf3\\xaa'\n  @366: f(x) = 5x+124, x0 = 52, L = 3  -> b'4\\x80\\xfc'\n  @376: f(x) = x+219, x0 = 89, L = 3  -> b'Y4\\x0f'\nequations used: x+a\u00d714, x^a\u00d79, a\u00b7x\u00d78, 5x+a\u00d714, x\u00b2+a\u00d711, a\u00b7x+1\u00d717, rotl(x)^a\u00d714", "sec": 0.3}, {"file": "sensor.csv", "size": 32918, "v8": 35812, "coverage": 0.220517649917978, "levels": [32918, 35810, 39950, 44448], "best_other_eq": [6374, "v6-predict"], "best_existing": ["xz -9e", 6564], "auto": 6374, "example": "7,259 of 32,918 bytes printed by equations (22.1%), the rest stored as literals\n  @1: f(x) = rotl(x)^191, x0 = 105, L = 3  -> b'ime'\n  @22: f(x) = x^13, x0 = 105, L = 3  -> b'idi'\n  @33: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @47: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @52: f(x) = x\u00b2+164, x0 = 44, L = 3  -> b',44'\n  @59: f(x) = x^30, x0 = 50, L = 3  -> b'2,2'\n  @75: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @89: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\nequations used: x+a\u00d7517, x^a\u00d71215, a\u00b7x\u00d737, 5x+a\u00d799, x\u00b2+a\u00d7240, a\u00b7x+1\u00d7175, rotl(x)^a\u00d7131", "sec": 2.2}, {"file": "sentence.txt", "size": 77, "v8": 88, "coverage": 0.19480519480519481, "levels": [77, 86, 97, 109], "best_other_eq": [57, "v5-symbolic"], "best_existing": ["brotli -11", 61], "auto": 57, "example": "15 of 77 bytes printed by equations (19.5%), the rest stored as literals\n  @16: f(x) = x+9, x0 = 102, L = 3  -> b'fox'\n  @22: f(x) = x+3, x0 = 109, L = 3  -> b'mps'\n  @61: f(x) = x+9, x0 = 102, L = 3  -> b'fox'\n  @67: f(x) = x+3, x0 = 109, L = 3  -> b'mps'\n  @71: f(x) = x^6, x0 = 97, L = 3  -> b'aga'\nequations used: x+a\u00d74, x^a\u00d71", "sec": 0.0}, {"file": "typing.py", "size": 132718, "v8": 130713, "coverage": 0.327257794722645, "levels": [132718, 130711, 144971, 160601], "best_other_eq": [36066, "v6-predict"], "best_existing": ["brotli -11", 28616], "auto": 36066, "example": "43,433 of 132,718 bytes printed by equations (32.7%), the rest stored as literals\n  @0: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @11: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @46: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @53: f(x) = x+1, x0 = 100, L = 3  -> b'def'\n  @64: f(x) = x^21, x0 = 80, L = 3  -> b'PEP'\n  @68: f(x) = x^12, x0 = 52, L = 3  -> b'484'\n  @87: f(x) = x^21, x0 = 80, L = 3  -> b'PEP'\n  @107: f(x) = 5x+97, x0 = 104, L = 3  -> b'hin'\nequations used: x+a\u00d75127, x^a\u00d73237, a\u00b7x\u00d7110, 5x+a\u00d7648, x\u00b2+a\u00d7269, a\u00b7x+1\u00d7716, rotl(x)^a\u00d7419", "sec": 10.9}, {"file": "beach photo (raw pixels)", "size": 83460, "v8": 90231, "coverage": 0.15366642703091302, "levels": [83460, 90229, 99993, 110960], "best_other_eq": [48273, "v6-predict"], "best_existing": ["xz -9e", 43624], "auto": 48273, "example": "12,825 of 83,460 bytes printed by equations (15.4%), the rest stored as literals\n  @144: f(x) = 236\u00b7x+1, x0 = 62, L = 3  -> b'>)\\xcd'\n  @451: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @460: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @466: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @473: f(x) = x^203, x0 = 183, L = 3  -> b'\\xb7|\\xb7'\n  @487: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\n  @490: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\n  @493: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\nequations used: x+a\u00d7945, x^a\u00d7767, a\u00b7x\u00d7507, 5x+a\u00d7337, x\u00b2+a\u00d7297, a\u00b7x+1\u00d7418, rotl(x)^a\u00d7472", "sec": 7.6}, {"file": "chord (raw PCM)", "size": 264600, "v8": 282803, "coverage": 0.33198790627362057, "levels": [264600, 282801, 314473, 349588], "best_other_eq": [219547, "v6-predict"], "best_existing": ["bzip2 -9", 199193], "auto": 219547, "example": "87,844 of 264,600 bytes printed by equations (33.2%), the rest stored as literals\n  @35: f(x) = x^202, x0 = 36, L = 3  -> b'$\\xee$'\n  @39: f(x) = x^13, x0 = 37, L = 3  -> b'%(%'\n  @43: f(x) = x^86, x0 = 36, L = 3  -> b'$r$'\n  @110: f(x) = x\u00b2+32, x0 = 178, L = 3  -> b'\\xb2\\xe40'\n  @115: f(x) = x^92, x0 = 227, L = 3  -> b'\\xe3\\xbf\\xe3'\n  @121: f(x) = x^157, x0 = 228, L = 3  -> b'\\xe4y\\xe4'\n  @125: f(x) = x^52, x0 = 229, L = 3  -> b'\\xe5\\xd1\\xe5'\n  @181: f(x) = x^228, x0 = 12, L = 3  -> b'\\x0c\\xe8\\x0c'\nequations used: x+a\u00d7850, x^a\u00d725513, a\u00b7x\u00d7445, 5x+a\u00d7648, x\u00b2+a\u00d7577, a\u00b7x+1\u00d7588, rotl(x)^a\u00d7578", "sec": 57.1}]};
+const $ = (s, r = document) => r.querySelector(s);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmt = (n) => Math.round(n).toLocaleString();
+const r9 = D.reach.find((r) => r.L === 9);
+$("#menu").innerHTML = ["x+a", "x^a", "a−x", "a·x", "5x+a", "x²+a", "a·x+1", "rotl(x)^a"].map((e) => `<span>${e}</span>`).join("");
+$("#distinct").textContent = fmt(r9.distinct);
+const odds = Math.pow(2, r9.log2_possible) / r9.distinct;
+$("#odds").textContent = (odds / 1e15).toFixed(0) + " quadrillion";
+$("#odds2").textContent = `${fmt(r9.distinct)} printable out of 2^72 possible`;
+
+// coverage rows + size table
+const rows = D.rows;
+$("#cov").innerHTML = rows.map((r) => `<div class="r"><span>${r.file}</span><div class="bar"><i class="e" data-w="${(100 * r.coverage).toFixed(1)}"></i><i class="l" data-w="${(100 - 100 * r.coverage).toFixed(1)}"></i></div><span class="pct">${(100 * r.coverage).toFixed(1)}% by equation</span></div>`).join("");
+const N = { "v5-symbolic": "V5b segments", "v6-predict": "V6 predictive", "v5-grammar": "V5a rules", "v1-poly": "V1 poly", "v4-tree": "V4 tree" };
+let t = `<tr><th>file</th><th>size</th><th>V8 small loops</th><th>vs file</th><th>best earlier equation</th><th>best existing</th></tr>`;
+for (const r of rows) {
+  const ratio = r.v8 / r.size;
+  t += `<tr><td>${r.file}</td><td>${fmt(r.size)}</td><td>${fmt(r.v8)}</td><td class="${ratio < 1 ? "good" : "bad"}">${ratio < 1 ? "−" : "+"}${Math.abs(100 * (ratio - 1)).toFixed(0)}%</td>
+    <td>${fmt(r.best_other_eq[0])} <span style="color:var(--muted)">${N[r.best_other_eq[1]] || r.best_other_eq[1]}</span></td><td>${fmt(r.best_existing[1])} <span style="color:var(--muted)">${r.best_existing[0]}</span></td></tr>`;
+}
+$("#sizes").innerHTML = t;
+const ty = rows.find((r) => r.file === "typing.py").levels, mx = Math.max(...ty);
+$("#levels").innerHTML = ty.map((s, i) => `<div class="lv"><b>${(s / 1024).toFixed(0)} KB</b><div class="col ${i ? "" : "file"}" data-h="${(100 * s / mx).toFixed(1)}"></div><small>${i ? "level " + i : "file"}</small></div>`).join("");
+const counter = rows.find((r) => r.file === "counter.bin");
+$("#cn").textContent = fmt(counter.v8) + " B";
+const recipes = Math.ceil(counter.size / 9);
+$("#dots").innerHTML = Array(recipes).fill("<i></i>").join("") ;
+$("#dots").insertAdjacentHTML("afterend", `<div style="color:var(--muted);font-size:13px;margin-top:8px">${recipes} recipes of 9 bytes each</div>`);
+
+const anims = {
+  async reach(s) { for (const f of s.querySelectorAll(".fill")) { f.style.width = f.dataset.w + "%"; await sleep(300); } },
+  async cov(s) { for (const r of s.querySelectorAll(".r")) { r.querySelectorAll("i").forEach((i) => (i.style.width = i.dataset.w + "%")); await sleep(120); } },
+  async levels(s) { for (const c of s.querySelectorAll(".col")) { c.style.height = c.dataset.h + "%"; await sleep(350); } },
+  async counter(s) { const ds = s.querySelectorAll(".dots i"); for (let i = 0; i < ds.length; i++) { ds[i].classList.add("on"); if (i % 6 === 0) await sleep(8); } },
+};
+const io = new IntersectionObserver((es) => {
+  for (const e of es) {
+    if (!e.isIntersecting) continue;
+    io.unobserve(e.target);
+    e.target.classList.add("in");
+    const a = e.target.dataset.anim;
+    a && anims[a](e.target);
+  }
+}, { threshold: 0.25 });
+document.querySelectorAll("section").forEach((s) => io.observe(s));
+</script>
+</body>
+</html>

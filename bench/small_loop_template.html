@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Loops Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --line: #2b3442;
+  --text: #e6edf3; --muted: #8b98a8; --accent: #3dd6c6; --accent2: #f5b74a;
+  --good: #3fb950; --bad: #f0605d; --ref: #6b7686; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eef2f6; --line: #d6dde5;
+    --text: #1b2330; --muted: #5b6878; --accent: #0f9d8f; --accent2: #c27c0e;
+    --good: #1a7f37; --bad: #cf222e; --ref: #9aa5b1;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 0 16px 120px; }
+.hero { min-height: 70vh; display: grid; place-content: center; text-align: center; gap: 14px; }
+.hero h1 { font-size: clamp(30px, 5.5vw, 52px); margin: 0; letter-spacing: -0.03em; line-height: 1.08; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 17px; }
+section { padding: 52px 0; border-top: 1px solid var(--line); }
+.kicker { font: 600 13px var(--mono); color: var(--accent2); letter-spacing: .08em; text-transform: uppercase; }
+h2 { font-size: clamp(23px, 4vw, 32px); margin: 6px 0 10px; letter-spacing: -0.02em; }
+.lead { color: var(--muted); max-width: 700px; margin: 0 0 26px; font-size: 17px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.callout { margin-top: 18px; padding: 14px 16px; border-left: 3px solid var(--accent2); background: var(--panel2); border-radius: 0 10px 10px 0; }
+.fade { opacity: 0; transform: translateY(14px); transition: opacity .7s, transform .7s; }
+.in .fade { opacity: 1; transform: none; }
+
+/* recipe */
+.recipe { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.part { flex: 1 1 150px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center;
+  opacity: 0; transform: scale(.92); transition: opacity .5s, transform .5s; }
+.in .part { opacity: 1; transform: none; }
+.part .what { font-size: 13px; color: var(--muted); }
+.part .how { font: 700 18px var(--mono); margin: 6px 0; color: var(--accent); }
+.part .bits { font: 600 13px var(--mono); color: var(--accent2); }
+.plus { align-self: center; font-size: 22px; color: var(--muted); }
+.eqmenu { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.eqmenu span { font: 12px var(--mono); padding: 2px 6px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+.total { margin-top: 16px; display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 17px; }
+.total b { font: 800 26px var(--mono); }
+
+/* reach */
+.reach { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+.bigq { text-align: center; }
+.bigq .n { font: 800 clamp(30px, 6vw, 54px) var(--mono); color: var(--bad); }
+.bigq .s { color: var(--muted); }
+.stack { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 210px 1fr; gap: 12px; align-items: center; font-size: 14px; }
+.row .track { height: 24px; background: var(--panel2); border-radius: 0 6px 6px 0; position: relative; overflow: hidden; }
+.fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 0 6px 6px 0; transition: width 1.3s cubic-bezier(.2,.8,.2,1); }
+.fill.eq { background: var(--accent); } .fill.ex { background: var(--ref); } .fill.bad { background: var(--bad); } .fill.warn { background: var(--accent2); }
+.fill span { position: absolute; left: 8px; top: 3px; font: 600 12px var(--mono); color: #04201d; white-space: nowrap; }
+
+/* coverage table */
+.cov { display: grid; gap: 8px; }
+.cov .r { display: grid; grid-template-columns: 190px 1fr 170px; gap: 12px; align-items: center; font-size: 14px; }
+.cov .bar { height: 22px; display: flex; border-radius: 0 6px 6px 0; overflow: hidden; background: var(--panel2); }
+.cov .bar i { display: block; height: 100%; width: 0; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+.cov .bar i.e { background: var(--accent); } .cov .bar i.l { background: var(--ref); }
+.cov .pct { font: 600 13px var(--mono); text-align: right; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--muted); margin: 0 0 12px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+
+/* size table */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-family: var(--mono); }
+th { color: var(--muted); font: 500 12.5px Inter; }
+th:first-child, td:first-child { text-align: left; font-family: Inter; }
+.tablewrap { overflow-x: auto; }
+
+/* levels */
+.levels { display: flex; align-items: flex-end; gap: 14px; height: 220px; padding-top: 10px; }
+.lv { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 6px; }
+.lv .col { width: 100%; max-width: 110px; background: var(--bad); border-radius: 6px 6px 0 0; height: 0; transition: height 1s cubic-bezier(.2,.8,.2,1); }
+.lv .col.file { background: var(--ref); }
+.lv b { font: 600 13px var(--mono); }
+.lv small { color: var(--muted); font-size: 12.5px; }
+
+/* counter story */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.card h3 { margin: 0 0 6px; font-size: 15px; }
+.card .n { font: 800 28px var(--mono); }
+.dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 10px; }
+.dots i { width: 6px; height: 6px; border-radius: 2px; background: var(--accent2); opacity: 0; transition: opacity .2s; }
+.dots i.on { opacity: 1; }
+.one { font: 700 20px var(--mono); color: var(--accent); margin-top: 12px; }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.v { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.v .t { font: 800 18px var(--mono); margin-bottom: 6px; }
+.v p { margin: 0; color: var(--muted); font-size: 14.5px; }
+@media (max-width: 640px) {
+  .reach, .pair { grid-template-columns: 1fr; }
+  .row, .cov .r { grid-template-columns: 1fr; gap: 4px; }
+  .cov .pct { text-align: left; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <div class="kicker">EquaFile · follow-up test</div>
+    <h1>Tiny loops, simple equations,<br><em>best one for each piece</em></h1>
+    <p>The idea: keep the loop count to a single digit, use only simple equations, and for each part of the file pick whichever works best. Built and tested on every sample.</p>
+  </div>
+
+  <section>
+    <div class="kicker">What was built (V8)</div>
+    <h2>One piece of the file = one small recipe</h2>
+    <p class="lead">For every position in the file, the encoder tries all 524,288 small recipes and keeps the one that prints the longest run of bytes. Where nothing fits, the byte is stored as is.</p>
+    <div class="box">
+      <div class="recipe">
+        <div class="part" style="transition-delay:.1s"><div class="what">pick a simple equation</div><div class="eqmenu" id="menu"></div><div class="bits">3 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.3s"><div class="what">its number a</div><div class="how">0–255</div><div class="bits">8 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.5s"><div class="what">start value x₀</div><div class="how">0–255</div><div class="bits">8 bits</div></div>
+        <div class="plus">+</div>
+        <div class="part" style="transition-delay:.7s"><div class="what">loop count L</div><div class="how">2 … 9</div><div class="bits">3 bits</div></div>
+      </div>
+      <div class="total fade"><span>recipe = <b style="color:var(--accent2)">23 bits</b></span><span>→</span><span>prints up to <b style="color:var(--accent)">9 bytes = 72 bits</b></span></div>
+    </div>
+    <div class="callout fade">If every 9 bytes of a file matched a recipe, the file would shrink to a third. Everything depends on how often a recipe matches.</div>
+  </section>
+
+  <section data-anim="reach">
+    <div class="kicker">The catch</div>
+    <h2>The menu is tiny compared with what files contain</h2>
+    <p class="lead">Small loops and simple equations mean few possible recipes. Many of them even print the same thing (short cycles), so only <b id="distinct"></b> different 9-byte pieces can be printed at all.</p>
+    <div class="box reach">
+      <div class="bigq fade"><div class="s">chance that a given 9-byte piece is printable</div><div class="n">1 in <span id="odds">…</span></div><div class="s" id="odds2"></div></div>
+      <div class="stack">
+        <div class="row"><span>possible 3-byte pieces</span><div class="track"><div class="fill ex" data-w="100"><span>16.8 million</span></div></div></div>
+        <div class="row"><span>printable 3-byte pieces</span><div class="track"><div class="fill eq" data-w="2.5"></div></div></div>
+        <div class="row"><span>possible 9-byte pieces</span><div class="track"><div class="fill ex" data-w="100"><span>4.7 × 10²¹</span></div></div></div>
+        <div class="row"><span>printable 9-byte pieces</span><div class="track"><div class="fill bad" data-w="0.3"></div></div></div>
+      </div>
+    </div>
+    <p class="lead" style="font-size:14px;margin:10px 0 0">The 9-byte "printable" bar is drawn at its minimum visible width; the true share is 0.00000000000001%.</p>
+  </section>
+
+  <section data-anim="cov">
+    <div class="kicker">Measured</div>
+    <h2>How much of each file the recipes could print</h2>
+    <p class="lead">Teal = bytes printed by an equation, grey = bytes that had to be stored as they are. On ordinary files 69–86% of the matches are just 3 bytes long, coincidences that save only 4 bits each. The long ones are mostly runs of spaces.</p>
+    <div class="box">
+      <div class="legend"><span><i style="background:var(--accent)"></i>printed by a small equation</span><span><i style="background:var(--ref)"></i>stored as literal</span></div>
+      <div class="cov" id="cov"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Size</div>
+    <h2>Result: bigger than the file on most samples</h2>
+    <p class="lead">Each literal costs 9 bits (a flag plus the byte), so files the recipes can't print grow. Compare with the best of the earlier equation types and with today's best compressor.</p>
+    <div class="box tablewrap"><table id="sizes"></table></div>
+  </section>
+
+  <section data-anim="levels">
+    <div class="kicker">Sub-equations with the same loop count</div>
+    <h2>Feeding the recipes back in: every level grows</h2>
+    <p class="lead">The list of recipes for typing.py was encoded again with the same small recipes, then again. The list itself looks random, so each round adds about 11%.</p>
+    <div class="box"><div class="levels" id="levels"></div></div>
+  </section>
+
+  <section data-anim="counter">
+    <div class="kicker">Where the small loop hurts</div>
+    <h2>The one file that is a pattern got <i>worse</i></h2>
+    <p class="lead">counter.bin is 0, 1, 2 … 255 repeated 16 times. Earlier, one equation with a long run printed it all. With the loop capped at 9, it needs hundreds of recipes.</p>
+    <div class="pair">
+      <div class="card"><h3>Loop capped at 9</h3><div class="n" style="color:var(--accent2)" id="cn">… B</div><div class="dots" id="dots"></div></div>
+      <div class="card"><h3>One equation, long loop (V5b)</h3><div class="n" style="color:var(--accent)">6 B</div><div class="one">f(i) = i mod 256, i = 0 … 4095</div></div>
+    </div>
+    <div class="callout fade">A long loop is fine when the file really follows the equation; the loop count costs only a few bits. What made the first test fail was <b>searching</b> for a loop count that prints a random-looking file, not the length of the loop.</div>
+  </section>
+
+  <section>
+    <div class="kicker">So what's right and what isn't</div>
+    <h2>Takeaways</h2>
+    <div class="verdict">
+      <div class="v"><div class="t good">✓ "Best approach per piece"</div><p>This part is right, and it is where every win came from. Patterns get an equation, text gets prediction. Auto mode already picks the best method per file.</p></div>
+      <div class="v"><div class="t bad">✗ "Small loop + simple equation"</div><p>It makes the recipe cheap, but it also makes the menu tiny. Real files are almost never on the menu, so most bytes fall back to literals.</p></div>
+      <div class="v"><div class="t bad">✗ "Same trick on the sub-equations"</div><p>A list of recipes has no pattern left, so encoding it again grows it ~11% per level.</p></div>
+      <div class="v"><div class="t" style="color:var(--accent2)">→ The rule underneath</div><p>A recipe can only be shorter than what it prints if the data is one of the few things the recipes can print. Short recipes mean few recipes.</p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const D = /*DATA*/null;
+const $ = (s, r = document) => r.querySelector(s);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmt = (n) => Math.round(n).toLocaleString();
+const r9 = D.reach.find((r) => r.L === 9);
+$("#menu").innerHTML = ["x+a", "x^a", "a−x", "a·x", "5x+a", "x²+a", "a·x+1", "rotl(x)^a"].map((e) => `<span>${e}</span>`).join("");
+$("#distinct").textContent = fmt(r9.distinct);
+const odds = Math.pow(2, r9.log2_possible) / r9.distinct;
+$("#odds").textContent = (odds / 1e15).toFixed(0) + " quadrillion";
+$("#odds2").textContent = `${fmt(r9.distinct)} printable out of 2^72 possible`;
+
+// coverage rows + size table
+const rows = D.rows;
+$("#cov").innerHTML = rows.map((r) => `<div class="r"><span>${r.file}</span><div class="bar"><i class="e" data-w="${(100 * r.coverage).toFixed(1)}"></i><i class="l" data-w="${(100 - 100 * r.coverage).toFixed(1)}"></i></div><span class="pct">${(100 * r.coverage).toFixed(1)}% by equation</span></div>`).join("");
+const N = { "v5-symbolic": "V5b segments", "v6-predict": "V6 predictive", "v5-grammar": "V5a rules", "v1-poly": "V1 poly", "v4-tree": "V4 tree" };
+let t = `<tr><th>file</th><th>size</th><th>V8 small loops</th><th>vs file</th><th>best earlier equation</th><th>best existing</th></tr>`;
+for (const r of rows) {
+  const ratio = r.v8 / r.size;
+  t += `<tr><td>${r.file}</td><td>${fmt(r.size)}</td><td>${fmt(r.v8)}</td><td class="${ratio < 1 ? "good" : "bad"}">${ratio < 1 ? "−" : "+"}${Math.abs(100 * (ratio - 1)).toFixed(0)}%</td>
+    <td>${fmt(r.best_other_eq[0])} <span style="color:var(--muted)">${N[r.best_other_eq[1]] || r.best_other_eq[1]}</span></td><td>${fmt(r.best_existing[1])} <span style="color:var(--muted)">${r.best_existing[0]}</span></td></tr>`;
+}
+$("#sizes").innerHTML = t;
+const ty = rows.find((r) => r.file === "typing.py").levels, mx = Math.max(...ty);
+$("#levels").innerHTML = ty.map((s, i) => `<div class="lv"><b>${(s / 1024).toFixed(0)} KB</b><div class="col ${i ? "" : "file"}" data-h="${(100 * s / mx).toFixed(1)}"></div><small>${i ? "level " + i : "file"}</small></div>`).join("");
+const counter = rows.find((r) => r.file === "counter.bin");
+$("#cn").textContent = fmt(counter.v8) + " B";
+const recipes = Math.ceil(counter.size / 9);
+$("#dots").innerHTML = Array(recipes).fill("<i></i>").join("") ;
+$("#dots").insertAdjacentHTML("afterend", `<div style="color:var(--muted);font-size:13px;margin-top:8px">${recipes} recipes of 9 bytes each</div>`);
+
+const anims = {
+  async reach(s) { for (const f of s.querySelectorAll(".fill")) { f.style.width = f.dataset.w + "%"; await sleep(300); } },
+  async cov(s) { for (const r of s.querySelectorAll(".r")) { r.querySelectorAll("i").forEach((i) => (i.style.width = i.dataset.w + "%")); await sleep(120); } },
+  async levels(s) { for (const c of s.querySelectorAll(".col")) { c.style.height = c.dataset.h + "%"; await sleep(350); } },
+  async counter(s) { const ds = s.querySelectorAll(".dots i"); for (let i = 0; i < ds.length; i++) { ds[i].classList.add("on"); if (i % 6 === 0) await sleep(8); } },
+};
+const io = new IntersectionObserver((es) => {
+  for (const e of es) {
+    if (!e.isIntersecting) continue;
+    io.unobserve(e.target);
+    e.target.classList.add("in");
+    const a = e.target.dataset.anim;
+    a && anims[a](e.target);
+  }
+}, { threshold: 0.25 });
+document.querySelectorAll("section").forEach((s) => io.observe(s));
+</script>
+</body>
+</html>

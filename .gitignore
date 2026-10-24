@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs (rebuilt from source)
+*.dylib
+*.so
+*.o
+bench/speed_harness
+
+# Local backups and encoder outputs
+*.bak
+*.eqf
+
+# Local tooling
+.claude/settings.local.json
+.DS_Store

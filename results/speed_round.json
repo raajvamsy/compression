@@ -1,0 +1,233 @@
+{
+ "core": [
+  {
+   "file": "1 MB text",
+   "size": 1048576,
+   "v4": {
+    "size": 180415,
+    "enc": 0.772,
+    "dec": 0.75,
+    "ok": true
+   },
+   "now": {
+    "size": 179871,
+    "enc": 1.072,
+    "dec": 1.03,
+    "ok": true
+   }
+  },
+  {
+   "file": "1 MB sounds",
+   "size": 1019922,
+   "v4": {
+    "size": 78675,
+    "enc": 0.392,
+    "dec": 0.387,
+    "ok": true
+   },
+   "now": {
+    "size": 78142,
+    "enc": 0.646,
+    "dec": 0.636,
+    "ok": true
+   }
+  },
+  {
+   "file": "photo pixels",
+   "size": 786432,
+   "v4": {
+    "size": 94233,
+    "enc": 0.348,
+    "dec": 0.344,
+    "ok": true
+   },
+   "now": {
+    "size": 94022,
+    "enc": 0.551,
+    "dec": 0.545,
+    "ok": true
+   }
+  },
+  {
+   "file": "sensor CSV",
+   "size": 32918,
+   "v4": {
+    "size": 3117,
+    "enc": 0.615,
+    "dec": 0.645,
+    "ok": true
+   },
+   "now": {
+    "size": 3129,
+    "enc": 0.749,
+    "dec": 0.808,
+    "ok": true
+   }
+  },
+  {
+   "file": "program binary",
+   "size": 1361216,
+   "v4": {
+    "size": 518408,
+    "enc": 0.465,
+    "dec": 0.459,
+    "ok": true
+   },
+   "now": {
+    "size": 516721,
+    "enc": 0.609,
+    "dec": 0.59,
+    "ok": true
+   }
+  }
+ ],
+ "steps": [
+  {
+   "key": "huffman",
+   "title": "JPEG Huffman layer in C",
+   "verdict": "worked",
+   "idea": "Undoing and redoing a JPEG's Huffman codes was pure Python, about 6 s each way on the 4K photo. Now it's C. It writes the identical scan bits, including restart markers and 0xFF byte stuffing, and was checked against the Python version on all 5 JPEGs (the 4K one has 480 restart markers).",
+   "speed": [
+    [
+     "4K photo: Huffman decode",
+     0.9366666666666666,
+     60.43010752688172
+    ],
+    [
+     "4K photo: Huffman encode",
+     0.9366666666666666,
+     41.3235294117647
+    ]
+   ]
+  },
+  {
+   "key": "engine",
+   "title": "Engine: fix what the profile shows",
+   "verdict": "worked",
+   "idea": "A fast exp() (polynomial + exponent bits), a counter learning rate from a table instead of a division, cached 'surprise' intervals, one shared input vector for a 4-lane mixer, no third mixer when no signal lens runs, and a cheaper LPC refit for pixels. The first counter table rounded small negative steps the wrong way. On JPEG planes (94% zeros) that cost +1.7%, and the JPEG test caught it. With exact rounding the planes are smaller than before.",
+   "rows": [
+    [
+     "Sonoma brightness planes: first fast counters",
+     35389,
+     35992,
+     null
+    ],
+    [
+     "\u2026 rounding fixed (v4 was 35,389)",
+     35992,
+     35357,
+     null
+    ]
+   ]
+  },
+  {
+   "key": "lenses",
+   "title": "Listen drops lenses a file can't use",
+   "verdict": "worked",
+   "idea": "Every lens costs time on every bit, even one that finds nothing (word lens on sound, code lens on prose), and its noise makes the mix slightly worse. Listen now tries a few lens sets in the same parallel batch as its rhythm trials and keeps the smallest, so the choice adds no extra wait. Files got smaller and faster.",
+   "rows": [
+    [
+     "1 MB sounds (\u2212word \u2212code \u2212motion)",
+     78681,
+     78153,
+     [
+      "FLAC -12",
+      139535
+     ]
+    ],
+    [
+     "zsh binary (\u2212word)",
+     485958,
+     484208,
+     [
+      "xz -9e + BCJ",
+      486188
+     ]
+    ],
+    [
+     "1 MB text (\u2212code)",
+     177820,
+     177171,
+     null
+    ],
+    [
+     "photo pixels (\u2212word)",
+     94270,
+     94034,
+     [
+      "WebP lossless",
+      119562
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "jpegplanes",
+   "title": "JPEG: each frequency group gets its own model, all in parallel",
+   "verdict": "worked",
+   "idea": "The 4K photo's 50 MB of coefficients ran on 3 threads. Now the DC values stay 16-bit and the AC values are stored one byte each (value + 128; only 0.08% need an escape). The 63 AC planes are split into groups of about 1 MB, each coded by its own model on its own core. Low and high frequencies behave differently, so separate models also compress better: smaller and 10\u00d7 faster.",
+   "rows": [
+    [
+     "4K photo (5.6 MB)",
+     4846803,
+     4508904,
+     [
+      "bzip2 -9",
+      5441742
+     ]
+    ],
+    [
+     "Sonoma wallpaper",
+     45820,
+     43604,
+     [
+      "xz -9e",
+      67880
+     ]
+    ],
+    [
+     "landscape q90",
+     17574,
+     16931,
+     [
+      "brotli -11",
+      23509
+     ]
+    ],
+    [
+     "landscape q75",
+     10037,
+     9559,
+     [
+      "zstd -19",
+      14133
+     ]
+    ]
+   ],
+   "speed": [
+    [
+     "4K photo: compress",
+     0.10035714285714285,
+     1.0218181818181817
+    ],
+    [
+     "4K photo: decompress",
+     0.11353535353535353,
+     1.060377358490566
+    ]
+   ]
+  },
+  {
+   "key": "dropped",
+   "title": "Tried and dropped (ratio comes first)",
+   "verdict": "didnt",
+   "idea": "Each of these was faster but cost ratio, or gave nothing:",
+   "notes": [
+    "Smaller context tables: text +1.9% at half size for ~5% speed. Kept full size for files over 16 KB",
+    "64 KB Listen trials instead of 128 KB: 16% faster overall, but zsh +3.05% and landscape +0.78% (wrong picks)",
+    "Compiler tuning (-mcpu=native, LTO): no gain",
+    "Fewer byte-history contexts for 16-bit audio: \u00b10.4% size, +3% speed"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,301 @@
+{
+ "reach": [
+  {
+   "L": 3,
+   "distinct": 425008,
+   "log2_possible": 24,
+   "log2_distinct": 18.697130472044098
+  },
+  {
+   "L": 4,
+   "distinct": 428127,
+   "log2_possible": 32,
+   "log2_distinct": 18.707679296978867
+  },
+  {
+   "L": 5,
+   "distinct": 428375,
+   "log2_possible": 40,
+   "log2_distinct": 18.708514761181263
+  },
+  {
+   "L": 6,
+   "distinct": 428459,
+   "log2_possible": 48,
+   "log2_distinct": 18.708797631337728
+  },
+  {
+   "L": 7,
+   "distinct": 428487,
+   "log2_possible": 56,
+   "log2_distinct": 18.708891909066217
+  },
+  {
+   "L": 8,
+   "distinct": 428501,
+   "log2_possible": 64,
+   "log2_distinct": 18.70893904562023
+  },
+  {
+   "L": 9,
+   "distinct": 428508,
+   "log2_possible": 72,
+   "log2_distinct": 18.70896261331972
+  }
+ ],
+ "rows": [
+  {
+   "file": "counter.bin",
+   "size": 4096,
+   "v8": 1314,
+   "coverage": 0.999755859375,
+   "levels": [
+    4096,
+    1312,
+    1463,
+    1632
+   ],
+   "best_other_eq": [
+    6,
+    "v5-symbolic"
+   ],
+   "best_existing": [
+    "brotli -11",
+    217
+   ],
+   "auto": 6,
+   "example": "4,095 of 4,096 bytes printed by equations (100.0%), the rest stored as literals\n  @0: f(x) = x+1, x0 = 0, L = 9  -> b'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08'\n  @9: f(x) = x+1, x0 = 9, L = 9  -> b'\\t\\n\\x0b\\x0c\\r\\x0e\\x0f\\x10\\x11'\n  @18: f(x) = x+1, x0 = 18, L = 9  -> b'\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a'\n  @27: f(x) = x+1, x0 = 27, L = 9  -> b'\\x1b\\x1c\\x1d\\x1e\\x1f !\"#'\n  @36: f(x) = x+1, x0 = 36, L = 9  -> b\"$%&'()*+,\"\n  @45: f(x) = x+1, x0 = 45, L = 9  -> b'-./012345'\n  @54: f(x) = x+1, x0 = 54, L = 9  -> b'6789:;<=>'\n  @63: f(x) = x+1, x0 = 63, L = 9  -> b'?@ABCDEFG'\nequations used: x+a\u00d7455",
+   "sec": 0.7
+  },
+  {
+   "file": "hello.txt",
+   "size": 11,
+   "v8": 16,
+   "coverage": 0.0,
+   "levels": [
+    11,
+    14,
+    17,
+    21
+   ],
+   "best_other_eq": [
+    13,
+    "v5-symbolic"
+   ],
+   "best_existing": [
+    "brotli -11",
+    15
+   ],
+   "auto": 13,
+   "example": "0 of 11 bytes printed by equations (0.0%), the rest stored as literals\nequations used: ",
+   "sec": 0.0
+  },
+  {
+   "file": "hi.txt",
+   "size": 2,
+   "v8": 6,
+   "coverage": 0.0,
+   "levels": [
+    2,
+    4,
+    6,
+    8
+   ],
+   "best_other_eq": [
+    4,
+    "v5-symbolic"
+   ],
+   "best_existing": [
+    "brotli -11",
+    6
+   ],
+   "auto": 4,
+   "example": "0 of 2 bytes printed by equations (0.0%), the rest stored as literals\nequations used: ",
+   "sec": 0.0
+  },
+  {
+   "file": "json_decoder.py",
+   "size": 12872,
+   "v8": 12082,
+   "coverage": 0.3763983840894966,
+   "levels": [
+    12872,
+    12080,
+    13429,
+    14848
+   ],
+   "best_other_eq": [
+    4494,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "brotli -11",
+    3158
+   ],
+   "auto": 4494,
+   "example": "4,845 of 12,872 bytes printed by equations (37.6%), the rest stored as literals\n  @0: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @7: f(x) = x^8, x0 = 101, L = 3  -> b'eme'\n  @11: f(x) = x^21, x0 = 116, L = 3  -> b'tat'\n  @26: f(x) = rotl(x)^169, x0 = 101, L = 3  -> b'eco'\n  @33: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @78: f(x) = x+0, x0 = 32, L = 4  -> b'    '\n  @107: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @123: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\nequations used: x+a\u00d7529, x^a\u00d7326, a\u00b7x\u00d75, 5x+a\u00d721, x\u00b2+a\u00d727, a\u00b7x+1\u00d784, rotl(x)^a\u00d768",
+   "sec": 1.6
+  },
+  {
+   "file": "license.txt",
+   "size": 13809,
+   "v8": 14585,
+   "coverage": 0.21189079585777393,
+   "levels": [
+    13809,
+    14583,
+    16219,
+    18025
+   ],
+   "best_other_eq": [
+    5305,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "brotli -11",
+    3264
+   ],
+   "auto": 5305,
+   "example": "2,926 of 13,809 bytes printed by equations (21.2%), the rest stored as literals\n  @19: f(x) = rotl(x)^216, x0 = 79, L = 3  -> b'OFT'\n  @27: f(x) = x+0, x0 = 61, L = 9  -> b'========='\n  @36: f(x) = x+0, x0 = 61, L = 9  -> b'========='\n  @45: f(x) = x+0, x0 = 61, L = 8  -> b'========'\n  @79: f(x) = x^69, x0 = 101, L = 3  -> b'e e'\n  @111: f(x) = 59\u00b7x+1, x0 = 109, L = 3  -> b'm a'\n  @122: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @133: f(x) = 162\u00b7x+1, x0 = 116, L = 3  -> b'tis'\nequations used: x+a\u00d7178, x^a\u00d7315, a\u00b7x\u00d727, 5x+a\u00d770, x\u00b2+a\u00d730, a\u00b7x+1\u00d784, rotl(x)^a\u00d7109",
+   "sec": 1.8
+  },
+  {
+   "file": "random.bin",
+   "size": 4096,
+   "v8": 4569,
+   "coverage": 0.063720703125,
+   "levels": [
+    4096,
+    4567,
+    5088,
+    5659
+   ],
+   "best_other_eq": [
+    4100,
+    "v5-symbolic"
+   ],
+   "best_existing": [
+    "brotli -11",
+    4100
+   ],
+   "auto": 4100,
+   "example": "261 of 4,096 bytes printed by equations (6.4%), the rest stored as literals\n  @15: f(x) = x+247, x0 = 205, L = 3  -> b'\\xcd\\xc4\\xbb'\n  @28: f(x) = rotl(x)^248, x0 = 137, L = 3  -> b'\\x89\\xeb/'\n  @69: f(x) = 5x+8, x0 = 44, L = 3  -> b',\\xe4|'\n  @160: f(x) = x+229, x0 = 185, L = 3  -> b'\\xb9\\x9e\\x83'\n  @223: f(x) = rotl(x)^39, x0 = 195, L = 3  -> b'\\xc3\\xa0f'\n  @270: f(x) = 243\u00b7x+1, x0 = 198, L = 3  -> b'\\xc6\\xf3\\xaa'\n  @366: f(x) = 5x+124, x0 = 52, L = 3  -> b'4\\x80\\xfc'\n  @376: f(x) = x+219, x0 = 89, L = 3  -> b'Y4\\x0f'\nequations used: x+a\u00d714, x^a\u00d79, a\u00b7x\u00d78, 5x+a\u00d714, x\u00b2+a\u00d711, a\u00b7x+1\u00d717, rotl(x)^a\u00d714",
+   "sec": 0.3
+  },
+  {
+   "file": "sensor.csv",
+   "size": 32918,
+   "v8": 35812,
+   "coverage": 0.220517649917978,
+   "levels": [
+    32918,
+    35810,
+    39950,
+    44448
+   ],
+   "best_other_eq": [
+    6374,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "xz -9e",
+    6564
+   ],
+   "auto": 6374,
+   "example": "7,259 of 32,918 bytes printed by equations (22.1%), the rest stored as literals\n  @1: f(x) = rotl(x)^191, x0 = 105, L = 3  -> b'ime'\n  @22: f(x) = x^13, x0 = 105, L = 3  -> b'idi'\n  @33: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @47: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @52: f(x) = x\u00b2+164, x0 = 44, L = 3  -> b',44'\n  @59: f(x) = x^30, x0 = 50, L = 3  -> b'2,2'\n  @75: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\n  @89: f(x) = x+254, x0 = 50, L = 3  -> b'20.'\nequations used: x+a\u00d7517, x^a\u00d71215, a\u00b7x\u00d737, 5x+a\u00d799, x\u00b2+a\u00d7240, a\u00b7x+1\u00d7175, rotl(x)^a\u00d7131",
+   "sec": 2.2
+  },
+  {
+   "file": "sentence.txt",
+   "size": 77,
+   "v8": 88,
+   "coverage": 0.19480519480519481,
+   "levels": [
+    77,
+    86,
+    97,
+    109
+   ],
+   "best_other_eq": [
+    57,
+    "v5-symbolic"
+   ],
+   "best_existing": [
+    "brotli -11",
+    61
+   ],
+   "auto": 57,
+   "example": "15 of 77 bytes printed by equations (19.5%), the rest stored as literals\n  @16: f(x) = x+9, x0 = 102, L = 3  -> b'fox'\n  @22: f(x) = x+3, x0 = 109, L = 3  -> b'mps'\n  @61: f(x) = x+9, x0 = 102, L = 3  -> b'fox'\n  @67: f(x) = x+3, x0 = 109, L = 3  -> b'mps'\n  @71: f(x) = x^6, x0 = 97, L = 3  -> b'aga'\nequations used: x+a\u00d74, x^a\u00d71",
+   "sec": 0.0
+  },
+  {
+   "file": "typing.py",
+   "size": 132718,
+   "v8": 130713,
+   "coverage": 0.327257794722645,
+   "levels": [
+    132718,
+    130711,
+    144971,
+    160601
+   ],
+   "best_other_eq": [
+    36066,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "brotli -11",
+    28616
+   ],
+   "auto": 36066,
+   "example": "43,433 of 132,718 bytes printed by equations (32.7%), the rest stored as literals\n  @0: f(x) = x+0, x0 = 34, L = 3  -> b'\"\"\"'\n  @11: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @46: f(x) = 101\u00b7x+1, x0 = 105, L = 3  -> b'ing'\n  @53: f(x) = x+1, x0 = 100, L = 3  -> b'def'\n  @64: f(x) = x^21, x0 = 80, L = 3  -> b'PEP'\n  @68: f(x) = x^12, x0 = 52, L = 3  -> b'484'\n  @87: f(x) = x^21, x0 = 80, L = 3  -> b'PEP'\n  @107: f(x) = 5x+97, x0 = 104, L = 3  -> b'hin'\nequations used: x+a\u00d75127, x^a\u00d73237, a\u00b7x\u00d7110, 5x+a\u00d7648, x\u00b2+a\u00d7269, a\u00b7x+1\u00d7716, rotl(x)^a\u00d7419",
+   "sec": 10.9
+  },
+  {
+   "file": "beach photo (raw pixels)",
+   "size": 83460,
+   "v8": 90231,
+   "coverage": 0.15366642703091302,
+   "levels": [
+    83460,
+    90229,
+    99993,
+    110960
+   ],
+   "best_other_eq": [
+    48273,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "xz -9e",
+    43624
+   ],
+   "auto": 48273,
+   "example": "12,825 of 83,460 bytes printed by equations (15.4%), the rest stored as literals\n  @144: f(x) = 236\u00b7x+1, x0 = 62, L = 3  -> b'>)\\xcd'\n  @451: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @460: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @466: f(x) = 45\u00b7x+1, x0 = 186, L = 3  -> b'\\xba\\xb3x'\n  @473: f(x) = x^203, x0 = 183, L = 3  -> b'\\xb7|\\xb7'\n  @487: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\n  @490: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\n  @493: f(x) = x\u00b2+152, x0 = 99, L = 3  -> b'c\\xe1Y'\nequations used: x+a\u00d7945, x^a\u00d7767, a\u00b7x\u00d7507, 5x+a\u00d7337, x\u00b2+a\u00d7297, a\u00b7x+1\u00d7418, rotl(x)^a\u00d7472",
+   "sec": 7.6
+  },
+  {
+   "file": "chord (raw PCM)",
+   "size": 264600,
+   "v8": 282803,
+   "coverage": 0.33198790627362057,
+   "levels": [
+    264600,
+    282801,
+    314473,
+    349588
+   ],
+   "best_other_eq": [
+    219547,
+    "v6-predict"
+   ],
+   "best_existing": [
+    "bzip2 -9",
+    199193
+   ],
+   "auto": 219547,
+   "example": "87,844 of 264,600 bytes printed by equations (33.2%), the rest stored as literals\n  @35: f(x) = x^202, x0 = 36, L = 3  -> b'$\\xee$'\n  @39: f(x) = x^13, x0 = 37, L = 3  -> b'%(%'\n  @43: f(x) = x^86, x0 = 36, L = 3  -> b'$r$'\n  @110: f(x) = x\u00b2+32, x0 = 178, L = 3  -> b'\\xb2\\xe40'\n  @115: f(x) = x^92, x0 = 227, L = 3  -> b'\\xe3\\xbf\\xe3'\n  @121: f(x) = x^157, x0 = 228, L = 3  -> b'\\xe4y\\xe4'\n  @125: f(x) = x^52, x0 = 229, L = 3  -> b'\\xe5\\xd1\\xe5'\n  @181: f(x) = x^228, x0 = 12, L = 3  -> b'\\x0c\\xe8\\x0c'\nequations used: x+a\u00d7850, x^a\u00d725513, a\u00b7x\u00d7445, 5x+a\u00d7648, x\u00b2+a\u00d7577, a\u00b7x+1\u00d7588, rotl(x)^a\u00d7578",
+   "sec": 57.1
+  }
+ ]
+}

@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FunnelZip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --line: #2b3442;
+  --text: #e6edf3; --muted: #8b98a8; --accent: #3dd6c6; --accent2: #f5b74a;
+  --one: #3987e5; --zero: #d95926; --good: #3fb950; --bad: #f0605d; --ref: #6b7686;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eef2f6; --line: #d6dde5;
+    --text: #1b2330; --muted: #5b6878; --accent: #0f9d8f; --accent2: #c27c0e;
+    --one: #2a78d6; --zero: #eb6834; --good: #1a7f37; --bad: #cf222e; --ref: #9aa5b1;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 1060px; margin: 0 auto; padding: 0 16px 120px; }
+.hero { min-height: 74vh; display: grid; place-content: center; text-align: center; gap: 14px; }
+.hero h1 { font-size: clamp(32px, 6vw, 58px); margin: 0; letter-spacing: -0.03em; line-height: 1.05; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); max-width: 680px; margin: 0 auto; font-size: 17px; }
+.stats { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; min-width: 170px; }
+.stat b { display: block; font: 800 26px var(--mono); color: var(--accent); }
+.stat span { font-size: 13px; color: var(--muted); }
+section { padding: 52px 0; border-top: 1px solid var(--line); }
+.kicker { font: 600 13px var(--mono); color: var(--accent2); letter-spacing: .08em; text-transform: uppercase; }
+h2 { font-size: clamp(23px, 4vw, 32px); margin: 6px 0 10px; letter-spacing: -0.02em; }
+.lead { color: var(--muted); max-width: 760px; margin: 0 0 22px; font-size: 17px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.callout { margin-top: 18px; padding: 14px 16px; border-left: 3px solid var(--accent2); background: var(--panel2); border-radius: 0 10px 10px 0; }
+
+/* architecture */
+.arch { display: grid; grid-template-columns: 150px 1fr 170px 130px; gap: 16px; align-items: center; }
+.stage { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; font-size: 13.5px; }
+.stage b { display: block; font-size: 15px; margin-bottom: 4px; }
+.lenses { display: grid; gap: 8px; }
+.lens { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 10px; font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+.lens b { font-size: 13.5px; }
+.lens small { color: var(--muted); }
+.lens.hot { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.funnel svg { width: 100%; height: auto; }
+.pbar { height: 10px; border-radius: 5px; background: var(--panel); overflow: hidden; margin-top: 6px; }
+.pbar i { display: block; height: 100%; width: 50%; background: var(--one); transition: width .15s; }
+
+/* trace */
+.trace { overflow-x: auto; }
+.trace table { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
+.trace td, .trace th { padding: 0; text-align: center; }
+.trace th { font: 500 11.5px Inter; color: var(--muted); padding-right: 8px; text-align: right; white-space: nowrap; }
+.trace td.c { width: 18px; height: 20px; border-radius: 3px; }
+.trace td.ch { font: 600 12px var(--mono); color: var(--text); padding-bottom: 2px; }
+.trace .bit { font: 700 11px var(--mono); }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+button.tab { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-weight: 600; }
+button.tab.on { background: var(--accent); color: #04201d; border-color: var(--accent); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* results */
+.res { display: grid; gap: 6px; }
+.rr { display: grid; grid-template-columns: 270px 1fr 150px; gap: 12px; align-items: center; font-size: 14px; }
+.rr .bars { display: grid; gap: 3px; }
+.rr .bars div { height: 9px; border-radius: 0 4px 4px 0; width: 0; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+.rr .rv { font: 600 13px var(--mono); text-align: right; }
+.win { color: var(--good); } .lose { color: var(--bad); }
+.heat { border-collapse: separate; border-spacing: 3px; font-size: 12.5px; width: 100%; }
+.heat th { color: var(--muted); font-weight: 500; text-align: center; padding: 4px; }
+.heat th:first-child { text-align: left; }
+.heat td { text-align: center; padding: 8px 4px; border-radius: 6px; font: 600 12px var(--mono); }
+.heat td:first-child { text-align: left; font: 500 13px Inter; background: none !important; }
+.journey { display: grid; gap: 8px; }
+.jr { display: grid; grid-template-columns: 290px 1fr 110px; gap: 12px; align-items: center; font-size: 14px; }
+.jr .track { height: 22px; background: var(--panel2); border-radius: 0 6px 6px 0; overflow: hidden; }
+.jr .track i { display: block; height: 100%; width: 0; border-radius: 0 6px 6px 0; transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.v { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.v .t { font: 800 16px var(--mono); margin-bottom: 6px; }
+.v p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.tip { position: fixed; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px;
+  font-size: 12.5px; opacity: 0; transition: opacity .1s; z-index: 5; box-shadow: 0 4px 14px rgb(0 0 0 / .2); max-width: 280px; }
+.nextgrid { display: grid; gap: 14px; }
+.ncard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.ncard .hd { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ncard h3 { margin: 0; font-size: 17px; }
+.badge { font: 700 12px var(--mono); padding: 3px 9px; border-radius: 999px; border: 1px solid; }
+.badge.worked { color: var(--good); border-color: var(--good); }
+.badge.partly { color: var(--accent2); border-color: var(--accent2); }
+.badge.didnt { color: var(--bad); border-color: var(--bad); }
+.ncard p { color: var(--muted); font-size: 14.5px; margin: 6px 0 12px; }
+.nrow { display: grid; grid-template-columns: 230px 1fr 210px; gap: 12px; align-items: center; font-size: 13.5px; margin: 6px 0; }
+.nrow .bars div { height: 8px; border-radius: 0 4px 4px 0; width: 0; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+.nrow .bars { display: grid; gap: 3px; }
+.nrow .nv { font: 600 12.5px var(--mono); text-align: right; }
+.future { color: var(--muted); font-size: 14.5px; }
+.proof { border-collapse: collapse; width: 100%; font-size: 13px; }
+.proof th, .proof td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.proof th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.proof th:first-child, .proof td:first-child { text-align: left; }
+.proof td.h { font: 500 11.5px var(--mono); color: var(--muted); }
+.spd { display: inline-block; height: 8px; border-radius: 0 4px 4px 0; vertical-align: middle; margin-right: 6px; background: var(--accent); }
+.future li { margin: 4px 0; }
+@media (max-width: 760px) {
+  .nrow { grid-template-columns: 1fr; gap: 3px; }
+  .nrow .nv { text-align: left; }
+  .arch { grid-template-columns: 1fr; }
+  .rr, .jr { grid-template-columns: 1fr; gap: 4px; }
+  .rr .rv { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div class="tip" id="tip"></div>
+<main>
+  <div class="hero">
+    <div class="kicker">EquaFile · the combined design</div>
+    <h1>Fun<em>nel</em>Zip</h1>
+    <p>Every idea we tried becomes a <b>lens</b> that guesses the next bit. A funnel of mixers learns, bit by bit, which lenses to trust. Nothing is chosen by hand, no recipes are stored, and the decoder replays the same funnel.</p>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <section data-anim="arch">
+    <div class="kicker">How it works</div>
+    <h2>Lenses on a shared field → a funnel → one coder</h2>
+    <p class="lead">Lessons from the experiments: (1) an equation should <b>predict</b>, not print exactly; a near miss still saves bits. (2) Don't pick one method; let them <b>all vote</b>, weighted by how right each one has been lately.</p>
+    <div class="box arch">
+      <div class="stage"><b>Listen</b>resonance of the file with itself finds its rhythm: sample width, channels, row length</div>
+      <div class="lenses" id="lenses"></div>
+      <div class="stage funnel"><b>Funnel</b>3 mixers, each trusting lenses by a different context, then a final mixer<svg viewBox="0 0 160 90" aria-hidden="true"><path d="M10 10 L150 10 L95 55 L95 85 L65 85 L65 55 Z" fill="none" stroke="var(--accent)" stroke-width="2"/><circle id="drip" cx="80" cy="20" r="5" fill="var(--accent2)"/></svg><div class="pbar"><i id="pfinal"></i></div><small id="ptext" style="color:var(--muted)"></small></div>
+      <div class="stage"><b>Coder</b>pays −log₂ P bits for what actually happened<div id="paid" style="font:700 18px var(--mono);margin-top:6px;color:var(--accent2)">0.00 bits</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Watch the vote (real recorded data)</div>
+    <h2>Each lens's opinion on every bit</h2>
+    <p class="lead">These are recorded from the real compressor running on the start of each file. Blue = "next bit is 1", orange = "it's 0", stronger colour = more sure. The bottom rows are the funnel's final answer, the actual bit, and what it cost.</p>
+    <div class="controls" id="tabs"></div>
+    <div class="box trace" id="trace"></div>
+    <div class="legend"><span><i style="background:var(--one)"></i>says 1</span><span><i style="background:var(--zero)"></i>says 0</span><span><i style="background:var(--panel2)"></i>no opinion</span></div>
+  </section>
+
+  <section data-anim="repeat">
+    <div class="kicker">Repeats of repeats</div>
+    <h2>A repeat gets one equation; repeated repeats get one rhythm</h2>
+    <p class="lead">Echo finds a repeat, but loses it at the first changed byte. Rhythm keeps the beat: Listen hears the period (a log line, a music bar, a video frame), and the lens reads "the same moment one period ago". For signals it also re-plays the <b>leftover</b> of the previous repeat with a learned gain, so a bar played louder or softer is still "the same equation".</p>
+    <div class="box"><div class="legend" style="margin:0 0 12px"><span><i style="background:color-mix(in srgb, var(--accent) 45%, var(--panel2))"></i>FunnelZip without rhythm</span><span><i style="background:var(--accent)"></i>with rhythm</span><span><i style="background:var(--ref)"></i>best existing</span></div><div class="res" id="rep"></div></div>
+  </section>
+
+  <section data-anim="pvf">
+    <div class="kicker">File or pixels?</div>
+    <h2>Compress where the structure lives</h2>
+    <p class="lead">An image <b>file</b> is not its pixels: PNG has already scrambled the positions with deflate, and JPEG has already turned them into cosine waves. FunnelZip on the file finds almost nothing. On the decoded <b>pixels</b> its grid and rhythm lenses see rows, columns and frames again. For JPEG, the right level is in between, its cosine coefficients (Dropbox's Lepton gets ~22% there, bit-exact).</p>
+    <div class="box"><div class="legend" style="margin:0 0 12px"><span><i style="background:var(--ref)"></i>the file as it is</span><span><i style="background:color-mix(in srgb, var(--accent) 45%, var(--panel2))"></i>FunnelZip on the file's bytes</span><span><i style="background:var(--accent)"></i>FunnelZip on the decoded pixels</span></div><div class="res" id="pvf"></div></div>
+  </section>
+
+  <section data-anim="results">
+    <div class="kicker">Measured · every file decoded back bit for bit</div>
+    <h2>FunnelZip vs the best existing tool for each file</h2>
+    <p class="lead">For each file, the smallest of gzip, bzip2, xz, zstd −19/−22, brotli −11, plus FLAC −12 for sound, PNG/WebP-lossless for pictures, FFV1/x264-lossless for video.</p>
+    <div class="box"><div class="legend" style="margin:0 0 12px"><span><i style="background:var(--accent)"></i>FunnelZip</span><span><i style="background:var(--ref)"></i>best existing</span></div><div class="res" id="res"></div></div>
+  </section>
+
+  <section>
+    <div class="kicker">Mix and match, measured</div>
+    <h2>What each lens adds: switch it off and see the file grow</h2>
+    <p class="lead">Same file, same settings, one lens removed. Number = how much bigger the result gets. Darker = that lens matters more for that kind of file.</p>
+    <div class="box" style="overflow-x:auto"><table class="heat" id="heat"></table></div>
+  </section>
+
+  <section data-anim="journey">
+    <div class="kicker">The journey on one file</div>
+    <h2>Real sounds (1 MB): from loops to FunnelZip</h2>
+    <p class="lead">Every attempt from this project on the same recording, lossless.</p>
+    <div class="box journey" id="journey"></div>
+  </section>
+
+  <section>
+    <div class="kicker">Is anything lost?</div>
+    <h2>Pure lossless: every byte comes back</h2>
+    <p class="lead">For every file: compress, decompress, then compare the SHA-256 fingerprint and every single byte with the original. Nothing is approximated anywhere in FunnelZip. (The only lossy parts of this whole project were the early "cosine wave" image/audio/video tests and the MP3/JPEG/H.264 reference codecs.)</p>
+    <div class="stats" id="proofstats" style="justify-content:flex-start;margin-bottom:14px"></div>
+    <div class="box" style="overflow-x:auto"><table class="proof" id="proof"></table></div>
+  </section>
+
+  <section data-anim="reshape">
+    <div class="kicker">Your idea: convert it first, undo it after</div>
+    <h2>Reshape the file where the lenses can see it, then reverse it exactly</h2>
+    <p class="lead">Turning a file into "pure 0s and 1s" adds nothing: FunnelZip already reads every file bit by bit. What helps is <b>reshaping</b>: putting similar things next to each other, coding the reshaped file, and undoing the reshape on decode. Listen now tries each reshape on a sample and keeps one only if it wins.</p>
+    <div class="box"><div class="legend" style="margin:0 0 12px"><span><i style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))"></i>before (no reshape)</span><span><i style="background:var(--accent)"></i>after</span><span><i style="background:var(--ref)"></i>best existing</span></div><div id="reshape"></div></div>
+    <p class="note" style="margin-top:12px;color:var(--muted);font-size:14px">Reshapes: <b>colour transform</b> (R−G, B−G, so the three colours stop repeating the same brightness); <b>planar</b> (all red, then all green, then all blue); <b>prediction residual</b> (each pixel minus its JPEG-LS guess, which turns smooth gradients into zeros); <b>caps + words</b> for text (upper case → marker + lower case, common words → 2-byte codes). For JPEG files, telling FunnelZip the coefficient layout instead of guessing is also a reshape.</p>
+  </section>
+
+  <section data-anim="speed">
+    <div class="kicker">Speed round</div>
+    <h2>Faster — and the files got smaller, not bigger</h2>
+    <p class="lead">Goal: 1+ MB/s at the same ratio. We profiled the C core and fixed what the profile showed. The JPEG Huffman layer moved to C. Then two things made files both faster <i>and</i> smaller: Listen now drops lenses a file can't use, and JPEG frequency planes get their own models running in parallel.</p>
+    <div class="stats" id="srstats" style="justify-content:flex-start;margin-bottom:18px"></div>
+    <div class="box">
+      <div class="legend" style="margin:0 0 12px"><span><i style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))"></i>v4 engine</span><span><i style="background:var(--accent)"></i>now</span><span>one core, no Listen, compress speed · size change in brackets</span></div>
+      <div id="srcore"></div>
+    </div>
+    <div id="srsteps" class="nextgrid" style="margin-top:18px"></div>
+  </section>
+
+  <section>
+    <div class="kicker">Speed</div>
+    <h2>How fast, file by file</h2>
+    <p class="lead">Measured on this Mac (one file at a time; Listen's trials and the colour planes use all cores). Compress includes Listen's trial runs. Tiny files show near 0 MB/s because a fixed setup of ~0.2–0.6 s (reading the 122 KB primer, trial runs) dominates; look at the seconds instead.</p>
+    <div class="box" style="overflow-x:auto"><table class="proof" id="speed"></table></div>
+  </section>
+
+  <section>
+    <div class="kicker">Next steps — tried</div>
+    <h2>Every next step from the last round, built and measured</h2>
+    <p class="lead">Each card: the idea in plain words, then the file before → after the change, next to the best existing tool. Every result was decoded back bit for bit.</p>
+    <div id="next" class="nextgrid"></div>
+    <h3 style="margin:30px 0 8px">What's next after this round</h3>
+    <ul id="future" class="future"></ul>
+  </section>
+
+  <section>
+    <div class="kicker">Honest notes</div>
+    <h2>Where it stands</h2>
+    <div class="verdict" id="verdict"></div>
+  </section>
+</main>
+
+<script>
+const D = /*DATA*/null;
+const $ = (s) => document.querySelector(s);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (n) => Math.round(n).toLocaleString();
+const fmtB = (b) => b >= 1e6 ? (b / 1e6).toFixed(2) + " MB" : b >= 1e3 ? (b / 1e3).toFixed(1) + " KB" : b + " B";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const tip = $("#tip");
+const showTip = (ev, h) => { tip.innerHTML = h; tip.style.opacity = 1; tip.style.left = Math.min(ev.clientX + 12, innerWidth - 290) + "px"; tip.style.top = ev.clientY + 14 + "px"; };
+const hideTip = () => (tip.style.opacity = 0);
+const rows = D.rows;
+
+// hero stats
+const wins = rows.filter((r) => r.funnelzip < r.best_existing[1]).length;
+const big = rows.filter((r) => r.size >= 10000), bigWins = big.filter((r) => r.funnelzip < r.best_existing[1]).length;
+const ss = rows.find((r) => r.file === "system_sounds.wav"), py = rows.find((r) => r.file.startsWith("stdlib"));
+$("#stats").innerHTML = [
+  [`${bigWins} / ${big.length}`, "files ≥ 10 KB where it beats the best existing tool"],
+  [`${(100 * (1 - ss.funnelzip / ss.best_existing[1])).toFixed(0)}%`, `smaller than ${ss.best_existing[0]} on real sounds`],
+  [`${(100 * (1 - py.funnelzip / py.best_existing[1])).toFixed(0)}%`, `smaller than ${py.best_existing[0]} on 2 MB of code`],
+  [rows.every((r) => r.ok) ? "100%" : "!", "exact round trips"],
+].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+// lenses (architecture)
+const LENS = [
+  ["Memory", "what followed the last 0–6 bytes", "from V6"],
+  ["Word", "current word, column in previous line", "text, CSV"],
+  ["Echo", "longest earlier repeat → its next bit", "from V5 repeat equation"],
+  ["Equation", "next ≈ 2·s₁ − s₂ (+ how sure)", "from V5/V8 equations"],
+  ["Resonator", "filter re-tuned from the past, + surprise", "from V9 waves/resonance"],
+  ["Grid", "pixel above/left, MED predictor", "from Listen (row length)"],
+  ["Rhythm", "same moment one period ago; leftover of the last repeat", "repeats of repeats (your idea)"],
+  ["Motion · Stereo · Code", "frame-to-frame motion, other channel, instruction words", "next-steps round"],
+];
+$("#lenses").innerHTML = LENS.map(([n, d, f], i) => `<div class="lens" id="lens${i}"><b>${n}</b><span>${d}<br><small>${f}</small></span></div>`).join("");
+
+// trace
+const T = D.trace;
+const GROUPS = T.groups;
+function cellColor(v) {
+  if (v === null || Math.abs(v) < 0.05) return css("--panel2");
+  const a = Math.min(1, Math.abs(v) / 6), c = v > 0 ? css("--one") : css("--zero");
+  return `color-mix(in srgb, ${c} ${Math.round(18 + 82 * a)}%, var(--panel2))`;
+}
+function drawTrace(key) {
+  const tr = T.files[key];
+  const nb = tr.bits.length;
+  let h = `<table><tr><th></th>`;
+  for (let i = 0; i < nb; i += 8) h += `<td class="ch" colspan="8">${tr.chars[i / 8]}</td>`;
+  h += `</tr>`;
+  GROUPS.forEach((g, gi) => {
+    h += `<tr><th>${g}</th>` + tr.groups[gi].map((v, i) => `<td class="c" data-i="${i}" data-g="${gi}" style="background:${cellColor(v)}"></td>`).join("") + `</tr>`;
+  });
+  h += `<tr><th>funnel says</th>` + tr.p.map((p, i) => `<td class="c" data-i="${i}" data-g="f" style="background:${cellColor(Math.log(p / (1 - p)))}"></td>`).join("") + `</tr>`;
+  h += `<tr><th>actual bit</th>` + tr.bits.map((b) => `<td class="bit">${b}</td>`).join("") + `</tr>`;
+  h += `<tr><th>bits paid</th>` + tr.p.map((p, i) => { const c = -Math.log2(tr.bits[i] ? p : 1 - p); return `<td class="c" style="background:color-mix(in srgb, var(--bad) ${Math.min(100, Math.round(c * 40))}%, var(--panel2))" data-i="${i}" data-g="c"></td>`; }).join("") + `</tr></table>`;
+  const total = tr.p.reduce((s, p, i) => s + -Math.log2(tr.bits[i] ? p : 1 - p), 0);
+  h += `<p style="color:var(--muted);font-size:13px;margin:10px 0 0">${tr.title}. These ${nb} bits cost <b>${total.toFixed(1)} bits</b> in total. Hover any cell for numbers.</p>`;
+  $("#trace").innerHTML = h;
+  $("#trace").querySelectorAll("td.c").forEach((td) => {
+    td.addEventListener("pointermove", (ev) => {
+      const i = +td.dataset.i, g = td.dataset.g, p = tr.p[i], b = tr.bits[i];
+      const what = g === "f" ? `funnel: P(1) = ${p.toFixed(3)}` : g === "c" ? `cost: ${(-Math.log2(b ? p : 1 - p)).toFixed(3)} bits` :
+        `${GROUPS[+g]}: ${tr.groups[+g][i] === null ? "no opinion" : "P(1) = " + (1 / (1 + Math.exp(-tr.groups[+g][i]))).toFixed(3)}`;
+      showTip(ev, `<b>byte '${tr.chars[Math.floor(i / 8)]}', bit ${i % 8 + 1}</b><br>${what}<br>actual bit: ${b}`);
+    });
+    td.addEventListener("pointerleave", hideTip);
+  });
+}
+$("#tabs").innerHTML = Object.entries(T.files).map(([k, v], i) => `<button class="tab${i ? "" : " on"}" data-k="${k}">${v.label}</button>`).join("");
+document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { document.querySelectorAll(".tab").forEach((x) => x.classList.remove("on")); b.classList.add("on"); drawTrace(b.dataset.k); }));
+drawTrace(Object.keys(T.files)[0]);
+
+// results
+$("#res").innerHTML = rows.map((r) => {
+  const [bn, bs] = r.best_existing, mx = Math.max(r.funnelzip, bs), d = r.funnelzip / bs - 1;
+  return `<div class="rr"><span>${r.file}<br><small style="color:var(--muted)">${fmtB(r.size)} · ${r.kind}</small></span>
+    <div class="bars"><div style="background:var(--accent)" data-w="${100 * r.funnelzip / mx}"></div><div style="background:var(--ref)" data-w="${100 * bs / mx}"></div></div>
+    <span class="rv">${fmt(r.funnelzip)} vs ${fmt(bs)}<br><span class="${d < 0 ? "win" : "lose"}">${d < 0 ? "✓ " : "✗ +"}${(100 * d).toFixed(1)}%</span> <small style="color:var(--muted)">${bn}</small></span></div>`;
+}).join("");
+
+// file vs pixels
+$("#pvf").innerHTML = (D.pvf || []).map((r) => {
+  const mx = Math.max(r.file_bytes, r.fz_file, r.fz_pixels), best = r.fz_pixels < r.fz_file;
+  const note = r.kind === "PNG" ? (r.file_exact_from_pixels ? "pixels re-encode to the identical file" : "needs a re-encode recipe")
+                                 : "lossy file: pixels carry JPEG's own noise";
+  return `<div class="rr"><span>${r.file}<br><small style="color:var(--muted)">${note}</small></span>
+    <div class="bars"><div style="background:var(--ref)" data-w="${100 * r.file_bytes / mx}"></div><div style="background:color-mix(in srgb, var(--accent) 45%, var(--panel2))" data-w="${100 * r.fz_file / mx}"></div><div style="background:var(--accent)" data-w="${100 * r.fz_pixels / mx}"></div></div>
+    <span class="rv">file ${fmt(r.file_bytes)}<br>bytes → ${fmt(r.fz_file)}<br><span class="${best ? "win" : "lose"}">pixels → ${fmt(r.fz_pixels)}</span></span></div>`;
+}).join("");
+
+// repeats of repeats
+$("#rep").innerHTML = (D.repeat || []).map((r) => {
+  const mx = Math.max(r.without, r.with, r.best[1]), gain = 1 - r.with / r.without;
+  return `<div class="rr"><span>${r.file}<br><small style="color:var(--muted)">${r.R ? "period " + fmt(r.R) + " bytes" : "period learned from echoes"}</small></span>
+    <div class="bars"><div style="background:color-mix(in srgb, var(--accent) 45%, var(--panel2))" data-w="${100 * r.without / mx}"></div><div style="background:var(--accent)" data-w="${100 * r.with / mx}"></div><div style="background:var(--ref)" data-w="${100 * r.best[1] / mx}"></div></div>
+    <span class="rv">${fmt(r.without)} → ${fmt(r.with)}<br><span class="${gain > 0.005 ? "win" : ""}">${gain > 0 ? "−" : "+"}${Math.abs(100 * gain).toFixed(1)}% from rhythm</span><br><small style="color:var(--muted)">${r.best[0]} ${fmt(r.best[1])}</small></span></div>`;
+}).join("");
+
+// step cards: "next steps — tried" and "speed round" share one renderer
+function cards(steps, box) {
+  const fmtS = (v) => (v >= 10 ? fmt(v) : v.toFixed(2));
+  $(box).innerHTML = steps.map((st) => {
+    const badge = { worked: "✓ worked", partly: "◐ partly", didnt: "✗ didn't" }[st.verdict];
+    let body = "";
+    if (st.rows) body += st.rows.map(([name, a, b, best]) => {
+      const mx = Math.max(a, b, best ? best[1] : 0), ch = b / a - 1;
+      return `<div class="nrow"><span>${name}</span><div class="bars"><div style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))" data-w="${100 * a / mx}"></div><div style="background:var(--accent)" data-w="${100 * b / mx}"></div>${best ? `<div style="background:var(--ref)" data-w="${100 * best[1] / mx}"></div>` : ""}</div>
+        <span class="nv">${fmt(a)} → ${fmt(b)} <span class="${ch < -0.003 ? "win" : ch > 0.003 ? "lose" : ""}">(${ch > 0 ? "+" : ""}${(100 * ch).toFixed(1)}%)</span>${best ? `<br><small style="color:var(--muted)">${best[0]} ${fmt(best[1])}</small>` : ""}</span></div>`;
+    }).join("");
+    if (st.speed) body += st.speed.map(([name, a, b]) => {
+      const mx = Math.max(a, b), up = b >= a;
+      return `<div class="nrow"><span>${name}</span><div class="bars"><div style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))" data-w="${100 * a / mx}"></div><div style="background:var(--accent)" data-w="${100 * b / mx}"></div></div>
+        <span class="nv">${fmtS(a)} → ${fmtS(b)} MB/s <span class="${up ? "win" : "lose"}">(×${(b / a).toFixed(b / a < 10 ? 1 : 0)})</span></span></div>`;
+    }).join("");
+    if (st.notes) body += `<ul class="future" style="margin:4px 0 0">${st.notes.map((n) => `<li>${n}</li>`).join("")}</ul>`;
+    const legend = st.rows || st.speed ? `<div class="legend" style="margin:0 0 6px"><span><i style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))"></i>before</span><span><i style="background:var(--accent)"></i>after</span>${st.rows && st.rows.some((r) => r[3]) ? '<span><i style="background:var(--ref)"></i>best existing / reference</span>' : ""}</div>` : "";
+    return `<div class="ncard"><div class="hd"><h3>${st.title}</h3><span class="badge ${st.verdict}">${badge}</span></div><p>${st.idea}</p>${legend}${body}</div>`;
+  }).join("");
+  const cardIO = new IntersectionObserver((es) => {   /* each card animates when it scrolls into view */
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      cardIO.unobserve(e.target);
+      e.target.querySelectorAll(".bars div").forEach((d) => (d.style.width = d.dataset.w + "%"));
+    }
+  }, { threshold: 0.2 });
+  document.querySelectorAll(`${box} .ncard`).forEach((c) => cardIO.observe(c));
+}
+if (D.next) { cards(D.next.steps, "#next"); $("#future").innerHTML = D.next.future.map((f) => `<li>${f}</li>`).join(""); }
+
+// speed round
+(function speedRound() {
+  const S = D.speedround;
+  if (!S) return;
+  $("#srstats").innerHTML = S.stats.map(([b, t]) => `<div class="stat"><b>${b}</b><span>${t}</span></div>`).join("");
+  const mx = Math.max(...S.core.map((r) => Math.max(r.v4.enc, r.now.enc)), 1.05);
+  $("#srcore").innerHTML = S.core.map((r) => {
+    const ch = r.now.size / r.v4.size - 1;
+    return `<div class="nrow"><span>${r.file}<br><small style="color:var(--muted)">${fmtB(r.size)} · ${fmt(r.v4.size)} → ${fmt(r.now.size)} bytes</small></span>
+      <div class="bars" style="position:relative"><div style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2));height:12px" data-w="${100 * r.v4.enc / mx}"></div><div style="background:var(--accent);height:12px" data-w="${100 * r.now.enc / mx}"></div>
+      <span style="position:absolute;top:-4px;bottom:-4px;left:${100 / mx}%;border-left:2px dashed var(--accent2)" title="1 MB/s"></span></div>
+      <span class="nv">${r.v4.enc.toFixed(2)} → <b>${r.now.enc.toFixed(2)}</b> MB/s <span class="win">(×${(r.now.enc / r.v4.enc).toFixed(2)})</span><br><small class="${ch < -0.001 ? "win" : ch > 0.001 ? "lose" : ""}">size ${ch > 0 ? "+" : ""}${(100 * ch).toFixed(2)}%</small></span></div>`;
+  }).join("") + `<p style="color:var(--muted);font-size:13px;margin:12px 0 0"><span style="border-left:2px dashed var(--accent2);padding-left:6px">dashed line = 1 MB/s target</span>. "Now" uses the lens set Listen picks for that file. Decompress speeds are within a few % of compress (same model runs both ways).</p>`;
+  cards(S.steps, "#srsteps");
+})();
+
+// lossless proof
+(function proof() {
+  const P = D.proof;
+  if (!P) return;
+  const total = P.reduce((a, r) => a + r.size, 0), diff = P.reduce((a, r) => a + Math.max(0, r.bytes_different), 0);
+  $("#proofstats").innerHTML = [[`${P.filter((r) => r.lossless).length} / ${P.length}`, "files identical after decompress"],
+    [fmtB(total), "of original data checked"], [String(diff), "bytes different"]].map(([b, t]) => `<div class="stat"><b>${b}</b><span>${t}</span></div>`).join("");
+  $("#proof").innerHTML = `<tr><th>file</th><th>original</th><th>stored</th><th>SHA-256 before</th><th>SHA-256 after</th><th>bytes different</th><th></th></tr>` +
+    P.map((r) => `<tr><td>${r.file}</td><td>${fmt(r.size)}</td><td>${fmt(r.stored)}</td><td class="h">${r.sha_in.slice(0, 16)}…</td><td class="h">${r.sha_out.slice(0, 16)}…</td>
+      <td>${r.bytes_different}</td><td class="${r.lossless ? "win" : "lose"}">${r.lossless ? "✓ identical" : "✗"}</td></tr>`).join("");
+  const mx = Math.max(...P.map((r) => Math.max(r.enc_mbps, r.dec_mbps)));
+  $("#speed").innerHTML = `<tr><th>file</th><th>size</th><th style="text-align:left">compress</th><th style="text-align:left">decompress</th></tr>` +
+    P.map((r) => `<tr><td>${r.file}</td><td>${fmtB(r.size)}</td>
+      <td style="text-align:left"><span class="spd" style="width:${Math.max(2, 120 * r.enc_mbps / mx)}px"></span>${r.enc_mbps.toFixed(2)} MB/s <small style="color:var(--muted)">(${r.enc_s}s)</small></td>
+      <td style="text-align:left"><span class="spd" style="width:${Math.max(2, 120 * r.dec_mbps / mx)}px;background:var(--ref)"></span>${r.dec_mbps.toFixed(2)} MB/s <small style="color:var(--muted)">(${r.dec_s}s)</small></td></tr>`).join("");
+})();
+
+// reshape results
+(function reshape() {
+  const R = D.reshape;
+  if (!R) return;
+  $("#reshape").innerHTML = R.map((r) => {
+    const mx = Math.max(r.before, r.after, r.best ? r.best[1] : 0), ch = r.after / r.before - 1;
+    return `<div class="nrow"><span>${r.file}<br><small style="color:var(--muted)">${r.how}</small></span>
+      <div class="bars"><div style="background:color-mix(in srgb, var(--accent) 40%, var(--panel2))" data-w="${100 * r.before / mx}"></div><div style="background:var(--accent)" data-w="${100 * r.after / mx}"></div>${r.best ? `<div style="background:var(--ref)" data-w="${100 * r.best[1] / mx}"></div>` : ""}</div>
+      <span class="nv">${fmt(r.before)} → ${fmt(r.after)} <span class="${ch < -0.003 ? "win" : ch > 0.003 ? "lose" : ""}">(${ch > 0 ? "+" : ""}${(100 * ch).toFixed(1)}%)</span>${r.best ? `<br><small style="color:var(--muted)">${r.best[0]} ${fmt(r.best[1])}</small>` : ""}</span></div>`;
+  }).join("");
+})();
+
+// heat
+const AB = D.ablation, LENSKEYS = ["memory", "word", "echo", "equation", "resonator", "grid", "rhythm", "motion", "stereo", "code", "precise", "funnel", "refine"];
+let hh = `<tr><th>file</th>` + LENSKEYS.map((k) => `<th>−${k}</th>`).join("") + `</tr>`;
+for (const [f, r] of Object.entries(AB)) {
+  hh += `<tr><td>${f}</td>` + LENSKEYS.map((k) => {
+    const inc = (r["-" + k] / r.all - 1) * 100, a = Math.min(1, Math.max(0, inc) / 40);
+    return `<td style="background:color-mix(in srgb, var(--bad) ${Math.round(6 + 80 * a)}%, var(--panel2))" title="${fmt(r["-" + k])} B without, ${fmt(r.all)} B with all">${inc >= 0 ? "+" : ""}${inc.toFixed(inc < 10 && inc > -10 ? 1 : 0)}%</td>`;
+  }).join("") + `</tr>`;
+}
+$("#heat").innerHTML = hh;
+
+// journey (real sounds, 1 MB)
+const J = D.journey, jm = Math.max(...J.map((j) => j[1]));
+$("#journey").innerHTML = J.map(([n, b, c]) => `<div class="jr"><span>${n}</span><div class="track"><i style="background:${c}" data-w="${100 * b / jm}"></i></div><span style="font:600 13px var(--mono);text-align:right">${fmtB(b)}</span></div>`).join("");
+
+// verdict
+$("#verdict").innerHTML = D.verdict.map(([t, c, p]) => `<div class="v"><div class="t ${c}">${t}</div><p>${p}</p></div>`).join("");
+
+// animations
+const anims = {
+  async arch() {
+    const tr = Object.values(T.files)[0];
+    for (let loop = 0; loop < 3; loop++) {
+      let paid = 0;
+      for (let i = 0; i < Math.min(64, tr.bits.length); i++) {
+        const strongest = tr.groups.map((g) => Math.abs(g[i] ?? 0));
+        const best = strongest.indexOf(Math.max(...strongest));
+        document.querySelectorAll(".lens").forEach((l, k) => l.classList.toggle("hot", k === best));
+        const p = tr.p[i];
+        $("#pfinal").style.width = (100 * p).toFixed(1) + "%";
+        paid += -Math.log2(tr.bits[i] ? p : 1 - p);
+        $("#ptext").textContent = `P(next bit = 1) = ${p.toFixed(2)} · actual ${tr.bits[i]}`;
+        $("#paid").textContent = paid.toFixed(2) + " bits";
+        const drip = $("#drip"); drip.setAttribute("cy", 20); await sleep(60); drip.setAttribute("cy", 80); await sleep(140);
+      }
+    }
+    document.querySelectorAll(".lens").forEach((l) => l.classList.remove("hot"));
+  },
+  async results() { document.querySelectorAll("#res .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async repeat() { document.querySelectorAll("#rep .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async reshape() { document.querySelectorAll("#reshape .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async next() { document.querySelectorAll("#next .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async speed() { document.querySelectorAll("#srcore .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async pvf() { document.querySelectorAll("#pvf .bars div").forEach((d) => (d.style.width = d.dataset.w + "%")); },
+  async journey() { for (const i of document.querySelectorAll(".jr i")) { i.style.width = i.dataset.w + "%"; await sleep(200); } },
+};
+const io = new IntersectionObserver((es) => {
+  for (const e of es) { if (!e.isIntersecting) continue; io.unobserve(e.target); const a = e.target.dataset.anim; a && anims[a](); }
+}, { threshold: 0.25 });
+document.querySelectorAll("section[data-anim]").forEach((s) => io.observe(s));
+</script>
+</body>
+</html>

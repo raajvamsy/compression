@@ -1,0 +1,17 @@
+chord.wav (3 notes)        v9a-waves        264600 ->    26299 ok=True 33.3s
+chord.wav (3 notes)        v9b-resonator    264600 ->    36097 ok=True 9.5s
+system_sounds.wav          v9a-waves       1019844 ->   169365 ok=True 291.4s
+system_sounds.wav          v9b-resonator   1019844 ->    99747 ok=True 33.6s
+sensor.csv                 v9a-waves         32918 ->    11974 ok=True 17.9s
+sensor.csv                 v9b-resonator     32918 ->    10188 ok=True 1.4s
+counter.bin                v9a-waves          4096 ->     1419 ok=True 0.6s
+counter.bin                v9b-resonator      4096 ->       78 ok=True 0.1s
+license.txt                v9a-waves         13809 ->     9730 ok=True 4.3s
+license.txt                v9b-resonator     13809 ->    10654 ok=True 0.5s
+typing.py                  v9a-waves        132718 ->    69416 ok=True 81.9s
+typing.py                  v9b-resonator    132718 ->    81466 ok=True 5.2s
+random.bin                 v9a-waves          4096 ->     4127 ok=True 2.6s
+random.bin                 v9b-resonator      4096 ->     4132 ok=True 0.2s
+beach photo (raw pixels)   v9a-waves         83460 ->    69341 ok=True 27.6s
+beach photo (raw pixels)   v9b-resonator     83460 ->    42600 ok=True 3.3s
+wrote results/resonance.json

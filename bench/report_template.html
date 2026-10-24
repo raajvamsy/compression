@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EquaFile Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --surface-0: #f3f2ee; --surface-1: #fcfcfb; --line: #e2e0d9; --grid: #ecebe6;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77756f;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --ref: #9a978f; --good: #008300; --bad: #c62a2a;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-0: #111110; --surface-1: #1a1a19; --line: #2e2d2a; --grid: #262523;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --ref: #6f6d66; --good: #4cb94c; --bad: #ef6b6b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #111110; --surface-1: #1a1a19; --line: #2e2d2a; --grid: #262523;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --ref: #6f6d66; --good: #4cb94c; --bad: #ef6b6b;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 15px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font-size: 32px; margin: 0 0 6px; letter-spacing: -0.02em; }
+h2 { font-size: 21px; margin: 0 0 4px; }
+h3 { font-size: 15px; margin: 0 0 6px; }
+.lede { color: var(--text-secondary); max-width: 760px; }
+section { background: var(--surface-1); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin: 20px 0; }
+.note { color: var(--text-secondary); font-size: 14px; max-width: 820px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 20px 0; }
+.tile { background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.tile .k { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.tile .v { font: 700 26px var(--mono); margin: 4px 0; }
+.tile .d { font-size: 13.5px; color: var(--text-secondary); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 18px; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--text-secondary); margin: 6px 0 4px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.dash { height: 0; border-top: 2px dashed var(--ref); border-radius: 0; width: 16px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgb(0 0 0 / .15);
+  white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 2; }
+.tip b { display: block; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { color: var(--text-muted); font-weight: 500; font-size: 12.5px; }
+td.n { font-family: var(--mono); text-align: right; }
+.win { color: var(--good); font-weight: 600; }
+.lose { color: var(--bad); font-weight: 600; }
+.pair { display: grid; grid-template-columns: 1fr; gap: 3px; min-width: 160px; }
+.pair div { height: 8px; border-radius: 0 4px 4px 0; }
+@media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>EquaFile — POC results</h1>
+  <p class="lede">Every file stored as an equation, decoded back and checked. Below: does the loop idea shrink files, does the FunnelBrain tree narrow, and how do equation families compare with gzip/xz/brotli, PNG/JPEG/WebP, MP3/Opus and H.264?</p>
+  <div class="tiles" id="tiles"></div>
+
+  <section>
+    <h2>1 · The loop and the seed search</h2>
+    <p class="note">Each dot is one random target. The dashed line is break-even: below it the equation would be smaller than the file. Individual lucky targets dip below it, but once the decoder is told how long the stored number is (the "length prefix" table in REPORT_DATA.md), every bit size averages above it. Search time doubles with every extra bit.</p>
+    <div class="grid2">
+      <div><h3>Bits stored vs bits in the file</h3><div class="chart" id="c-loop"></div></div>
+      <div><h3>Seed search time (V3, vectorised)</h3><div class="chart" id="c-time"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · The FunnelBrain tree never narrows</h2>
+    <p class="note">Each level replaces 16-bit chunks with the seeds of sub-equations that print them. A seed costs about 18.5 bits per 16-bit chunk, so every level grows by ~16% instead of shrinking toward one master equation.</p>
+    <div class="chart" id="c-tree" style="max-width:720px"></div>
+  </section>
+
+  <section>
+    <h2>3 · Lossless: best equation vs best existing compressor</h2>
+    <p class="note">Ratio = stored / original (lower is better). Every equation result was decoded and matched the original bit for bit.</p>
+    <div class="tablewrap"><table id="t-lossless"></table></div>
+  </section>
+
+  <section>
+    <h2>4 · Images: quality per byte</h2>
+    <p class="note">PSNR against the original (higher is better) vs stored size (log scale). Up and to the left wins.</p>
+    <div class="grid2" id="c-image"></div>
+  </section>
+
+  <section>
+    <h2>5 · Audio</h2>
+    <p class="note">SNR vs size. MP3 and Opus are tuned for what ears hear, not for SNR, so this metric flatters the equation; treat the audio result as a lower bound for the codecs.</p>
+    <div class="grid2" id="c-audio"></div>
+  </section>
+
+  <section>
+    <h2>6 · Video</h2>
+    <p class="note">PSNR vs size for 48 frames at 256×144. The equation has no motion compensation; H.264 does.</p>
+    <div class="grid2" id="c-video"></div>
+  </section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (n) => Math.round(n).toLocaleString();
+const fmtB = (b) => b >= 1e6 ? (b / 1e6).toFixed(2) + " MB" : b >= 1e3 ? (b / 1e3).toFixed(1) + " KB" : b + " B";
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+function niceTicks(lo, hi, n = 5) {
+  const step = Math.pow(10, Math.floor(Math.log10((hi - lo) / n)));
+  const s = [1, 2, 5, 10].map((m) => m * step).find((m) => (hi - lo) / m <= n) || step * 10;
+  const out = [];
+  for (let v = Math.ceil(lo / s) * s; v <= hi + 1e-9; v += s) out.push(+v.toFixed(6));
+  return out;
+}
+function logTicks(lo, hi) {
+  const out = [];
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+    for (const m of [1, 3]) { const v = m * 10 ** e; if (v >= lo && v <= hi) out.push(v); }
+  return out;
+}
+
+// series: [{name, color(var), points:[{x,y,tip}], line:bool, dots:bool}], opts: {xlog, ylog, xLabel, yLabel, ref:[[x,y],[x,y]], refName, xFmt, yFmt}
+function chart(host, series, o) {
+  const W = 520, H = 320, m = { l: 52, r: 18, t: 12, b: 42 };
+  const wrap = document.createElement("div");
+  wrap.className = "chart";
+  host.appendChild(wrap);
+  const leg = document.createElement("div");
+  leg.className = "legend";
+  leg.innerHTML = series.map((s) => `<span><i style="background:${css(s.color)}"></i>${s.name}</span>`).join("") +
+    (o.ref ? `<span><i class="dash"></i>${o.refName}</span>` : "");
+  if (series.length > 1 || o.ref) wrap.appendChild(leg);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.aria || o.yLabel });
+  wrap.appendChild(svg);
+  const all = series.flatMap((s) => s.points).filter((p) => isFinite(p.y));
+  let [x0, x1] = [Math.min(...all.map((p) => p.x)), Math.max(...all.map((p) => p.x))];
+  let [y0, y1] = [Math.min(...all.map((p) => p.y)), Math.max(...all.map((p) => p.y))];
+  if (o.ref) for (const [x, y] of o.ref) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (o.y0 !== undefined) y0 = o.y0;
+  if (o.xlog) { x0 /= 1.25; x1 *= 1.25; } else { const p = (x1 - x0) * 0.04; x0 -= p; x1 += p; }
+  if (o.ylog) { y0 /= 1.5; y1 *= 1.5; } else { const p = (y1 - y0) * 0.08 || 1; y0 = o.y0 ?? y0 - p; y1 += p; }
+  const sx = (x) => m.l + (W - m.l - m.r) * (o.xlog ? (Math.log(x) - Math.log(x0)) / (Math.log(x1) - Math.log(x0)) : (x - x0) / (x1 - x0));
+  const sy = (y) => H - m.b - (H - m.t - m.b) * (o.ylog ? (Math.log(y) - Math.log(y0)) / (Math.log(y1) - Math.log(y0)) : (y - y0) / (y1 - y0));
+  const g = el("g", {}, svg);
+  const xt = o.xlog ? logTicks(x0, x1) : niceTicks(x0, x1, 6), yt = o.ylog ? logTicks(y0, y1) : niceTicks(y0, y1, 5);
+  for (const t of yt) {
+    el("line", { x1: m.l, x2: W - m.r, y1: sy(t), y2: sy(t), stroke: css("--grid"), "stroke-width": 1 }, g);
+    el("text", { x: m.l - 8, y: sy(t) + 4, "text-anchor": "end", "font-size": 11, fill: css("--text-muted") }, g).textContent = (o.yFmt || ((v) => v))(t);
+  }
+  for (const t of xt) {
+    el("text", { x: sx(t), y: H - m.b + 16, "text-anchor": "middle", "font-size": 11, fill: css("--text-muted") }, g).textContent = (o.xFmt || ((v) => v))(t);
+  }
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--line") }, g);
+  el("text", { x: (m.l + W - m.r) / 2, y: H - 6, "text-anchor": "middle", "font-size": 12, fill: css("--text-secondary") }, g).textContent = o.xLabel;
+  el("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", "font-size": 12, fill: css("--text-secondary"),
+    transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, g).textContent = o.yLabel;
+  if (o.ref) el("line", { x1: sx(o.ref[0][0]), y1: sy(o.ref[0][1]), x2: sx(o.ref[1][0]), y2: sy(o.ref[1][1]),
+    stroke: css("--ref"), "stroke-width": 2, "stroke-dasharray": "5 4" }, g);
+  const marks = [];
+  for (const s of series) {
+    const pts = s.points.filter((p) => isFinite(p.y)).sort((a, b) => a.x - b.x);
+    const c = css(s.color);
+    if (s.line !== false && pts.length > 1)
+      el("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(""), fill: "none", stroke: c,
+        "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, g);
+    for (const p of pts) {
+      const dot = el("circle", { cx: sx(p.x), cy: sy(p.y), r: s.line === false ? 4.5 : 3.5, fill: c,
+        stroke: css("--surface-1"), "stroke-width": 2 }, g);
+      marks.push({ X: sx(p.x), Y: sy(p.y), p, s, dot });
+    }
+  }
+  const tip = document.createElement("div");
+  tip.className = "tip";
+  wrap.appendChild(tip);
+  svg.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(), k = W / r.width;
+    const mx = (ev.clientX - r.left) * k, my = (ev.clientY - r.top) * k;
+    let best = null, bd = 900;
+    for (const mk of marks) { const d = (mk.X - mx) ** 2 + (mk.Y - my) ** 2; if (d < bd) { bd = d; best = mk; } }
+    marks.forEach((mk) => mk.dot.setAttribute("r", mk === best ? 6 : mk.s.line === false ? 4.5 : 3.5));
+    if (!best) { tip.style.opacity = 0; return; }
+    tip.innerHTML = `<b>${best.s.name}</b>${best.p.tip}`;
+    tip.style.opacity = 1;
+    const left = best.X / k + 12, top = best.Y / k - 10;
+    tip.style.left = Math.min(left, r.width - tip.offsetWidth - 4) + "px";
+    tip.style.top = top + "px";
+  });
+  svg.addEventListener("pointerleave", () => { tip.style.opacity = 0; marks.forEach((mk) => mk.dot.setAttribute("r", mk.s.line === false ? 4.5 : 3.5)); });
+}
+
+const SLOTS = ["--series-1", "--series-2", "--series-3", "--series-4"];
+
+// ---------------- tiles
+(function tiles() {
+  const L = DATA.lossless, wins = L.filter((e) => e.eq && e.eq[1] < e.base[1]);
+  const big = L.filter((e) => e.size >= 1000);
+  const bigWins = big.filter((e) => e.eq && e.eq[1] < e.base[1]);
+  const v3 = DATA.loop.v3, mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  const elias = (b) => b + 2 * Math.max(1, b).toString(2).length - 1;   // stored number + its length
+  const v3raw = mean(v3.map((r) => r.stored_bits - r.bits));
+  const v3over = mean(v3.map((r) => elias(r.stored_bits) - r.bits));
+  const lic = DATA.tree["license.txt"];
+  const t = [
+    ["Round trips", "100%", "every equation decoded back to the exact original bits (SHA-256)"],
+    ["Loop / seed", "+" + v3over.toFixed(1) + " bits", `average extra bits per file for V3 once the decoder is told the seed's length (${v3raw.toFixed(1)} without)`],
+    ["Funnel tree", "×" + (lic[lic.length - 1] / lic[0]).toFixed(2), "license.txt after 5 levels of sub-equations — it grows, never narrows"],
+    ["Lossless wins", `${bigWins.length} of ${big.length}`, "files ≥ 1 KB where the best equation beat gzip/bzip2/xz/zstd/brotli"],
+  ];
+  document.getElementById("tiles").innerHTML = t.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+})();
+
+// ---------------- loop
+(function loop() {
+  const v2 = DATA.loop.v2, v3 = DATA.loop.v3;
+  const jit = (r, i) => r.bits + ((i % 5) - 2) * 0.18;
+  chart(document.getElementById("c-loop"), [
+    { name: "V2 loop count L", color: SLOTS[0], line: false, points: v2.map((r, i) => ({ x: jit(r, i), y: r.stored_bits, tip: `${r.bits}-bit file → L = ${fmt(r.steps)} (${r.stored_bits} bits)` })) },
+    { name: "V3 seed s", color: SLOTS[1], line: false, points: v3.map((r, i) => ({ x: jit(r, i), y: r.stored_bits, tip: `${r.bits}-bit file → s = ${fmt(r.seed)} (${r.stored_bits} bits)` })) },
+  ], { xLabel: "bits in the file", yLabel: "bits stored", ref: [[2, 2], [30, 30]], refName: "break-even (stored = file)", y0: 0 });
+  const byBits = {};
+  v3.forEach((r) => (byBits[r.bits] = byBits[r.bits] || []).push(r.sec));
+  chart(document.getElementById("c-time"), [
+    { name: "mean search time", color: SLOTS[0], points: Object.entries(byBits).map(([b, s]) => ({ x: +b, y: Math.max(1e-3, s.reduce((a, c) => a + c) / s.length), tip: `${b} bits: ${(s.reduce((a, c) => a + c) / s.length).toFixed(3)} s` })) },
+  ], { xLabel: "bits in the file", yLabel: "seconds (log)", ylog: true, yFmt: (v) => v >= 1 ? v + " s" : Math.round(v * 1000) + " ms" });
+})();
+
+// ---------------- tree
+(function tree() {
+  const files = Object.keys(DATA.tree);
+  chart(document.getElementById("c-tree"), files.map((f, i) => ({
+    name: f, color: SLOTS[i], points: DATA.tree[f].map((b, lvl) => ({ x: lvl, y: b / DATA.tree[f][0], tip: `level ${lvl}: ${fmt(b)} bits (${(b / DATA.tree[f][0]).toFixed(2)}× the file)` })),
+  })), { xLabel: "tree level (0 = the file)", yLabel: "size ÷ file size", ref: [[0, 1], [5, 1]], refName: "file size", y0: 0.8 });
+})();
+
+// ---------------- lossless table
+(function table() {
+  const N = DATA.names;
+  let h = `<tr><th>file</th><th>size</th><th>best equation</th><th>stored</th><th>best existing</th><th>stored</th><th>ratios (equation / existing)</th><th>result</th></tr>`;
+  const maxR = 1.2;
+  for (const e of DATA.lossless) {
+    const [eid, es] = e.eq, [bn, bs] = e.base;
+    const er = es / e.size, br = bs / e.size, win = es < bs;
+    h += `<tr><td>${e.file}</td><td class="n">${fmt(e.size)}</td><td>${N[eid]}</td><td class="n">${fmt(es)}</td><td>${bn}</td><td class="n">${fmt(bs)}</td>
+      <td><div class="pair"><div style="width:${Math.min(100, 100 * er / maxR)}%;background:${css("--series-1")}" title="equation ${er.toFixed(3)}"></div>
+      <div style="width:${Math.min(100, 100 * br / maxR)}%;background:${css("--ref")}" title="existing ${br.toFixed(3)}"></div></div></td>
+      <td class="${win ? "win" : "lose"}">${win ? "✓ equation smaller" : "✗ existing smaller"} <span style="color:var(--text-muted);font-weight:400">(${er.toFixed(3)} vs ${br.toFixed(3)})</span></td></tr>`;
+  }
+  document.getElementById("t-lossless").innerHTML = h;
+})();
+
+// ---------------- media
+function media(kind, key, host) {
+  const d = DATA.media[kind];
+  if (!d) return;
+  for (const [name, e] of Object.entries(d)) {
+    const box = document.createElement("div");
+    box.innerHTML = `<h3>${name} <span style="color:var(--text-muted);font-weight:400">· raw ${fmtB(e.raw)}</span></h3>`;
+    host.appendChild(box);
+    chart(box, Object.entries(e.curves).map(([cn, pts], i) => ({
+      name: cn, color: SLOTS[i],
+      points: pts.filter((p) => isFinite(p[key]) && p[key] < 99).map((p) => ({ x: p.bytes, y: p[key],
+        tip: `${fmtB(p.bytes)} → ${p[key].toFixed(2)} dB` + (p.terms ? ` · ${fmt(p.terms)} terms` : "") + (p.q ? ` · q${p.q}` : "") + (p.kbps ? ` · ${p.kbps} kbps` : "") + (p.crf !== undefined ? ` · crf ${p.crf}` : "") })),
+    })), { xlog: true, xLabel: "stored size (log)", yLabel: key.toUpperCase() + " dB", xFmt: fmtB });
+  }
+}
+media("image", "psnr", document.getElementById("c-image"));
+media("audio", "snr", document.getElementById("c-audio"));
+media("video", "psnr", document.getElementById("c-video"));
+</script>
+</body>
+</html>

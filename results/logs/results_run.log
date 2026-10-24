@@ -1,0 +1,135 @@
+counter.bin                  v1-poly      ok         8707
+counter.bin                  v2-loop      skipped    -
+counter.bin                  v3-seed      skipped    -
+counter.bin                  v4-tree      ok         4810
+counter.bin                  v5-grammar   ok         652
+counter.bin                  v5-symbolic  ok         6
+counter.bin                  v6-predict   ok         1248
+hello.txt                    v1-poly      ok         15
+hello.txt                    v2-loop      skipped    -
+hello.txt                    v3-seed      skipped    -
+hello.txt                    v4-tree      ok         19
+hello.txt                    v5-grammar   ok         14
+hello.txt                    v5-symbolic  ok         13
+hello.txt                    v6-predict   ok         13
+hi.txt                       v1-poly      ok         5
+hi.txt                       v2-loop      ok         5
+hi.txt                       v3-seed      ok         6
+hi.txt                       v4-tree      ok         7
+hi.txt                       v5-grammar   ok         5
+hi.txt                       v5-symbolic  ok         4
+hi.txt                       v6-predict   ok         4
+json_decoder.py              v1-poly      ok         27356
+json_decoder.py              v2-loop      skipped    -
+json_decoder.py              v3-seed      skipped    -
+json_decoder.py              v4-tree      ok         15306
+json_decoder.py              v5-grammar   ok         5771
+json_decoder.py              v5-symbolic  ok         5206
+json_decoder.py              v6-predict   ok         4494
+license.txt                  v1-poly      ok         29348
+license.txt                  v2-loop      skipped    -
+license.txt                  v3-seed      skipped    -
+license.txt                  v4-tree      ok         16132
+license.txt                  v5-grammar   ok         7359
+license.txt                  v5-symbolic  ok         6131
+license.txt                  v6-predict   ok         5305
+random.bin                   v1-poly      ok         8707
+random.bin                   v2-loop      skipped    -
+random.bin                   v3-seed      skipped    -
+random.bin                   v4-tree      ok         4793
+random.bin                   v5-grammar   ok         4607
+random.bin                   v5-symbolic  ok         4100
+random.bin                   v6-predict   ok         4109
+sensor.csv                   v1-poly      skipped    -
+sensor.csv                   v2-loop      skipped    -
+sensor.csv                   v3-seed      skipped    -
+sensor.csv                   v4-tree      ok         38267
+sensor.csv                   v5-grammar   ok         13285
+sensor.csv                   v5-symbolic  ok         18839
+sensor.csv                   v6-predict   ok         6374
+sentence.txt                 v1-poly      ok         89
+sentence.txt                 v2-loop      skipped    -
+sentence.txt                 v3-seed      skipped    -
+sentence.txt                 v4-tree      ok         98
+sentence.txt                 v5-grammar   ok         88
+sentence.txt                 v5-symbolic  ok         57
+sentence.txt                 v6-predict   ok         64
+typing.py                    v1-poly      skipped    -
+typing.py                    v2-loop      skipped    -
+typing.py                    v3-seed      skipped    -
+typing.py                    v4-tree      ok         157442
+typing.py                    v5-grammar   ok         47640
+typing.py                    v5-symbolic  ok         47041
+typing.py                    v6-predict   ok         36066
+beach_photo.rgb (raw pixels) v1-poly      skipped    -
+beach_photo.rgb (raw pixels) v2-loop      skipped    -
+beach_photo.rgb (raw pixels) v3-seed      skipped    -
+beach_photo.rgb (raw pixels) v4-tree      ok         97220
+beach_photo.rgb (raw pixels) v5-grammar   ok         77893
+beach_photo.rgb (raw pixels) v5-symbolic  ok         55481
+beach_photo.rgb (raw pixels) v6-predict   ok         48273
+synthetic.rgb (raw pixels)   v1-poly      skipped    -
+synthetic.rgb (raw pixels)   v2-loop      skipped    -
+synthetic.rgb (raw pixels)   v3-seed      skipped    -
+synthetic.rgb (raw pixels)   v4-tree      ok         229913
+synthetic.rgb (raw pixels)   v5-grammar   ok         237684
+synthetic.rgb (raw pixels)   v5-symbolic  ok         159029
+synthetic.rgb (raw pixels)   v6-predict   ok         82675
+chord.wav (raw PCM)          v1-poly      skipped    -
+chord.wav (raw PCM)          v2-loop      skipped    -
+chord.wav (raw PCM)          v3-seed      skipped    -
+chord.wav (raw PCM)          v4-tree      ok         308272
+chord.wav (raw PCM)          v5-grammar   ok         317229
+chord.wav (raw PCM)          v5-symbolic  ok         264747
+chord.wav (raw PCM)          v6-predict   ok         219547
+wrote results/lossless.json
+== lossless done in 59.3s
+v2 4 [5, 4, 3, 2, 5]
+v2 6 [7, 9, 7, 5, 7]
+v2 8 [7, 7, 10, 8, 8]
+v2 10 [10, 12, 11, 6, 8]
+v2 12 [15, 11, 10, 11, 13]
+v2 14 [14, 13, 16, 14, 15]
+v2 16 [14, 18, 18, 14, 18]
+v2 18 [20, 17, 14, 19, 18]
+v2 20 [16, 21, 20, 20, 18]
+v2 22 [22, 23, 20, 22, 22]
+v3 4 [5, 3, 3, 4, 3]
+v3 8 [8, 7, 6, 7, 9]
+v3 12 [7, 13, 9, 12, 13]
+v3 16 [16, 16, 16, 15, 14]
+v3 20 [19, 20, 18, 21, 21]
+v3 24 [22, 25, 20, 24, 26]
+v3 28 [20, 24, 26, 28, 30]
+wrote results/loop.json
+== loop done in 16.3s
+hi.txt [16, 21, 37, 54, 76, 91]
+sentence.txt [616, 730, 853, 1004, 1170, 1380]
+license.txt [110472, 128991, 150166, 174843, 203522, 237199]
+random.bin [32768, 38276, 44661, 52025, 60556, 70496]
+wrote results/tree.json
+== tree done in 0.1s
+image beach_photo
+image landscape
+image synthetic
+image wallpaper
+wrote results/image.json
+== image done in 131.7s
+audio chord
+audio system_sounds
+wrote results/audio.json
+== audio done in 63.5s
+  eq 6 81990 38.5
+  eq 12 47728 37.71
+  eq 24 26744 36.25
+  eq 48 13915 34.15
+  eq 96 7083 31.53
+video pan_landscape
+  eq 6 560593 39.58
+  eq 12 367029 35.05
+  eq 24 209839 30.53
+  eq 48 100423 26.65
+  eq 96 40696 23.63
+video testsrc
+wrote results/video.json
+== video done in 125.2s

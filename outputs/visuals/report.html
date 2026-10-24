@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EquaFile Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --surface-0: #f3f2ee; --surface-1: #fcfcfb; --line: #e2e0d9; --grid: #ecebe6;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #77756f;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --ref: #9a978f; --good: #008300; --bad: #c62a2a;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-0: #111110; --surface-1: #1a1a19; --line: #2e2d2a; --grid: #262523;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --ref: #6f6d66; --good: #4cb94c; --bad: #ef6b6b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #111110; --surface-1: #1a1a19; --line: #2e2d2a; --grid: #262523;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --ref: #6f6d66; --good: #4cb94c; --bad: #ef6b6b;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 15px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font-size: 32px; margin: 0 0 6px; letter-spacing: -0.02em; }
+h2 { font-size: 21px; margin: 0 0 4px; }
+h3 { font-size: 15px; margin: 0 0 6px; }
+.lede { color: var(--text-secondary); max-width: 760px; }
+section { background: var(--surface-1); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin: 20px 0; }
+.note { color: var(--text-secondary); font-size: 14px; max-width: 820px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 20px 0; }
+.tile { background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.tile .k { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.tile .v { font: 700 26px var(--mono); margin: 4px 0; }
+.tile .d { font-size: 13.5px; color: var(--text-secondary); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 18px; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--text-secondary); margin: 6px 0 4px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.dash { height: 0; border-top: 2px dashed var(--ref); border-radius: 0; width: 16px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgb(0 0 0 / .15);
+  white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 2; }
+.tip b { display: block; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { color: var(--text-muted); font-weight: 500; font-size: 12.5px; }
+td.n { font-family: var(--mono); text-align: right; }
+.win { color: var(--good); font-weight: 600; }
+.lose { color: var(--bad); font-weight: 600; }
+.pair { display: grid; grid-template-columns: 1fr; gap: 3px; min-width: 160px; }
+.pair div { height: 8px; border-radius: 0 4px 4px 0; }
+@media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>EquaFile — POC results</h1>
+  <p class="lede">Every file stored as an equation, decoded back and checked. Below: does the loop idea shrink files, does the FunnelBrain tree narrow, and how do equation families compare with gzip/xz/brotli, PNG/JPEG/WebP, MP3/Opus and H.264?</p>
+  <div class="tiles" id="tiles"></div>
+
+  <section>
+    <h2>1 · The loop and the seed search</h2>
+    <p class="note">Each dot is one random target. The dashed line is break-even: below it the equation would be smaller than the file. Individual lucky targets dip below it, but once the decoder is told how long the stored number is (the "length prefix" table in REPORT_DATA.md), every bit size averages above it. Search time doubles with every extra bit.</p>
+    <div class="grid2">
+      <div><h3>Bits stored vs bits in the file</h3><div class="chart" id="c-loop"></div></div>
+      <div><h3>Seed search time (V3, vectorised)</h3><div class="chart" id="c-time"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · The FunnelBrain tree never narrows</h2>
+    <p class="note">Each level replaces 16-bit chunks with the seeds of sub-equations that print them. A seed costs about 18.5 bits per 16-bit chunk, so every level grows by ~16% instead of shrinking toward one master equation.</p>
+    <div class="chart" id="c-tree" style="max-width:720px"></div>
+  </section>
+
+  <section>
+    <h2>3 · Lossless: best equation vs best existing compressor</h2>
+    <p class="note">Ratio = stored / original (lower is better). Every equation result was decoded and matched the original bit for bit.</p>
+    <div class="tablewrap"><table id="t-lossless"></table></div>
+  </section>
+
+  <section>
+    <h2>4 · Images: quality per byte</h2>
+    <p class="note">PSNR against the original (higher is better) vs stored size (log scale). Up and to the left wins.</p>
+    <div class="grid2" id="c-image"></div>
+  </section>
+
+  <section>
+    <h2>5 · Audio</h2>
+    <p class="note">SNR vs size. MP3 and Opus are tuned for what ears hear, not for SNR, so this metric flatters the equation; treat the audio result as a lower bound for the codecs.</p>
+    <div class="grid2" id="c-audio"></div>
+  </section>
+
+  <section>
+    <h2>6 · Video</h2>
+    <p class="note">PSNR vs size for 48 frames at 256×144. The equation has no motion compensation; H.264 does.</p>
+    <div class="grid2" id="c-video"></div>
+  </section>
+</main>
+
+<script>
+const DATA = {"lossless": [{"file": "counter.bin", "size": 4096, "eq": ["v5-symbolic", 6], "base": ["brotli -11", 217], "variants": {"v1-poly": 8707, "v2-loop": null, "v3-seed": null, "v4-tree": 4810, "v5-grammar": 652, "v5-symbolic": 6, "v6-predict": 1248}}, {"file": "hello.txt", "size": 11, "eq": ["v5-symbolic", 13], "base": ["brotli -11", 15], "variants": {"v1-poly": 15, "v2-loop": null, "v3-seed": null, "v4-tree": 19, "v5-grammar": 14, "v5-symbolic": 13, "v6-predict": 13}}, {"file": "hi.txt", "size": 2, "eq": ["v5-symbolic", 4], "base": ["brotli -11", 6], "variants": {"v1-poly": 5, "v2-loop": 5, "v3-seed": 6, "v4-tree": 7, "v5-grammar": 5, "v5-symbolic": 4, "v6-predict": 4}}, {"file": "json_decoder.py", "size": 12872, "eq": ["v6-predict", 4494], "base": ["brotli -11", 3158], "variants": {"v1-poly": 27356, "v2-loop": null, "v3-seed": null, "v4-tree": 15306, "v5-grammar": 5771, "v5-symbolic": 5206, "v6-predict": 4494}}, {"file": "license.txt", "size": 13809, "eq": ["v6-predict", 5305], "base": ["brotli -11", 3264], "variants": {"v1-poly": 29348, "v2-loop": null, "v3-seed": null, "v4-tree": 16132, "v5-grammar": 7359, "v5-symbolic": 6131, "v6-predict": 5305}}, {"file": "random.bin", "size": 4096, "eq": ["v5-symbolic", 4100], "base": ["brotli -11", 4100], "variants": {"v1-poly": 8707, "v2-loop": null, "v3-seed": null, "v4-tree": 4793, "v5-grammar": 4607, "v5-symbolic": 4100, "v6-predict": 4109}}, {"file": "sensor.csv", "size": 32918, "eq": ["v6-predict", 6374], "base": ["xz -9e", 6564], "variants": {"v1-poly": null, "v2-loop": null, "v3-seed": null, "v4-tree": 38267, "v5-grammar": 13285, "v5-symbolic": 18839, "v6-predict": 6374}}, {"file": "sentence.txt", "size": 77, "eq": ["v5-symbolic", 57], "base": ["brotli -11", 61], "variants": {"v1-poly": 89, "v2-loop": null, "v3-seed": null, "v4-tree": 98, "v5-grammar": 88, "v5-symbolic": 57, "v6-predict": 64}}, {"file": "typing.py", "size": 132718, "eq": ["v6-predict", 36066], "base": ["brotli -11", 28616], "variants": {"v1-poly": null, "v2-loop": null, "v3-seed": null, "v4-tree": 157442, "v5-grammar": 47640, "v5-symbolic": 47041, "v6-predict": 36066}}, {"file": "beach_photo.rgb (raw pixels)", "size": 83460, "eq": ["v6-predict", 48273], "base": ["WebP lossless", 33720], "variants": {"v1-poly": null, "v2-loop": null, "v3-seed": null, "v4-tree": 97220, "v5-grammar": 77893, "v5-symbolic": 55481, "v6-predict": 48273}}, {"file": "synthetic.rgb (raw pixels)", "size": 196608, "eq": ["v6-predict", 82675], "base": ["WebP lossless", 232], "variants": {"v1-poly": null, "v2-loop": null, "v3-seed": null, "v4-tree": 229913, "v5-grammar": 237684, "v5-symbolic": 159029, "v6-predict": 82675}}, {"file": "chord.wav (raw PCM)", "size": 264600, "eq": ["v6-predict", 219547], "base": ["bzip2 -9", 199193], "variants": {"v1-poly": null, "v2-loop": null, "v3-seed": null, "v4-tree": 308272, "v5-grammar": 317229, "v5-symbolic": 264747, "v6-predict": 219547}}], "loop": {"v2": [{"bits": 4, "stored_bits": 5, "steps": 16, "sec": 1.0250005288980901e-05}, {"bits": 4, "stored_bits": 4, "steps": 13, "sec": 5.166999471839517e-06}, {"bits": 4, "stored_bits": 3, "steps": 7, "sec": 2.5839981390163302e-06}, {"bits": 4, "stored_bits": 2, "steps": 3, "sec": 1.2089949450455606e-06}, {"bits": 4, "stored_bits": 5, "steps": 23, "sec": 7.667003956157714e-06}, {"bits": 6, "stored_bits": 7, "steps": 88, "sec": 2.9874994652345777e-05}, {"bits": 6, "stored_bits": 9, "steps": 326, "sec": 0.00010762499732663855}, {"bits": 6, "stored_bits": 7, "steps": 89, "sec": 3.687500429805368e-05}, {"bits": 6, "stored_bits": 5, "steps": 29, "sec": 9.625000529922545e-06}, {"bits": 6, "stored_bits": 7, "steps": 72, "sec": 2.379199577262625e-05}, {"bits": 8, "stored_bits": 7, "steps": 81, "sec": 3.0125003831926733e-05}, {"bits": 8, "stored_bits": 7, "steps": 119, "sec": 3.9332997403107584e-05}, {"bits": 8, "stored_bits": 10, "steps": 702, "sec": 0.00024254099844256416}, {"bits": 8, "stored_bits": 8, "steps": 177, "sec": 6.283300172071904e-05}, {"bits": 8, "stored_bits": 8, "steps": 141, "sec": 4.9875001423060894e-05}, {"bits": 10, "stored_bits": 10, "steps": 561, "sec": 0.00019920799968531355}, {"bits": 10, "stored_bits": 12, "steps": 3046, "sec": 0.0010992919997079298}, {"bits": 10, "stored_bits": 11, "steps": 1882, "sec": 0.0007026669991319068}, {"bits": 10, "stored_bits": 6, "steps": 62, "sec": 2.2207997972145677e-05}, {"bits": 10, "stored_bits": 8, "steps": 184, "sec": 6.479200237663463e-05}, {"bits": 12, "stored_bits": 15, "steps": 19162, "sec": 0.006701625003188383}, {"bits": 12, "stored_bits": 11, "steps": 1904, "sec": 0.0006866659969091415}, {"bits": 12, "stored_bits": 10, "steps": 528, "sec": 0.00018270800501341}, {"bits": 12, "stored_bits": 11, "steps": 1672, "sec": 0.000625790999038145}, {"bits": 12, "stored_bits": 13, "steps": 6925, "sec": 0.0024785829955362715}, {"bits": 14, "stored_bits": 14, "steps": 16299, "sec": 0.005692124999768566}, {"bits": 14, "stored_bits": 13, "steps": 4505, "sec": 0.0014970419942983426}, {"bits": 14, "stored_bits": 16, "steps": 52468, "sec": 0.01813399999809917}, {"bits": 14, "stored_bits": 14, "steps": 8232, "sec": 0.0028298329998506233}, {"bits": 14, "stored_bits": 15, "steps": 24232, "sec": 0.008393249998334795}, {"bits": 16, "stored_bits": 14, "steps": 12935, "sec": 0.004472624998015817}, {"bits": 16, "stored_bits": 18, "steps": 144921, "sec": 0.0499112499965122}, {"bits": 16, "stored_bits": 18, "steps": 234136, "sec": 0.07994324999890523}, {"bits": 16, "stored_bits": 14, "steps": 13817, "sec": 0.004729790998680983}, {"bits": 16, "stored_bits": 18, "steps": 213940, "sec": 0.07307520800532075}, {"bits": 18, "stored_bits": 20, "steps": 736110, "sec": 0.2518096250059898}, {"bits": 18, "stored_bits": 17, "steps": 127239, "sec": 0.04334137499972712}, {"bits": 18, "stored_bits": 14, "steps": 12973, "sec": 0.004410292000102345}, {"bits": 18, "stored_bits": 19, "steps": 372396, "sec": 0.12712962499790592}, {"bits": 18, "stored_bits": 18, "steps": 163053, "sec": 0.05519270899822004}, {"bits": 20, "stored_bits": 16, "steps": 49524, "sec": 0.016911624996282626}, {"bits": 20, "stored_bits": 21, "steps": 1611847, "sec": 0.5453463750018273}, {"bits": 20, "stored_bits": 20, "steps": 597056, "sec": 0.2016285420031636}, {"bits": 20, "stored_bits": 20, "steps": 998728, "sec": 0.33653824999782955}, {"bits": 20, "stored_bits": 18, "steps": 159216, "sec": 0.05353849999664817}, {"bits": 22, "stored_bits": 22, "steps": 2570954, "sec": 0.8688109159993473}, {"bits": 22, "stored_bits": 23, "steps": 5351975, "sec": 1.8138692499996978}, {"bits": 22, "stored_bits": 20, "steps": 903475, "sec": 0.30539845800376497}, {"bits": 22, "stored_bits": 22, "steps": 3876153, "sec": 1.3051242500005173}, {"bits": 22, "stored_bits": 22, "steps": 2255716, "sec": 0.7567300419977983}], "v3": [{"bits": 4, "stored_bits": 5, "seed": 21, "sec": 0.045571833004942164}, {"bits": 4, "stored_bits": 3, "seed": 4, "sec": 0.038042790998588316}, {"bits": 4, "stored_bits": 3, "seed": 4, "sec": 0.03737724999518832}, {"bits": 4, "stored_bits": 4, "seed": 8, "sec": 0.03795399999944493}, {"bits": 4, "stored_bits": 3, "seed": 4, "sec": 0.037530917004914954}, {"bits": 8, "stored_bits": 8, "seed": 151, "sec": 0.034703999997873325}, {"bits": 8, "stored_bits": 7, "seed": 106, "sec": 0.034649250002985355}, {"bits": 8, "stored_bits": 6, "seed": 49, "sec": 0.034449958002369385}, {"bits": 8, "stored_bits": 7, "seed": 117, "sec": 0.03444820800359594}, {"bits": 8, "stored_bits": 9, "seed": 357, "sec": 0.03451287500502076}, {"bits": 12, "stored_bits": 7, "seed": 116, "sec": 0.039004083002510015}, {"bits": 12, "stored_bits": 13, "seed": 5794, "sec": 0.03451383300125599}, {"bits": 12, "stored_bits": 9, "seed": 411, "sec": 0.03440708400012227}, {"bits": 12, "stored_bits": 12, "seed": 2211, "sec": 0.034313374999328516}, {"bits": 12, "stored_bits": 13, "seed": 4869, "sec": 0.03440254199813353}, {"bits": 16, "stored_bits": 16, "seed": 41801, "sec": 0.034328708999964874}, {"bits": 16, "stored_bits": 16, "seed": 34190, "sec": 0.03435716700187186}, {"bits": 16, "stored_bits": 16, "seed": 52004, "sec": 0.03434779200324556}, {"bits": 16, "stored_bits": 15, "seed": 29426, "sec": 0.035364333001780324}, {"bits": 16, "stored_bits": 14, "seed": 14368, "sec": 0.037293083005351946}, {"bits": 20, "stored_bits": 19, "seed": 351493, "sec": 0.03449629100214224}, {"bits": 20, "stored_bits": 20, "seed": 751034, "sec": 0.03411941699596355}, {"bits": 20, "stored_bits": 18, "seed": 145086, "sec": 0.034546041999419685}, {"bits": 20, "stored_bits": 21, "seed": 1783539, "sec": 0.033836375005193986}, {"bits": 20, "stored_bits": 21, "seed": 1949548, "sec": 0.034186750002845656}, {"bits": 24, "stored_bits": 22, "seed": 2298298, "sec": 0.034139874995162245}, {"bits": 24, "stored_bits": 25, "seed": 29277795, "sec": 0.23763925000093877}, {"bits": 24, "stored_bits": 20, "seed": 856752, "sec": 0.03374574999907054}, {"bits": 24, "stored_bits": 24, "seed": 8482960, "sec": 0.10169300000416115}, {"bits": 24, "stored_bits": 26, "seed": 37476326, "sec": 0.3058645830024034}, {"bits": 28, "stored_bits": 28, "seed": 231959634, "sec": 1.9015551249976852}, {"bits": 28, "stored_bits": 30, "seed": 713578479, "sec": 5.820745958997577}]}, "tree": {"hi.txt": [16, 21, 37, 54, 76, 91], "sentence.txt": [616, 730, 853, 1004, 1170, 1380], "license.txt": [110472, 128991, 150166, 174843, 203522, 237199], "random.bin": [32768, 38276, 44661, 52025, 60556, 70496]}, "media": {"image": {"beach_photo": {"shape": [130, 214, 3], "raw": 83460, "lossless": {"PNG": 43542, "WebP lossless": 33720}, "curves": {"Equation: 16x16 sub-equations": [{"bytes": 21141, "psnr": 34.32270248190912, "terms": 26668, "step": 3}, {"bytes": 18743, "psnr": 33.95393412358189, "terms": 24095, "step": 4}, {"bytes": 15525, "psnr": 33.17008998302122, "terms": 20353, "step": 6}, {"bytes": 13441, "psnr": 32.39834648475237, "terms": 17793, "step": 8}, {"bytes": 10678, "psnr": 31.031694654006397, "terms": 14230, "step": 12}, {"bytes": 8956, "psnr": 29.895755048388825, "terms": 11969, "step": 16}, {"bytes": 6781, "psnr": 28.17628961423585, "terms": 8938, "step": 24}, {"bytes": 5387, "psnr": 26.869731236926576, "terms": 7007, "step": 32}, {"bytes": 3786, "psnr": 25.08573288155808, "terms": 4717, "step": 48}, {"bytes": 2898, "psnr": 23.902396946021724, "terms": 3522, "step": 64}, {"bytes": 1849, "psnr": 21.917658938145284, "terms": 2119, "step": 96}], "Equation: one global equation": [{"bytes": 21369, "psnr": 34.21494231279627, "terms": 32521, "step": 3}, {"bytes": 19175, "psnr": 33.75510823140055, "terms": 30216, "step": 4}, {"bytes": 16138, "psnr": 32.854090800301485, "terms": 26526, "step": 6}, {"bytes": 14115, "psnr": 31.968252546791796, "terms": 23776, "step": 8}, {"bytes": 11326, "psnr": 30.395298951405955, "terms": 19404, "step": 12}, {"bytes": 9426, "psnr": 29.199798226412103, "terms": 16146, "step": 16}, {"bytes": 7070, "psnr": 27.406280493518565, "terms": 11826, "step": 24}, {"bytes": 5577, "psnr": 25.96297800525115, "terms": 9040, "step": 32}, {"bytes": 3726, "psnr": 24.061075360916565, "terms": 5637, "step": 48}, {"bytes": 2677, "psnr": 22.896172412377243, "terms": 3871, "step": 64}, {"bytes": 1533, "psnr": 21.296159378100704, "terms": 2064, "step": 96}], "JPEG": [{"bytes": 1119, "psnr": 20.49678260593502, "q": 5}, {"bytes": 1801, "psnr": 22.746014499758267, "q": 10}, {"bytes": 2860, "psnr": 24.7971987845676, "q": 20}, {"bytes": 3667, "psnr": 25.943894983134683, "q": 30}, {"bytes": 4327, "psnr": 26.716254026597657, "q": 40}, {"bytes": 4935, "psnr": 27.47711303063634, "q": 50}, {"bytes": 5576, "psnr": 28.1512446419539, "q": 60}, {"bytes": 6495, "psnr": 29.04823397690748, "q": 70}, {"bytes": 7998, "psnr": 30.480844243144638, "q": 80}, {"bytes": 11229, "psnr": 33.12424279355157, "q": 90}, {"bytes": 15216, "psnr": 34.98167360694534, "q": 95}], "WebP": [{"bytes": 1674, "psnr": 24.077205979344086, "q": 5}, {"bytes": 2008, "psnr": 24.993655879745983, "q": 10}, {"bytes": 2558, "psnr": 26.389206048697172, "q": 20}, {"bytes": 3070, "psnr": 27.455723440239154, "q": 30}, {"bytes": 3686, "psnr": 28.54386664047277, "q": 40}, {"bytes": 4180, "psnr": 29.383884342759607, "q": 50}, {"bytes": 4670, "psnr": 30.382775085610675, "q": 60}, {"bytes": 5164, "psnr": 30.987689849720425, "q": 70}, {"bytes": 6310, "psnr": 32.311597805410834, "q": 80}, {"bytes": 9232, "psnr": 34.42041064111397, "q": 90}, {"bytes": 11416, "psnr": 35.184942301727574, "q": 95}]}}, "landscape": {"shape": [512, 512, 3], "raw": 786432, "lossless": {"PNG": 168916, "WebP lossless": 119562}, "curves": {"Equation: 16x16 sub-equations": [{"bytes": 27914, "psnr": 43.11126502695029, "terms": 31898, "step": 3}, {"bytes": 23211, "psnr": 42.675975908541446, "terms": 26644, "step": 4}, {"bytes": 17814, "psnr": 41.84849593441666, "terms": 20618, "step": 6}, {"bytes": 14527, "psnr": 41.09398067717517, "terms": 16876, "step": 8}, {"bytes": 10687, "psnr": 39.763337840084134, "terms": 12575, "step": 12}, {"bytes": 8442, "psnr": 38.657149892367514, "terms": 10172, "step": 16}, {"bytes": 5981, "psnr": 36.977531085195935, "terms": 7492, "step": 24}, {"bytes": 4616, "psnr": 35.76638587417185, "terms": 5981, "step": 32}, {"bytes": 3170, "psnr": 33.81560097253115, "terms": 4482, "step": 48}, {"bytes": 2461, "psnr": 32.278627540727456, "terms": 3593, "step": 64}, {"bytes": 1666, "psnr": 30.417949589000337, "terms": 2703, "step": 96}], "Equation: one global equation": [{"bytes": 39778, "psnr": 41.91947118484983, "terms": 70099, "step": 3}, {"bytes": 31494, "psnr": 41.15505771823216, "terms": 54511, "step": 4}, {"bytes": 21746, "psnr": 39.90714842853875, "terms": 36406, "step": 6}, {"bytes": 16102, "psnr": 38.95998457709721, "terms": 26429, "step": 8}, {"bytes": 10504, "psnr": 37.629082883362784, "terms": 16634, "step": 12}, {"bytes": 7720, "psnr": 36.637097901838814, "terms": 11880, "step": 16}, {"bytes": 4825, "psnr": 35.24204947530804, "terms": 7141, "step": 24}, {"bytes": 3486, "psnr": 34.225017750644454, "terms": 5021, "step": 32}, {"bytes": 2174, "psnr": 32.93103509654776, "terms": 3061, "step": 48}, {"bytes": 1575, "psnr": 31.989285950887094, "terms": 2173, "step": 64}, {"bytes": 1011, "psnr": 30.587677429423294, "terms": 1346, "step": 96}], "JPEG": [{"bytes": 2380, "psnr": 26.86866206520478, "q": 5}, {"bytes": 3213, "psnr": 31.305826546500754, "q": 10}, {"bytes": 5123, "psnr": 34.6601532495055, "q": 20}, {"bytes": 6737, "psnr": 36.499266064833996, "q": 30}, {"bytes": 8303, "psnr": 37.51820518019187, "q": 40}, {"bytes": 9707, "psnr": 38.28065512678057, "q": 50}, {"bytes": 10934, "psnr": 38.98757902590526, "q": 60}, {"bytes": 12873, "psnr": 39.87097090293198, "q": 70}, {"bytes": 16092, "psnr": 41.14616608265411, "q": 80}, {"bytes": 23570, "psnr": 42.73895061159233, "q": 90}, {"bytes": 35673, "psnr": 43.756146103645165, "q": 95}], "WebP": [{"bytes": 2414, "psnr": 35.08372503419882, "q": 5}, {"bytes": 2712, "psnr": 35.78792595721723, "q": 10}, {"bytes": 3204, "psnr": 37.16286553436896, "q": 20}, {"bytes": 3708, "psnr": 37.98664827623216, "q": 30}, {"bytes": 4178, "psnr": 38.601835809126214, "q": 40}, {"bytes": 4696, "psnr": 39.15074197106329, "q": 50}, {"bytes": 5168, "psnr": 39.64687599534236, "q": 60}, {"bytes": 5658, "psnr": 40.049678874256635, "q": 70}, {"bytes": 7196, "psnr": 41.06654946488863, "q": 80}, {"bytes": 11828, "psnr": 42.8480936533284, "q": 90}, {"bytes": 18682, "psnr": 43.61269057963777, "q": 95}]}}, "synthetic": {"shape": [256, 256, 3], "raw": 196608, "lossless": {"PNG": 980, "WebP lossless": 232}, "curves": {"Equation: 16x16 sub-equations": [{"bytes": 5071, "psnr": 49.20921307341406, "terms": 5500, "step": 3}, {"bytes": 4520, "psnr": 47.456396816437874, "terms": 4815, "step": 4}, {"bytes": 3809, "psnr": 45.287786250898606, "terms": 4140, "step": 6}, {"bytes": 3358, "psnr": 43.35041894338169, "terms": 3759, "step": 8}, {"bytes": 2702, "psnr": 40.65528578790812, "terms": 2953, "step": 12}, {"bytes": 2332, "psnr": 38.91700281591386, "terms": 2604, "step": 16}, {"bytes": 1893, "psnr": 36.452073309954, "terms": 2242, "step": 24}, {"bytes": 1600, "psnr": 34.620591344732, "terms": 2001, "step": 32}, {"bytes": 1274, "psnr": 32.53355624720668, "terms": 1540, "step": 48}, {"bytes": 1076, "psnr": 30.28909589819131, "terms": 1382, "step": 64}, {"bytes": 776, "psnr": 27.090245639113284, "terms": 902, "step": 96}], "Equation: one global equation": [{"bytes": 15002, "psnr": 44.551534971129094, "terms": 20353, "step": 3}, {"bytes": 12205, "psnr": 43.01867674666998, "terms": 16499, "step": 4}, {"bytes": 9129, "psnr": 40.836131347018, "terms": 12267, "step": 6}, {"bytes": 7435, "psnr": 39.283012287256355, "terms": 9956, "step": 8}, {"bytes": 5516, "psnr": 37.036846363117945, "terms": 7271, "step": 12}, {"bytes": 4435, "psnr": 35.40971826813892, "terms": 5796, "step": 16}, {"bytes": 3189, "psnr": 33.0991751076297, "terms": 4042, "step": 24}, {"bytes": 2513, "psnr": 31.60771898598684, "terms": 3094, "step": 32}, {"bytes": 1774, "psnr": 29.61957929644509, "terms": 2071, "step": 48}, {"bytes": 1358, "psnr": 28.27996866403933, "terms": 1517, "step": 64}, {"bytes": 852, "psnr": 26.542497653518954, "terms": 917, "step": 96}], "JPEG": [{"bytes": 937, "psnr": 24.759368433466527, "q": 5}, {"bytes": 1106, "psnr": 28.59226528050426, "q": 10}, {"bytes": 1365, "psnr": 30.60243081883361, "q": 20}, {"bytes": 1777, "psnr": 32.380518000298444, "q": 30}, {"bytes": 2220, "psnr": 33.94008952144965, "q": 40}, {"bytes": 2368, "psnr": 34.98982100082343, "q": 50}, {"bytes": 2784, "psnr": 35.53045943791294, "q": 60}, {"bytes": 3026, "psnr": 36.38517278478834, "q": 70}, {"bytes": 3563, "psnr": 37.243582628292906, "q": 80}, {"bytes": 4396, "psnr": 37.67393517825219, "q": 90}, {"bytes": 5889, "psnr": 37.88864868675494, "q": 95}], "WebP": [{"bytes": 736, "psnr": 34.23988665411478, "q": 5}, {"bytes": 784, "psnr": 34.64455706188983, "q": 10}, {"bytes": 912, "psnr": 35.17377390657767, "q": 20}, {"bytes": 964, "psnr": 36.12488535533988, "q": 30}, {"bytes": 1054, "psnr": 36.588961025526324, "q": 40}, {"bytes": 1110, "psnr": 36.7894233472719, "q": 50}, {"bytes": 1158, "psnr": 36.76814814827289, "q": 60}, {"bytes": 1268, "psnr": 36.96475764793697, "q": 70}, {"bytes": 1360, "psnr": 36.85150665919759, "q": 80}, {"bytes": 2026, "psnr": 37.41958368003011, "q": 90}, {"bytes": 2766, "psnr": 37.71100495865199, "q": 95}]}}, "wallpaper": {"shape": [288, 512, 3], "raw": 442368, "lossless": {"PNG": 202260, "WebP lossless": 154976}, "curves": {"Equation: 16x16 sub-equations": [{"bytes": 57203, "psnr": 38.472705331256755, "terms": 84264, "step": 3}, {"bytes": 49981, "psnr": 37.92292923386616, "terms": 74858, "step": 4}, {"bytes": 40434, "psnr": 36.897711169552366, "terms": 61285, "step": 6}, {"bytes": 34281, "psnr": 35.997987562587696, "terms": 51801, "step": 8}, {"bytes": 26206, "psnr": 34.52768164430331, "terms": 38749, "step": 12}, {"bytes": 21065, "psnr": 33.416180645707, "terms": 30347, "step": 16}, {"bytes": 14762, "psnr": 31.759523597783463, "terms": 20441, "step": 24}, {"bytes": 11146, "psnr": 30.56953200029294, "terms": 14949, "step": 32}, {"bytes": 7122, "psnr": 28.90458175944559, "terms": 9252, "step": 48}, {"bytes": 5005, "psnr": 27.74766673895701, "terms": 6473, "step": 64}, {"bytes": 2980, "psnr": 26.132423390637275, "terms": 3852, "step": 96}], "Equation: one global equation": [{"bytes": 83510, "psnr": 37.87823567317669, "terms": 141140, "step": 3}, {"bytes": 72570, "psnr": 37.14324581454217, "terms": 126310, "step": 4}, {"bytes": 58278, "psnr": 35.86653639303136, "terms": 104002, "step": 6}, {"bytes": 48894, "psnr": 34.807747999130136, "terms": 87402, "step": 8}, {"bytes": 36576, "psnr": 33.15221896322268, "terms": 63964, "step": 12}, {"bytes": 28493, "psnr": 31.933103818864655, "terms": 48353, "step": 16}, {"bytes": 18942, "psnr": 30.191370680208106, "terms": 30462, "step": 24}, {"bytes": 13438, "psnr": 28.99135656225976, "terms": 20876, "step": 32}, {"bytes": 7839, "psnr": 27.426976653713517, "terms": 11618, "step": 48}, {"bytes": 5281, "psnr": 26.429946397930376, "terms": 7565, "step": 64}, {"bytes": 2858, "psnr": 25.15818572862617, "terms": 3896, "step": 96}], "JPEG": [{"bytes": 2318, "psnr": 24.62548954897189, "q": 5}, {"bytes": 4089, "psnr": 27.11865094505773, "q": 10}, {"bytes": 6983, "psnr": 29.247819861402917, "q": 20}, {"bytes": 9525, "psnr": 30.321568290985184, "q": 30}, {"bytes": 11574, "psnr": 31.038430864714385, "q": 40}, {"bytes": 13478, "psnr": 31.62622298186172, "q": 50}, {"bytes": 15517, "psnr": 32.17608040561585, "q": 60}, {"bytes": 18664, "psnr": 32.89834557232476, "q": 70}, {"bytes": 23554, "psnr": 33.93945256168656, "q": 80}, {"bytes": 35026, "psnr": 35.99230905309004, "q": 90}, {"bytes": 51128, "psnr": 37.866413877626385, "q": 95}], "WebP": [{"bytes": 3272, "psnr": 28.04236870074323, "q": 5}, {"bytes": 3968, "psnr": 28.704506156866437, "q": 10}, {"bytes": 5346, "psnr": 29.773274348552548, "q": 20}, {"bytes": 6904, "psnr": 30.775161522342344, "q": 30}, {"bytes": 8328, "psnr": 31.555205662689964, "q": 40}, {"bytes": 9820, "psnr": 32.32311096384636, "q": 50}, {"bytes": 11230, "psnr": 32.93819981345494, "q": 60}, {"bytes": 12964, "psnr": 33.61630743899827, "q": 70}, {"bytes": 17696, "psnr": 35.054297080363476, "q": 80}, {"bytes": 30150, "psnr": 37.46496577452496, "q": 90}, {"bytes": 43374, "psnr": 38.69070680801834, "q": 95}]}}}, "audio": {"chord": {"seconds": 3.0, "raw": 264600, "curves": {"Equation: cosine terms / frame": [{"bytes": 70126, "snr": 76.04348482661437, "terms": 102516, "step": 2}, {"bytes": 54199, "snr": 70.95534988614398, "terms": 87158, "step": 4}, {"bytes": 41378, "snr": 65.60272433647506, "terms": 69707, "step": 8}, {"bytes": 31143, "snr": 60.365695707777924, "terms": 52677, "step": 16}, {"bytes": 23290, "snr": 55.40160666010025, "terms": 38595, "step": 32}, {"bytes": 17403, "snr": 50.6151274184607, "terms": 27871, "step": 64}, {"bytes": 12886, "snr": 45.95199685267848, "terms": 20083, "step": 128}, {"bytes": 9569, "snr": 41.34826671955091, "terms": 14517, "step": 256}, {"bytes": 7072, "snr": 36.754405625612506, "terms": 10573, "step": 512}], "MP3": [{"bytes": 12347, "snr": 26.00017187927215, "kbps": 32}, {"bytes": 18407, "snr": 26.004791116206842, "kbps": 48}, {"bytes": 24493, "snr": 26.025584023869435, "kbps": 64}, {"bytes": 36719, "snr": 26.024222795410743, "kbps": 96}, {"bytes": 48944, "snr": 26.025064440165465, "kbps": 128}, {"bytes": 73394, "snr": 30.46895962568336, "kbps": 192}], "Opus": [{"bytes": 5227, "snr": 15.025628895110408, "kbps": 12}, {"bytes": 6556, "snr": 20.36189683412879, "kbps": 16}, {"bytes": 12981, "snr": 21.040165773073806, "kbps": 24}, {"bytes": 16054, "snr": 34.77202297173229, "kbps": 32}, {"bytes": 22596, "snr": 42.46029515364603, "kbps": 48}, {"bytes": 28444, "snr": 43.0795577504314, "kbps": 64}, {"bytes": 44437, "snr": 43.64840521743524, "kbps": 96}]}, "flac": 48824}, "system_sounds": {"seconds": 11.562857142857142, "raw": 1019844, "curves": {"Equation: cosine terms / frame": [{"bytes": 98363, "snr": 68.15925080971462, "terms": 108790, "step": 2}, {"bytes": 74268, "snr": 64.10330040757715, "terms": 84998, "step": 4}, {"bytes": 56966, "snr": 59.62615937464758, "terms": 65835, "step": 8}, {"bytes": 43302, "snr": 54.8221702842594, "terms": 49606, "step": 16}, {"bytes": 32278, "snr": 50.043763620175326, "terms": 36743, "step": 32}, {"bytes": 23519, "snr": 45.28862326688611, "terms": 26813, "step": 64}, {"bytes": 16777, "snr": 40.56838364982728, "terms": 19001, "step": 128}, {"bytes": 11663, "snr": 35.91420936466679, "terms": 13224, "step": 256}, {"bytes": 7855, "snr": 31.41504034372943, "terms": 8856, "step": 512}], "MP3": [{"bytes": 46619, "snr": 22.707574434190118, "kbps": 32}, {"bytes": 69816, "snr": 23.883344771367952, "kbps": 48}, {"bytes": 93038, "snr": 25.904125885253848, "kbps": 64}, {"bytes": 139537, "snr": 25.913055906417593, "kbps": 96}, {"bytes": 186034, "snr": 25.99157515513887, "kbps": 128}, {"bytes": 279030, "snr": 30.46115251717837, "kbps": 192}], "Opus": [{"bytes": 14459, "snr": 19.099446093216233, "kbps": 12}, {"bytes": 19269, "snr": 18.394651487691704, "kbps": 16}, {"bytes": 26921, "snr": 19.317722809559424, "kbps": 24}, {"bytes": 34580, "snr": 20.793769852963262, "kbps": 32}, {"bytes": 51560, "snr": 26.470825000973058, "kbps": 48}, {"bytes": 80466, "snr": 32.803630826916205, "kbps": 64}, {"bytes": 120487, "snr": 35.97064693360535, "kbps": 96}]}, "flac": 150436}}, "video": {"pan_landscape": {"shape": [48, 144, 256, 3], "raw": 5308416, "curves": {"Equation: 3-D cosine per 8x16x16 block": [{"bytes": 81990, "psnr": 38.495777541958226, "terms": 105186, "step": 6, "sec": 7.1657833339995705}, {"bytes": 47728, "psnr": 37.71374588246197, "terms": 62140, "step": 12, "sec": 4.257365124998614}, {"bytes": 26744, "psnr": 36.2494891157767, "terms": 35050, "step": 24, "sec": 2.452241957995284}, {"bytes": 13915, "psnr": 34.14733892075438, "terms": 18891, "step": 48, "sec": 1.3597644159963238}, {"bytes": 7083, "psnr": 31.529879832761303, "terms": 10128, "step": 96, "sec": 0.7851584999953047}], "H.264 (x264 veryslow)": [{"bytes": 24299, "psnr": 37.56659178344503, "crf": 12}, {"bytes": 13363, "psnr": 37.194562727093235, "crf": 18}, {"bytes": 9351, "psnr": 36.59912577967213, "crf": 23}, {"bytes": 6939, "psnr": 35.64237985063415, "crf": 28}, {"bytes": 5311, "psnr": 34.006722734154906, "crf": 33}, {"bytes": 4273, "psnr": 31.994705872226486, "crf": 38}, {"bytes": 3587, "psnr": 29.196946482660508, "crf": 45}, {"bytes": 3207, "psnr": 26.123475035697318, "crf": 51}]}}, "testsrc": {"shape": [48, 144, 256, 3], "raw": 5308416, "curves": {"Equation: 3-D cosine per 8x16x16 block": [{"bytes": 560593, "psnr": 39.58354525543511, "terms": 704309, "step": 6, "sec": 46.13732066699595}, {"bytes": 367029, "psnr": 35.05107448249019, "terms": 466885, "step": 12, "sec": 31.324543208997056}, {"bytes": 209839, "psnr": 30.53328314438015, "terms": 258468, "step": 24, "sec": 17.64134995800123}, {"bytes": 100423, "psnr": 26.651402887790393, "terms": 115434, "step": 48, "sec": 8.103039708999859}, {"bytes": 40696, "psnr": 23.62523900596384, "terms": 46375, "step": 96, "sec": 3.36977008300164}], "H.264 (x264 veryslow)": [{"bytes": 83334, "psnr": 37.13928728912971, "crf": 12}, {"bytes": 57470, "psnr": 35.78998677912195, "crf": 18}, {"bytes": 38974, "psnr": 33.456754055954015, "crf": 23}, {"bytes": 23623, "psnr": 30.49419072678001, "crf": 28}, {"bytes": 15625, "psnr": 27.98713245480377, "crf": 33}, {"bytes": 12413, "psnr": 25.56083421433224, "crf": 38}, {"bytes": 9037, "psnr": 22.32200535123875, "crf": 45}, {"bytes": 6773, "psnr": 19.57109888157189, "crf": 51}]}}}}, "names": {"v1-poly": "V1 One polynomial f(i)", "v2-loop": "V2 Loop: x0=1, x<-f(x), L times", "v3-seed": "V3 Seed + loop: f^R(s)", "v4-tree": "V4 FunnelBrain tree of sub-equations", "v5-grammar": "V5a Nested rules R = A B", "v5-symbolic": "V5b Segment equations a+b\u00b7i / repeat", "v6-predict": "V6 Predictive equation (context mixing)"}};
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (n) => Math.round(n).toLocaleString();
+const fmtB = (b) => b >= 1e6 ? (b / 1e6).toFixed(2) + " MB" : b >= 1e3 ? (b / 1e3).toFixed(1) + " KB" : b + " B";
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+function niceTicks(lo, hi, n = 5) {
+  const step = Math.pow(10, Math.floor(Math.log10((hi - lo) / n)));
+  const s = [1, 2, 5, 10].map((m) => m * step).find((m) => (hi - lo) / m <= n) || step * 10;
+  const out = [];
+  for (let v = Math.ceil(lo / s) * s; v <= hi + 1e-9; v += s) out.push(+v.toFixed(6));
+  return out;
+}
+function logTicks(lo, hi) {
+  const out = [];
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+    for (const m of [1, 3]) { const v = m * 10 ** e; if (v >= lo && v <= hi) out.push(v); }
+  return out;
+}
+
+// series: [{name, color(var), points:[{x,y,tip}], line:bool, dots:bool}], opts: {xlog, ylog, xLabel, yLabel, ref:[[x,y],[x,y]], refName, xFmt, yFmt}
+function chart(host, series, o) {
+  const W = 520, H = 320, m = { l: 52, r: 18, t: 12, b: 42 };
+  const wrap = document.createElement("div");
+  wrap.className = "chart";
+  host.appendChild(wrap);
+  const leg = document.createElement("div");
+  leg.className = "legend";
+  leg.innerHTML = series.map((s) => `<span><i style="background:${css(s.color)}"></i>${s.name}</span>`).join("") +
+    (o.ref ? `<span><i class="dash"></i>${o.refName}</span>` : "");
+  if (series.length > 1 || o.ref) wrap.appendChild(leg);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": o.aria || o.yLabel });
+  wrap.appendChild(svg);
+  const all = series.flatMap((s) => s.points).filter((p) => isFinite(p.y));
+  let [x0, x1] = [Math.min(...all.map((p) => p.x)), Math.max(...all.map((p) => p.x))];
+  let [y0, y1] = [Math.min(...all.map((p) => p.y)), Math.max(...all.map((p) => p.y))];
+  if (o.ref) for (const [x, y] of o.ref) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (o.y0 !== undefined) y0 = o.y0;
+  if (o.xlog) { x0 /= 1.25; x1 *= 1.25; } else { const p = (x1 - x0) * 0.04; x0 -= p; x1 += p; }
+  if (o.ylog) { y0 /= 1.5; y1 *= 1.5; } else { const p = (y1 - y0) * 0.08 || 1; y0 = o.y0 ?? y0 - p; y1 += p; }
+  const sx = (x) => m.l + (W - m.l - m.r) * (o.xlog ? (Math.log(x) - Math.log(x0)) / (Math.log(x1) - Math.log(x0)) : (x - x0) / (x1 - x0));
+  const sy = (y) => H - m.b - (H - m.t - m.b) * (o.ylog ? (Math.log(y) - Math.log(y0)) / (Math.log(y1) - Math.log(y0)) : (y - y0) / (y1 - y0));
+  const g = el("g", {}, svg);
+  const xt = o.xlog ? logTicks(x0, x1) : niceTicks(x0, x1, 6), yt = o.ylog ? logTicks(y0, y1) : niceTicks(y0, y1, 5);
+  for (const t of yt) {
+    el("line", { x1: m.l, x2: W - m.r, y1: sy(t), y2: sy(t), stroke: css("--grid"), "stroke-width": 1 }, g);
+    el("text", { x: m.l - 8, y: sy(t) + 4, "text-anchor": "end", "font-size": 11, fill: css("--text-muted") }, g).textContent = (o.yFmt || ((v) => v))(t);
+  }
+  for (const t of xt) {
+    el("text", { x: sx(t), y: H - m.b + 16, "text-anchor": "middle", "font-size": 11, fill: css("--text-muted") }, g).textContent = (o.xFmt || ((v) => v))(t);
+  }
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--line") }, g);
+  el("text", { x: (m.l + W - m.r) / 2, y: H - 6, "text-anchor": "middle", "font-size": 12, fill: css("--text-secondary") }, g).textContent = o.xLabel;
+  el("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", "font-size": 12, fill: css("--text-secondary"),
+    transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, g).textContent = o.yLabel;
+  if (o.ref) el("line", { x1: sx(o.ref[0][0]), y1: sy(o.ref[0][1]), x2: sx(o.ref[1][0]), y2: sy(o.ref[1][1]),
+    stroke: css("--ref"), "stroke-width": 2, "stroke-dasharray": "5 4" }, g);
+  const marks = [];
+  for (const s of series) {
+    const pts = s.points.filter((p) => isFinite(p.y)).sort((a, b) => a.x - b.x);
+    const c = css(s.color);
+    if (s.line !== false && pts.length > 1)
+      el("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(""), fill: "none", stroke: c,
+        "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, g);
+    for (const p of pts) {
+      const dot = el("circle", { cx: sx(p.x), cy: sy(p.y), r: s.line === false ? 4.5 : 3.5, fill: c,
+        stroke: css("--surface-1"), "stroke-width": 2 }, g);
+      marks.push({ X: sx(p.x), Y: sy(p.y), p, s, dot });
+    }
+  }
+  const tip = document.createElement("div");
+  tip.className = "tip";
+  wrap.appendChild(tip);
+  svg.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(), k = W / r.width;
+    const mx = (ev.clientX - r.left) * k, my = (ev.clientY - r.top) * k;
+    let best = null, bd = 900;
+    for (const mk of marks) { const d = (mk.X - mx) ** 2 + (mk.Y - my) ** 2; if (d < bd) { bd = d; best = mk; } }
+    marks.forEach((mk) => mk.dot.setAttribute("r", mk === best ? 6 : mk.s.line === false ? 4.5 : 3.5));
+    if (!best) { tip.style.opacity = 0; return; }
+    tip.innerHTML = `<b>${best.s.name}</b>${best.p.tip}`;
+    tip.style.opacity = 1;
+    const left = best.X / k + 12, top = best.Y / k - 10;
+    tip.style.left = Math.min(left, r.width - tip.offsetWidth - 4) + "px";
+    tip.style.top = top + "px";
+  });
+  svg.addEventListener("pointerleave", () => { tip.style.opacity = 0; marks.forEach((mk) => mk.dot.setAttribute("r", mk.s.line === false ? 4.5 : 3.5)); });
+}
+
+const SLOTS = ["--series-1", "--series-2", "--series-3", "--series-4"];
+
+// ---------------- tiles
+(function tiles() {
+  const L = DATA.lossless, wins = L.filter((e) => e.eq && e.eq[1] < e.base[1]);
+  const big = L.filter((e) => e.size >= 1000);
+  const bigWins = big.filter((e) => e.eq && e.eq[1] < e.base[1]);
+  const v3 = DATA.loop.v3, mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  const elias = (b) => b + 2 * Math.max(1, b).toString(2).length - 1;   // stored number + its length
+  const v3raw = mean(v3.map((r) => r.stored_bits - r.bits));
+  const v3over = mean(v3.map((r) => elias(r.stored_bits) - r.bits));
+  const lic = DATA.tree["license.txt"];
+  const t = [
+    ["Round trips", "100%", "every equation decoded back to the exact original bits (SHA-256)"],
+    ["Loop / seed", "+" + v3over.toFixed(1) + " bits", `average extra bits per file for V3 once the decoder is told the seed's length (${v3raw.toFixed(1)} without)`],
+    ["Funnel tree", "×" + (lic[lic.length - 1] / lic[0]).toFixed(2), "license.txt after 5 levels of sub-equations — it grows, never narrows"],
+    ["Lossless wins", `${bigWins.length} of ${big.length}`, "files ≥ 1 KB where the best equation beat gzip/bzip2/xz/zstd/brotli"],
+  ];
+  document.getElementById("tiles").innerHTML = t.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+})();
+
+// ---------------- loop
+(function loop() {
+  const v2 = DATA.loop.v2, v3 = DATA.loop.v3;
+  const jit = (r, i) => r.bits + ((i % 5) - 2) * 0.18;
+  chart(document.getElementById("c-loop"), [
+    { name: "V2 loop count L", color: SLOTS[0], line: false, points: v2.map((r, i) => ({ x: jit(r, i), y: r.stored_bits, tip: `${r.bits}-bit file → L = ${fmt(r.steps)} (${r.stored_bits} bits)` })) },
+    { name: "V3 seed s", color: SLOTS[1], line: false, points: v3.map((r, i) => ({ x: jit(r, i), y: r.stored_bits, tip: `${r.bits}-bit file → s = ${fmt(r.seed)} (${r.stored_bits} bits)` })) },
+  ], { xLabel: "bits in the file", yLabel: "bits stored", ref: [[2, 2], [30, 30]], refName: "break-even (stored = file)", y0: 0 });
+  const byBits = {};
+  v3.forEach((r) => (byBits[r.bits] = byBits[r.bits] || []).push(r.sec));
+  chart(document.getElementById("c-time"), [
+    { name: "mean search time", color: SLOTS[0], points: Object.entries(byBits).map(([b, s]) => ({ x: +b, y: Math.max(1e-3, s.reduce((a, c) => a + c) / s.length), tip: `${b} bits: ${(s.reduce((a, c) => a + c) / s.length).toFixed(3)} s` })) },
+  ], { xLabel: "bits in the file", yLabel: "seconds (log)", ylog: true, yFmt: (v) => v >= 1 ? v + " s" : Math.round(v * 1000) + " ms" });
+})();
+
+// ---------------- tree
+(function tree() {
+  const files = Object.keys(DATA.tree);
+  chart(document.getElementById("c-tree"), files.map((f, i) => ({
+    name: f, color: SLOTS[i], points: DATA.tree[f].map((b, lvl) => ({ x: lvl, y: b / DATA.tree[f][0], tip: `level ${lvl}: ${fmt(b)} bits (${(b / DATA.tree[f][0]).toFixed(2)}× the file)` })),
+  })), { xLabel: "tree level (0 = the file)", yLabel: "size ÷ file size", ref: [[0, 1], [5, 1]], refName: "file size", y0: 0.8 });
+})();
+
+// ---------------- lossless table
+(function table() {
+  const N = DATA.names;
+  let h = `<tr><th>file</th><th>size</th><th>best equation</th><th>stored</th><th>best existing</th><th>stored</th><th>ratios (equation / existing)</th><th>result</th></tr>`;
+  const maxR = 1.2;
+  for (const e of DATA.lossless) {
+    const [eid, es] = e.eq, [bn, bs] = e.base;
+    const er = es / e.size, br = bs / e.size, win = es < bs;
+    h += `<tr><td>${e.file}</td><td class="n">${fmt(e.size)}</td><td>${N[eid]}</td><td class="n">${fmt(es)}</td><td>${bn}</td><td class="n">${fmt(bs)}</td>
+      <td><div class="pair"><div style="width:${Math.min(100, 100 * er / maxR)}%;background:${css("--series-1")}" title="equation ${er.toFixed(3)}"></div>
+      <div style="width:${Math.min(100, 100 * br / maxR)}%;background:${css("--ref")}" title="existing ${br.toFixed(3)}"></div></div></td>
+      <td class="${win ? "win" : "lose"}">${win ? "✓ equation smaller" : "✗ existing smaller"} <span style="color:var(--text-muted);font-weight:400">(${er.toFixed(3)} vs ${br.toFixed(3)})</span></td></tr>`;
+  }
+  document.getElementById("t-lossless").innerHTML = h;
+})();
+
+// ---------------- media
+function media(kind, key, host) {
+  const d = DATA.media[kind];
+  if (!d) return;
+  for (const [name, e] of Object.entries(d)) {
+    const box = document.createElement("div");
+    box.innerHTML = `<h3>${name} <span style="color:var(--text-muted);font-weight:400">· raw ${fmtB(e.raw)}</span></h3>`;
+    host.appendChild(box);
+    chart(box, Object.entries(e.curves).map(([cn, pts], i) => ({
+      name: cn, color: SLOTS[i],
+      points: pts.filter((p) => isFinite(p[key]) && p[key] < 99).map((p) => ({ x: p.bytes, y: p[key],
+        tip: `${fmtB(p.bytes)} → ${p[key].toFixed(2)} dB` + (p.terms ? ` · ${fmt(p.terms)} terms` : "") + (p.q ? ` · q${p.q}` : "") + (p.kbps ? ` · ${p.kbps} kbps` : "") + (p.crf !== undefined ? ` · crf ${p.crf}` : "") })),
+    })), { xlog: true, xLabel: "stored size (log)", yLabel: key.toUpperCase() + " dB", xFmt: fmtB });
+  }
+}
+media("image", "psnr", document.getElementById("c-image"));
+media("audio", "snr", document.getElementById("c-audio"));
+media("video", "psnr", document.getElementById("c-video"));
+</script>
+</body>
+</html>

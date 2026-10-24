@@ -1,0 +1,33 @@
+hi.txt                                               2 ->         5  diff bytes=0  lossless=True  enc 0.00 MB/s  dec 0.00 MB/s
+sentence.txt                                        77 ->        34  diff bytes=0  lossless=True  enc 0.00 MB/s  dec 0.00 MB/s
+license.txt                                      13809 ->      3368  diff bytes=0  lossless=True  enc 0.02 MB/s  dec 0.08 MB/s
+json_decoder.py                                  12872 ->      2687  diff bytes=0  lossless=True  enc 0.02 MB/s  dec 0.08 MB/s
+typing.py                                       132718 ->     24767  diff bytes=0  lossless=True  enc 0.11 MB/s  dec 0.41 MB/s
+sensor.csv                                       32918 ->      3113  diff bytes=0  lossless=True  enc 0.08 MB/s  dec 0.63 MB/s
+counter.bin                                       4096 ->        50  diff bytes=0  lossless=True  enc 0.09 MB/s  dec 0.51 MB/s
+random.bin                                        4096 ->      4113  diff bytes=0  lossless=True  enc 0.10 MB/s  dec 0.48 MB/s
+stdlib_2mb.txt (Python source)                 2097152 ->    363831  diff bytes=0  lossless=True  enc 0.56 MB/s  dec 0.73 MB/s
+zsh (program binary)                           1361216 ->    485935  diff bytes=0  lossless=True  enc 0.31 MB/s  dec 0.44 MB/s
+chord.wav                                       264644 ->     34111  diff bytes=0  lossless=True  enc 0.12 MB/s  dec 0.33 MB/s
+system_sounds.wav                              1019922 ->     78685  diff bytes=0  lossless=True  enc 0.30 MB/s  dec 0.38 MB/s
+beach_photo (raw RGB)                            83460 ->     30362  diff bytes=0  lossless=True  enc 0.06 MB/s  dec 0.37 MB/s
+landscape (raw RGB)                             786432 ->     94244  diff bytes=0  lossless=True  enc 0.19 MB/s  dec 0.34 MB/s
+wallpaper (raw RGB)                             442368 ->    148978  diff bytes=0  lossless=True  enc 0.16 MB/s  dec 0.36 MB/s
+synthetic (raw RGB)                             196608 ->       257  diff bytes=0  lossless=True  enc 0.08 MB/s  dec 0.44 MB/s
+doc_versions.txt                                 41459 ->      3569  diff bytes=0  lossless=True  enc 0.04 MB/s  dec 0.16 MB/s
+server.log                                     1740137 ->    122484  diff bytes=0  lossless=True  enc 0.52 MB/s  dec 0.70 MB/s
+music_loop.wav                                  529244 ->    149079  diff bytes=0  lossless=True  enc 0.15 MB/s  dec 0.33 MB/s
+music_loop_clean.wav                            529244 ->     46086  diff bytes=0  lossless=True  enc 0.15 MB/s  dec 0.35 MB/s
+stereo_mix.wav                                 1256068 ->    104650  diff bytes=0  lossless=True  enc 0.29 MB/s  dec 0.37 MB/s
+landscape.png (PNG file)                        183871 ->     94794  diff bytes=0  lossless=True  enc 0.03 MB/s  dec 0.08 MB/s
+beach_photo.png (PNG file)                       44550 ->     30375  diff bytes=0  lossless=True  enc 0.03 MB/s  dec 0.19 MB/s
+wallpaper.png (PNG file)                        207776 ->    148991  diff bytes=0  lossless=True  enc 0.05 MB/s  dec 0.17 MB/s
+synthetic.png (PNG file)                          1832 ->       269  diff bytes=0  lossless=True  enc 0.00 MB/s  dec 0.00 MB/s
+landscape_q90.jpg (JPEG file)                    24498 ->     17574  diff bytes=0  lossless=True  enc 0.02 MB/s  dec 0.02 MB/s
+landscape_q75.jpg (JPEG file)                    15335 ->     10037  diff bytes=0  lossless=True  enc 0.01 MB/s  dec 0.01 MB/s
+sonoma_apple.jpg (JPEG file)                     73364 ->     45820  diff bytes=0  lossless=True  enc 0.01 MB/s  dec 0.01 MB/s
+beach_apple.jpg (JPEG file)                      19577 ->     14271  diff bytes=0  lossless=True  enc 0.04 MB/s  dec 0.10 MB/s
+macOS DefaultBackground.jpg (4K) (JPEG file)   5617703 ->   4846803  diff bytes=0  lossless=True  enc 0.10 MB/s  dec 0.11 MB/s
+static camera video (raw RGB, 24 frames)       2654208 ->    693612  diff bytes=0  lossless=True  enc 0.22 MB/s  dec 0.31 MB/s
+camera pan video (raw RGB, 48 frames)          5308416 ->    466865  diff bytes=0  lossless=True  enc 0.27 MB/s  dec 0.33 MB/s
+all lossless: True | wrote results/lossless_proof.json

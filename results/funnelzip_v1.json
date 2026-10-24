@@ -1,0 +1,570 @@
+{
+ "rows": [
+  {
+   "file": "hi.txt",
+   "kind": "text/data",
+   "size": 2,
+   "funnelzip": 9,
+   "ok": true,
+   "enc_s": 0.01,
+   "dec_s": 0.0,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 22,
+    "bzip2 -9": 37,
+    "xz -9e": 60,
+    "zstd -19": 11,
+    "brotli -11": 6,
+    "zstd -22": 11
+   },
+   "best_existing": [
+    "brotli -11",
+    6
+   ]
+  },
+  {
+   "file": "sentence.txt",
+   "kind": "text/data",
+   "size": 77,
+   "funnelzip": 51,
+   "ok": true,
+   "enc_s": 0.01,
+   "dec_s": 0.0,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 73,
+    "bzip2 -9": 98,
+    "xz -9e": 120,
+    "zstd -19": 66,
+    "brotli -11": 61,
+    "zstd -22": 66
+   },
+   "best_existing": [
+    "brotli -11",
+    61
+   ]
+  },
+  {
+   "file": "license.txt",
+   "kind": "text/data",
+   "size": 13809,
+   "funnelzip": 3546,
+   "ok": true,
+   "enc_s": 0.12,
+   "dec_s": 0.02,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 4304,
+    "bzip2 -9": 4419,
+    "xz -9e": 4140,
+    "zstd -19": 4172,
+    "brotli -11": 3264,
+    "zstd -22": 4172
+   },
+   "best_existing": [
+    "brotli -11",
+    3264
+   ]
+  },
+  {
+   "file": "json_decoder.py",
+   "kind": "text/data",
+   "size": 12872,
+   "funnelzip": 3136,
+   "ok": true,
+   "enc_s": 0.07,
+   "dec_s": 0.02,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 3669,
+    "bzip2 -9": 3651,
+    "xz -9e": 3592,
+    "zstd -19": 3528,
+    "brotli -11": 3158,
+    "zstd -22": 3528
+   },
+   "best_existing": [
+    "brotli -11",
+    3158
+   ]
+  },
+  {
+   "file": "typing.py",
+   "kind": "text/data",
+   "size": 132718,
+   "funnelzip": 26622,
+   "ok": true,
+   "enc_s": 0.68,
+   "dec_s": 0.19,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 33996,
+    "bzip2 -9": 28679,
+    "xz -9e": 30340,
+    "zstd -19": 30570,
+    "brotli -11": 28616,
+    "zstd -22": 30568
+   },
+   "best_existing": [
+    "brotli -11",
+    28616
+   ]
+  },
+  {
+   "file": "sensor.csv",
+   "kind": "text/data",
+   "size": 32918,
+   "funnelzip": 3159,
+   "ok": true,
+   "enc_s": 0.48,
+   "dec_s": 0.06,
+   "params": [
+    1,
+    3,
+    816
+   ],
+   "baselines": {
+    "gzip -9": 11231,
+    "bzip2 -9": 7929,
+    "xz -9e": 6564,
+    "zstd -19": 8700,
+    "brotli -11": 7470,
+    "zstd -22": 8706
+   },
+   "best_existing": [
+    "xz -9e",
+    6564
+   ]
+  },
+  {
+   "file": "counter.bin",
+   "kind": "text/data",
+   "size": 4096,
+   "funnelzip": 36,
+   "ok": true,
+   "enc_s": 0.03,
+   "dec_s": 0.01,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 327,
+    "bzip2 -9": 657,
+    "xz -9e": 324,
+    "zstd -19": 276,
+    "brotli -11": 217,
+    "zstd -22": 276
+   },
+   "best_existing": [
+    "brotli -11",
+    217
+   ]
+  },
+  {
+   "file": "random.bin",
+   "kind": "text/data",
+   "size": 4096,
+   "funnelzip": 4129,
+   "ok": true,
+   "enc_s": 0.03,
+   "dec_s": 0.01,
+   "params": [
+    2,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 4119,
+    "bzip2 -9": 4586,
+    "xz -9e": 4156,
+    "zstd -19": 4106,
+    "brotli -11": 4100,
+    "zstd -22": 4106
+   },
+   "best_existing": [
+    "brotli -11",
+    4100
+   ]
+  },
+  {
+   "file": "stdlib_2mb.txt (Python source)",
+   "kind": "text/data",
+   "size": 2097152,
+   "funnelzip": 378998,
+   "ok": true,
+   "enc_s": 3.4,
+   "dec_s": 2.92,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 505481,
+    "bzip2 -9": 426498,
+    "xz -9e": 413148,
+    "zstd -19": 420767,
+    "brotli -11": 409022,
+    "zstd -22": 420686
+   },
+   "best_existing": [
+    "brotli -11",
+    409022
+   ]
+  },
+  {
+   "file": "zsh (program binary)",
+   "kind": "binary",
+   "size": 1361216,
+   "funnelzip": 540467,
+   "ok": true,
+   "enc_s": 5.07,
+   "dec_s": 3.23,
+   "params": [
+    1,
+    4,
+    8
+   ],
+   "baselines": {
+    "gzip -9": 665717,
+    "bzip2 -9": 651665,
+    "xz -9e": 519924,
+    "zstd -19": 566615,
+    "brotli -11": 533632,
+    "zstd -22": 566612
+   },
+   "best_existing": [
+    "xz -9e",
+    519924
+   ]
+  },
+  {
+   "file": "chord.wav",
+   "kind": "audio",
+   "size": 264644,
+   "funnelzip": 33965,
+   "ok": true,
+   "enc_s": 2.33,
+   "dec_s": 0.58,
+   "params": [
+    2,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 249275,
+    "bzip2 -9": 199208,
+    "xz -9e": 231848,
+    "zstd -19": 241460,
+    "brotli -11": 210058,
+    "zstd -22": 241460,
+    "FLAC -12": 46588
+   },
+   "best_existing": [
+    "FLAC -12",
+    46588
+   ]
+  },
+  {
+   "file": "system_sounds.wav",
+   "kind": "audio",
+   "size": 1019922,
+   "funnelzip": 79846,
+   "ok": true,
+   "enc_s": 3.31,
+   "dec_s": 1.76,
+   "params": [
+    2,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 353095,
+    "bzip2 -9": 237762,
+    "xz -9e": 263836,
+    "zstd -19": 307482,
+    "brotli -11": 259614,
+    "zstd -22": 307411,
+    "FLAC -12": 139535
+   },
+   "best_existing": [
+    "FLAC -12",
+    139535
+   ]
+  },
+  {
+   "file": "beach_photo (raw RGB)",
+   "kind": "image",
+   "size": 83460,
+   "funnelzip": 34211,
+   "ok": true,
+   "enc_s": 1.33,
+   "dec_s": 0.15,
+   "params": [
+    1,
+    1,
+    642
+   ],
+   "baselines": {
+    "gzip -9": 49409,
+    "bzip2 -9": 50112,
+    "xz -9e": 43624,
+    "zstd -19": 48469,
+    "brotli -11": 44868,
+    "zstd -22": 48467,
+    "PNG": 43542,
+    "WebP lossless": 33720
+   },
+   "best_existing": [
+    "WebP lossless",
+    33720
+   ]
+  },
+  {
+   "file": "landscape (raw RGB)",
+   "kind": "image",
+   "size": 786432,
+   "funnelzip": 97407,
+   "ok": true,
+   "enc_s": 3.38,
+   "dec_s": 1.62,
+   "params": [
+    1,
+    3,
+    1536
+   ],
+   "baselines": {
+    "gzip -9": 263141,
+    "bzip2 -9": 187128,
+    "xz -9e": 163560,
+    "zstd -19": 214021,
+    "brotli -11": 181729,
+    "zstd -22": 214021,
+    "PNG": 168916,
+    "WebP lossless": 119562
+   },
+   "best_existing": [
+    "WebP lossless",
+    119562
+   ]
+  },
+  {
+   "file": "wallpaper (raw RGB)",
+   "kind": "image",
+   "size": 442368,
+   "funnelzip": 167481,
+   "ok": true,
+   "enc_s": 2.57,
+   "dec_s": 0.95,
+   "params": [
+    1,
+    3,
+    1536
+   ],
+   "baselines": {
+    "gzip -9": 266388,
+    "bzip2 -9": 235124,
+    "xz -9e": 222528,
+    "zstd -19": 251617,
+    "brotli -11": 216909,
+    "zstd -22": 251597,
+    "PNG": 202260,
+    "WebP lossless": 154976
+   },
+   "best_existing": [
+    "WebP lossless",
+    154976
+   ]
+  },
+  {
+   "file": "synthetic (raw RGB)",
+   "kind": "image",
+   "size": 196608,
+   "funnelzip": 1183,
+   "ok": true,
+   "enc_s": 2.2,
+   "dec_s": 0.42,
+   "params": [
+    1,
+    3,
+    1536
+   ],
+   "baselines": {
+    "gzip -9": 148334,
+    "bzip2 -9": 113126,
+    "xz -9e": 41796,
+    "zstd -19": 158395,
+    "brotli -11": 74243,
+    "zstd -22": 158395,
+    "PNG": 980,
+    "WebP lossless": 232
+   },
+   "best_existing": [
+    "WebP lossless",
+    232
+   ]
+  },
+  {
+   "file": "landscape.png (already compressed)",
+   "kind": "image",
+   "size": 183871,
+   "funnelzip": 183887,
+   "ok": true,
+   "enc_s": 1.11,
+   "dec_s": 0.3,
+   "params": [
+    1,
+    1,
+    0
+   ],
+   "baselines": {
+    "gzip -9": 183949,
+    "bzip2 -9": 185028,
+    "xz -9e": 183940,
+    "zstd -19": 183886,
+    "brotli -11": 183876,
+    "zstd -22": 183886
+   },
+   "best_existing": [
+    "brotli -11",
+    183876
+   ]
+  },
+  {
+   "file": "camera pan video (raw RGB, 48 frames)",
+   "kind": "video",
+   "size": 5308416,
+   "funnelzip": 557160,
+   "ok": true,
+   "enc_s": 12.86,
+   "dec_s": 11.17,
+   "params": [
+    1,
+    3,
+    768
+   ],
+   "baselines": {
+    "gzip -9": 2596724,
+    "bzip2 -9": 1119917,
+    "xz -9e": 778468,
+    "zstd -19": 995901,
+    "brotli -11": 844488,
+    "zstd -22": 995695,
+    "FFV1": 1171587,
+    "x264 lossless": 579083
+   },
+   "best_existing": [
+    "x264 lossless",
+    579083
+   ]
+  }
+ ],
+ "ablation": {
+  "license.txt": {
+   "all": 3538,
+   "-memory": 4151,
+   "-word": 3577,
+   "-echo": 3654,
+   "-equation": 3524,
+   "-resonator": 3542,
+   "-grid": 3538,
+   "-funnel": 3582,
+   "-refine": 3546,
+   "memory only": 3779
+  },
+  "typing.py": {
+   "all": 26613,
+   "-memory": 33309,
+   "-word": 26695,
+   "-echo": 28617,
+   "-equation": 26530,
+   "-resonator": 26599,
+   "-grid": 26613,
+   "-funnel": 27286,
+   "-refine": 26775,
+   "memory only": 29771
+  },
+  "sensor.csv": {
+   "all": 3149,
+   "-memory": 3260,
+   "-word": 4966,
+   "-echo": 3167,
+   "-equation": 3142,
+   "-resonator": 3123,
+   "-grid": 3179,
+   "-funnel": 3202,
+   "-refine": 3188,
+   "memory only": 6724
+  },
+  "counter.bin": {
+   "all": 28,
+   "-memory": 26,
+   "-word": 24,
+   "-echo": 25,
+   "-equation": 31,
+   "-resonator": 53,
+   "-grid": 28,
+   "-funnel": 36,
+   "-refine": 27,
+   "memory only": 262
+  },
+  "zsh (program binary)": {
+   "all": 540458,
+   "-memory": 631505,
+   "-word": 538727,
+   "-echo": 570606,
+   "-equation": 540167,
+   "-resonator": 543305,
+   "-grid": 546572,
+   "-funnel": 552391,
+   "-refine": 545669,
+   "memory only": 616220
+  },
+  "system_sounds.wav": {
+   "all": 79837,
+   "-memory": 79059,
+   "-word": 79583,
+   "-echo": 79651,
+   "-equation": 80858,
+   "-resonator": 133404,
+   "-grid": 79837,
+   "-funnel": 86800,
+   "-refine": 80354,
+   "memory only": 250860
+  },
+  "beach_photo (raw RGB)": {
+   "all": 34201,
+   "-memory": 34697,
+   "-word": 34124,
+   "-echo": 34218,
+   "-equation": 34177,
+   "-resonator": 36724,
+   "-grid": 36837,
+   "-funnel": 35471,
+   "-refine": 34236,
+   "memory only": 47323
+  }
+ }
+}

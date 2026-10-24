@@ -1,0 +1,978 @@
+[
+ {
+  "file": "counter.bin",
+  "size": 4096,
+  "baselines": {
+   "gzip -9": 327,
+   "bzip2 -9": 657,
+   "xz -9e": 324,
+   "zstd -19": 276,
+   "brotli -11": 217
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 4096,
+    "status": "ok",
+    "stored": 8707,
+    "ratio": 2.125732421875,
+    "enc_s": 0.033,
+    "dec_s": 0.0523,
+    "equation": "f(x) = 0 + 1\u00b7x + 0\u00b7x(x-1) + 0\u00b7x(x-1)(x-2) + \u2026 (4096 Newton terms, mod 65537),  x = 0..4095\none coefficient per byte, 17 bits each -> 2.125x the file"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 4096,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 4096,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 4096,
+    "status": "ok",
+    "stored": 4810,
+    "ratio": 1.17431640625,
+    "enc_s": 0.2638,
+    "dec_s": 0.0048,
+    "equation": "level 0 (the file): 32768 bits\nlevel 1: 2048 sub-equations f^4(s), s = [147,502, 270,099, 20,862, 108,469, 133,474, 61,117 \u2026] -> 38416 bits (1.172x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 4096,
+    "status": "ok",
+    "stored": 652,
+    "ratio": 0.1591796875,
+    "enc_s": 0.0014,
+    "dec_s": 0.0002,
+    "equation": "258 rules, top equation has 2 symbols, 10 bits per symbol\nR256 = 0x00 0x01    -> b'\\x00\\x01'\nR257 = 0x02 0x03    -> b'\\x02\\x03'\nR258 = 0x04 0x05    -> b'\\x04\\x05'\nR259 = 0x06 0x07    -> b'\\x06\\x07'\nR260 = 0x08 0x09    -> b'\\x08\\t'\nR261 = 0x0a 0x0b    -> b'\\n\\x0b'\nR262 = 0x0c 0x0d    -> b'\\x0c\\r'\nR263 = 0x0e 0x0f    -> b'\\x0e\\x0f'\nR264 = 0x10 0x11    -> b'\\x10\\x11'\nR265 = 0x12 0x13    -> b'\\x12\\x13'\nR266 = 0x14 0x15    -> b'\\x14\\x15'\nR267 = 0x16 0x17    -> b'\\x16\\x17'\n\u2026\nFILE = R513 R513"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 4096,
+    "status": "ok",
+    "stored": 6,
+    "ratio": 0.00146484375,
+    "enc_s": 0.0008,
+    "dec_s": 0.0002,
+    "equation": "i in [0, 4096):  f(i) = (0 + 1\u00b7i) mod 256"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 4096,
+    "status": "ok",
+    "stored": 1248,
+    "ratio": 0.3046875,
+    "enc_s": 0.0715,
+    "dec_s": 0.0707,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 2.432 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "hello.txt",
+  "size": 11,
+  "baselines": {
+   "gzip -9": 31,
+   "bzip2 -9": 48,
+   "xz -9e": 68,
+   "zstd -19": 20,
+   "brotli -11": 15
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 11,
+    "status": "ok",
+    "stored": 15,
+    "ratio": 1.3636363636363635,
+    "enc_s": 0.0001,
+    "dec_s": 0.0,
+    "equation": "f(x) = 104 + 229\u00b7x + 201\u00b7x^2 + 79\u00b7x^3 + 45\u00b7x^4 + 62\u00b7x^5 + 191\u00b7x^6 + 192\u00b7x^7 + 217\u00b7x^8 + 232\u00b7x^9 + 91\u00b7x^10   (mod 257),  x = 0..10"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 11,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 11,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 11,
+    "status": "ok",
+    "stored": 19,
+    "ratio": 1.7272727272727273,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "level 0 (the file): 88 bits\nlevel 1: 6 sub-equations f^4(s), s = [292,990, 118,767, 80,560, 9,269, 70,696, 46,740] -> 114 bits (1.295x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 11,
+    "status": "ok",
+    "stored": 14,
+    "ratio": 1.2727272727272727,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "0 rules, top equation has 11 symbols, 8 bits per symbol\nFILE = 'h' 'e' 'l' 'l' 'o' ' ' 'w' 'o' 'r' 'l' 'd'"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 11,
+    "status": "ok",
+    "stored": 13,
+    "ratio": 1.1818181818181819,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "i in [0, 11):  literal b'hello world'"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 11,
+    "status": "ok",
+    "stored": 13,
+    "ratio": 1.1818181818181819,
+    "enc_s": 0.0008,
+    "dec_s": 0.0008,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 8.000 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "hi.txt",
+  "size": 2,
+  "baselines": {
+   "gzip -9": 22,
+   "bzip2 -9": 37,
+   "xz -9e": 60,
+   "zstd -19": 11,
+   "brotli -11": 6
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 2,
+    "status": "ok",
+    "stored": 5,
+    "ratio": 2.5,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "f(x) = 104 + 1\u00b7x   (mod 257),  x = 0..1"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 2,
+    "status": "ok",
+    "stored": 5,
+    "ratio": 2.5,
+    "enc_s": 0.042,
+    "dec_s": 0.0349,
+    "equation": "x0 = 1;  x <- splitmix64(x)  repeated L = 111,621 times;  file = top 16 bits of x\nL needs 17 bits to store, the file has 16 bits"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 2,
+    "status": "ok",
+    "stored": 6,
+    "ratio": 3.0,
+    "enc_s": 0.0587,
+    "dec_s": 0.0,
+    "equation": "y = splitmix64^4(s),  s = 344,969;  file = top 16 bits of y\ns needs 19 bits, the file has 16 bits"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 2,
+    "status": "ok",
+    "stored": 7,
+    "ratio": 3.5,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "level 0 (the file): 16 bits\nlevel 1: 1 sub-equations f^4(s), s = [344,969] -> 21 bits (1.312x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 2,
+    "status": "ok",
+    "stored": 5,
+    "ratio": 2.5,
+    "enc_s": 0.0001,
+    "dec_s": 0.0,
+    "equation": "0 rules, top equation has 2 symbols, 8 bits per symbol\nFILE = 'h' 'i'"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 2,
+    "status": "ok",
+    "stored": 4,
+    "ratio": 2.0,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "i in [0, 2):  literal b'hi'"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 2,
+    "status": "ok",
+    "stored": 4,
+    "ratio": 2.0,
+    "enc_s": 0.0007,
+    "dec_s": 0.0007,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 8.000 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "json_decoder.py",
+  "size": 12872,
+  "baselines": {
+   "gzip -9": 3669,
+   "bzip2 -9": 3651,
+   "xz -9e": 3592,
+   "zstd -19": 3528,
+   "brotli -11": 3158
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 12872,
+    "status": "ok",
+    "stored": 27356,
+    "ratio": 2.125233064014916,
+    "enc_s": 0.2458,
+    "dec_s": 0.4501,
+    "equation": "f(x) = 34 + 0\u00b7x + 0\u00b7x(x-1) + 32775\u00b7x(x-1)(x-2) + \u2026 (12872 Newton terms, mod 65537),  x = 0..12871\none coefficient per byte, 17 bits each -> 2.125x the file"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 12872,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 12872,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 12872,
+    "status": "ok",
+    "stored": 15306,
+    "ratio": 1.1890926041019267,
+    "enc_s": 0.0079,
+    "dec_s": 0.0145,
+    "equation": "level 0 (the file): 102976 bits\nlevel 1: 6436 sub-equations f^4(s), s = [47,182, 24,822, 9,767, 41,935, 75,379, 117,544 \u2026] -> 122379 bits (1.188x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 12872,
+    "status": "ok",
+    "stored": 5771,
+    "ratio": 0.4483374766935985,
+    "enc_s": 0.0689,
+    "dec_s": 0.0014,
+    "equation": "807 rules, top equation has 2579 symbols, 11 bits per symbol\nR256 = ' ' ' '    -> b'  '\nR257 = '-' '-'    -> b'--'\nR258 = 'e' 'n'    -> b'en'\nR259 = 'c' 'o'    -> b'co'\nR260 = ':' 0x0a    -> b':\\n'\nR261 = 'a' 'r'    -> b'ar'\nR262 = 't' 'h'    -> b'th'\nR263 = 'i' 's'    -> b'is'\nR264 = '`' '`'    -> b'``'\nR265 = 'O' 'N'    -> b'ON'\nR266 = 'J' 'S'    -> b'JS'\nR267 = '=' '='    -> b'=='\n\u2026\nFILE = R303 'I' R275 R949 'm' R818 R1008 R919 0x0a R303 0x0a R795 R447 R331 R890 R911 \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 12872,
+    "status": "ok",
+    "stored": 5206,
+    "ratio": 0.40444375388440024,
+    "enc_s": 0.0105,
+    "dec_s": 0.0011,
+    "equation": "i in [0, 58):  literal b'\"\"\"Implementatio'\u2026\ni in [58, 65):  f(i) = file[i - 21]  (repeat)\ni in [65, 82):  literal b'scanner\\ntry:\\n   '\u2026\ni in [82, 87):  f(i) = file[i - 34]  (repeat)\ni in [87, 88):  literal b'_'\ni in [88, 104):  f(i) = file[i - 35]  (repeat)\ni in [104, 116):  literal b'string as c_'\ni in [116, 126):  f(i) = file[i - 16]  (repeat)\ni in [126, 135):  literal b'\\nexcept I'\ni in [135, 140):  f(i) = file[i - 41]  (repeat)\ni in [140, 145):  literal b'Error'\ni in [145, 151):  f(i) = file[i - 69]  (repeat)\ni in [151, 163):  f(i) = file[i - 37]  (repeat)\ni in [163, 184):  literal b' = None\\n\\n__all__'\u2026\n\u2026 1451 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 12872,
+    "status": "ok",
+    "stored": 4494,
+    "ratio": 0.34912989434431324,
+    "enc_s": 0.2092,
+    "dec_s": 0.2166,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 2.791 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "license.txt",
+  "size": 13809,
+  "baselines": {
+   "gzip -9": 4304,
+   "bzip2 -9": 4419,
+   "xz -9e": 4140,
+   "zstd -19": 4172,
+   "brotli -11": 3264
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 13809,
+    "status": "ok",
+    "stored": 29348,
+    "ratio": 2.125280614092259,
+    "enc_s": 0.2792,
+    "dec_s": 0.5135,
+    "equation": "f(x) = 65 + 65518\u00b7x + 32771\u00b7x(x-1) + 10931\u00b7x(x-1)(x-2) + \u2026 (13809 Newton terms, mod 65537),  x = 0..13808\none coefficient per byte, 17 bits each -> 2.125x the file"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 13809,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 13809,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 13809,
+    "status": "ok",
+    "stored": 16132,
+    "ratio": 1.1682236222753277,
+    "enc_s": 0.0084,
+    "dec_s": 0.0152,
+    "equation": "level 0 (the file): 110472 bits\nlevel 1: 6905 sub-equations f^4(s), s = [5,767, 189,732, 34,416, 10,893, 89,881, 60,588 \u2026] -> 128991 bits (1.168x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 13809,
+    "status": "ok",
+    "stored": 7359,
+    "ratio": 0.5329133174016946,
+    "enc_s": 0.1192,
+    "dec_s": 0.0017,
+    "equation": "1205 rules, top equation has 2938 symbols, 11 bits per symbol\nR256 = ' ' ' '    -> b'  '\nR257 = '-' '-'    -> b'--'\nR258 = 't' 'h'    -> b'th'\nR259 = 'o' 'n'    -> b'on'\nR260 = 'e' 'r'    -> b'er'\nR261 = 'i' 'c'    -> b'ic'\nR262 = '=' '='    -> b'=='\nR263 = 'T' 'H'    -> b'TH'\nR264 = 'O' 'R'    -> b'OR'\nR265 = 'a' 'l'    -> b'al'\nR266 = 0x0a 0x0a    -> b'\\n\\n'\nR267 = 'E' 'N'    -> b'EN'\n\u2026\nFILE = 'A' R1344 'H' R543 R973 'Y' R866 R1210 0x0a R394 R341 R262 R266 R857 R1041 R323 \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 13809,
+    "status": "ok",
+    "stored": 6131,
+    "ratio": 0.4439858063581722,
+    "enc_s": 0.0099,
+    "dec_s": 0.001,
+    "equation": "i in [0, 27):  literal b'A. HISTORY OF TH'\u2026\ni in [27, 53):  f(i) = 61  (run)\ni in [53, 176):  literal b'\\n\\nPython was cre'\u2026\ni in [176, 184):  f(i) = file[i - 103]  (repeat)\ni in [184, 237):  literal b'Netherlands\\nas a'\u2026\ni in [237, 244):  f(i) = file[i - 142]  (repeat)\ni in [244, 252):  literal b'remains '\ni in [252, 258):  f(i) = file[i - 197]  (repeat)\ni in [258, 325):  literal b\"'s\\nprincipal aut\"\u2026\ni in [325, 329):  f(i) = file[i - 139]  (repeat)\ni in [329, 335):  literal b's.\\n\\nIn'\ni in [335, 339):  f(i) = file[i - 249]  (repeat)\ni in [339, 341):  literal b'5,'\ni in [341, 348):  f(i) = file[i - 104]  (repeat)\n\u2026 1491 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 13809,
+    "status": "ok",
+    "stored": 5305,
+    "ratio": 0.38416974436961404,
+    "enc_s": 0.2293,
+    "dec_s": 0.2349,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 3.072 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "random.bin",
+  "size": 4096,
+  "baselines": {
+   "gzip -9": 4119,
+   "bzip2 -9": 4586,
+   "xz -9e": 4156,
+   "zstd -19": 4106,
+   "brotli -11": 4100
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 4096,
+    "status": "ok",
+    "stored": 8707,
+    "ratio": 2.125732421875,
+    "enc_s": 0.033,
+    "dec_s": 0.0532,
+    "equation": "f(x) = 245 + 65469\u00b7x + 65533\u00b7x(x-1) + 54617\u00b7x(x-1)(x-2) + \u2026 (4096 Newton terms, mod 65537),  x = 0..4095\none coefficient per byte, 17 bits each -> 2.125x the file"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 4096,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 4096,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 4096,
+    "status": "ok",
+    "stored": 4793,
+    "ratio": 1.170166015625,
+    "enc_s": 0.0027,
+    "dec_s": 0.0047,
+    "equation": "level 0 (the file): 32768 bits\nlevel 1: 2048 sub-equations f^4(s), s = [14,481, 83,480, 65,385, 95,111, 34,372, 121,622 \u2026] -> 38276 bits (1.168x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 4096,
+    "status": "ok",
+    "stored": 4607,
+    "ratio": 1.124755859375,
+    "enc_s": 0.0027,
+    "dec_s": 0.0012,
+    "equation": "5 rules, top equation has 4081 symbols, 9 bits per symbol\nR256 = '~' 'D'    -> b'~D'\nR257 = 'Z' 'A'    -> b'ZA'\nR258 = 'G' 0x80    -> b'G\\x80'\nR259 = 'N' 0x95    -> b'N\\x95'\nR260 = '*' 0x17    -> b'*\\x17'\nFILE = '\u00f5' '\u00b1' 'e' '\"' 'J' 'X' '\u00b7' 0x91 '\u00df' 'j' '\u00f1' '\u00d8' '0' '>' 'a' '\u00cd' \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 4096,
+    "status": "ok",
+    "stored": 4100,
+    "ratio": 1.0009765625,
+    "enc_s": 0.0031,
+    "dec_s": 0.0,
+    "equation": "i in [0, 4096):  literal b'\\xf5\\xb1e\"JX\\xb7\\x91\\xdfj\\xf1\\xd80>a\\xcd'\u2026"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 4096,
+    "status": "ok",
+    "stored": 4109,
+    "ratio": 1.003173828125,
+    "enc_s": 0.0709,
+    "dec_s": 0.0715,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 8.020 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "sensor.csv",
+  "size": 32918,
+  "baselines": {
+   "gzip -9": 11231,
+   "bzip2 -9": 7929,
+   "xz -9e": 6564,
+   "zstd -19": 8700,
+   "brotli -11": 7470
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 32918,
+    "status": "skipped",
+    "reason": "input > 16384 B (search cost)"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 32918,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 32918,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 32918,
+    "status": "ok",
+    "stored": 38267,
+    "ratio": 1.1624946837596453,
+    "enc_s": 0.0199,
+    "dec_s": 0.0367,
+    "equation": "level 0 (the file): 263344 bits\nlevel 1: 16459 sub-equations f^4(s), s = [4,794, 75,379, 159,063, 81,228, 3,226, 10,660 \u2026] -> 306066 bits (1.162x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 32918,
+    "status": "ok",
+    "stored": 13285,
+    "ratio": 0.4035785892217024,
+    "enc_s": 0.1202,
+    "dec_s": 0.0031,
+    "equation": "780 rules, top equation has 8098 symbols, 11 bits per symbol\nR256 = ',' 'S'    -> b',S'\nR257 = 0x0a '1'    -> b'\\n1'\nR258 = '2' '4'    -> b'24'\nR259 = '5' '.'    -> b'5.'\nR260 = '6' '0'    -> b'60'\nR261 = '9' '9'    -> b'99'\nR262 = '7' '7'    -> b'77'\nR263 = '8' '8'    -> b'88'\nR264 = '3' '3'    -> b'33'\nR265 = ',' '4'    -> b',4'\nR266 = R256 '0'    -> b',S0'\nR267 = R258 '.'    -> b'24.'\n\u2026\nFILE = 't' 'i' 'm' 'e' ',' 's' 'e' 'n' 's' 'o' 'r' ',' 't' 'e' 'm' 'p' \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 32918,
+    "status": "ok",
+    "stored": 18839,
+    "ratio": 0.5723008688255665,
+    "enc_s": 0.0474,
+    "dec_s": 0.0039,
+    "equation": "i in [0, 46):  literal b'time,sensor,temp'\u2026\ni in [46, 50):  f(i) = file[i - 14]  (repeat)\ni in [50, 60):  literal b'10,44\\n2,S2'\ni in [60, 64):  f(i) = file[i - 14]  (repeat)\ni in [64, 74):  literal b'20,52\\n3,S3'\ni in [74, 78):  f(i) = file[i - 14]  (repeat)\ni in [78, 85):  literal b'30,60\\n4'\ni in [85, 92):  f(i) = file[i - 56]  (repeat)\ni in [92, 99):  literal b'40,41\\n5'\ni in [99, 106):  f(i) = file[i - 56]  (repeat)\ni in [106, 113):  literal b'50,42\\n6'\ni in [113, 120):  f(i) = file[i - 56]  (repeat)\ni in [120, 127):  literal b'60,57\\n7'\ni in [127, 134):  f(i) = file[i - 56]  (repeat)\n\u2026 6480 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 32918,
+    "status": "ok",
+    "stored": 6374,
+    "ratio": 0.19363266298074003,
+    "enc_s": 0.5311,
+    "dec_s": 0.536,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 1.548 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "sentence.txt",
+  "size": 77,
+  "baselines": {
+   "gzip -9": 73,
+   "bzip2 -9": 98,
+   "xz -9e": 120,
+   "zstd -19": 66,
+   "brotli -11": 61
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 77,
+    "status": "ok",
+    "stored": 89,
+    "ratio": 1.155844155844156,
+    "enc_s": 0.0002,
+    "dec_s": 0.0002,
+    "equation": "f(x) = 84 + 20\u00b7x + 117\u00b7x(x-1) + 207\u00b7x(x-1)(x-2) + \u2026 (77 Newton terms, mod 257),  x = 0..76\none coefficient per byte, 9 bits each -> 1.125x the file"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 77,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 77,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 77,
+    "status": "ok",
+    "stored": 98,
+    "ratio": 1.2727272727272727,
+    "enc_s": 0.0001,
+    "dec_s": 0.0001,
+    "equation": "level 0 (the file): 616 bits\nlevel 1: 39 sub-equations f^4(s), s = [104,128, 57,562, 69,592, 13,821, 30,966, 70,227 \u2026] -> 730 bits (1.185x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 77,
+    "status": "ok",
+    "stored": 88,
+    "ratio": 1.1428571428571428,
+    "enc_s": 0.0001,
+    "dec_s": 0.0,
+    "equation": "2 rules, top equation has 71 symbols, 9 bits per symbol\nR256 = 'h' 'e'    -> b'he'\nR257 = R256 ' '    -> b'he '\nFILE = 'T' R257 'q' 'u' 'i' 'c' 'k' ' ' 'b' 'r' 'o' 'w' 'n' ' ' 'f' 'o' \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 77,
+    "status": "ok",
+    "stored": 57,
+    "ratio": 0.7402597402597403,
+    "enc_s": 0.0,
+    "dec_s": 0.0,
+    "equation": "i in [0, 45):  literal b'The quick brown '\u2026\ni in [45, 71):  f(i) = file[i - 45]  (repeat)\ni in [71, 77):  literal b'again.'"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 77,
+    "status": "ok",
+    "stored": 64,
+    "ratio": 0.8311688311688312,
+    "enc_s": 0.0019,
+    "dec_s": 0.002,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 6.442 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "typing.py",
+  "size": 132718,
+  "baselines": {
+   "gzip -9": 33996,
+   "bzip2 -9": 28679,
+   "xz -9e": 30340,
+   "zstd -19": 30570,
+   "brotli -11": 28616
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 132718,
+    "status": "skipped",
+    "reason": "input > 16384 B (search cost)"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 132718,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 132718,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 132718,
+    "status": "ok",
+    "stored": 157442,
+    "ratio": 1.1862897270905228,
+    "enc_s": 0.0813,
+    "dec_s": 0.1457,
+    "equation": "level 0 (the file): 1061744 bits\nlevel 1: 66359 sub-equations f^4(s), s = [47,182, 7,614, 104,128, 57,562, 139,782, 40,904 \u2026] -> 1259469 bits (1.186x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 132718,
+    "status": "ok",
+    "stored": 47640,
+    "ratio": 0.35895658463810487,
+    "enc_s": 2.2707,
+    "dec_s": 0.0096,
+    "equation": "4918 rules, top equation has 19477 symbols, 13 bits per symbol\nR256 = ' ' ' '    -> b'  '\nR257 = 'a' 'r'    -> b'ar'\nR258 = 'i' 'n'    -> b'in'\nR259 = '_' '_'    -> b'__'\nR260 = 'p' 'e'    -> b'pe'\nR261 = ':' 0x0a    -> b':\\n'\nR262 = 't' 'h'    -> b'th'\nR263 = 's' 's'    -> b'ss'\nR264 = 'c' 'l'    -> b'cl'\nR265 = '\"' '\"'    -> b'\"\"'\nR266 = 'T' 'y'    -> b'Ty'\nR267 = 'f' 'o'    -> b'fo'\n\u2026\nFILE = R304 0x0a R525 R4000 R1133 R1832 R1981 R1194 R1691 'g' R1119 R391 R293 R4831 R1551 R1140 \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 132718,
+    "status": "ok",
+    "stored": 47041,
+    "ratio": 0.354443255624708,
+    "enc_s": 0.1495,
+    "dec_s": 0.011,
+    "equation": "i in [0, 42):  literal b'\"\"\"\\nThe typing m'\u2026\ni in [42, 50):  f(i) = file[i - 35]  (repeat)\ni in [50, 86):  literal b'as defined by PE'\u2026\ni in [86, 90):  f(i) = file[i - 23]  (repeat)\ni in [90, 117):  literal b's.\\n\\nAmong other '\u2026\ni in [117, 124):  f(i) = file[i - 103]  (repeat)\ni in [124, 133):  literal b' includes'\ni in [133, 138):  f(i) = file[i - 20]  (repeat)\ni in [138, 169):  literal b'following:\\n* Gen'\u2026\ni in [169, 174):  f(i) = file[i - 98]  (repeat)\ni in [174, 197):  literal b'internal machine'\u2026\ni in [197, 204):  f(i) = file[i - 173]  (repeat)\ni in [204, 205):  literal b'g'\ni in [205, 211):  f(i) = file[i - 53]  (repeat)\n\u2026 14948 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 132718,
+    "status": "ok",
+    "stored": 36066,
+    "ratio": 0.27174912219894815,
+    "enc_s": 2.1518,
+    "dec_s": 2.1826,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 2.174 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "beach_photo.rgb (raw pixels)",
+  "size": 83460,
+  "baselines": {
+   "gzip -9": 49409,
+   "bzip2 -9": 50112,
+   "xz -9e": 43624,
+   "zstd -19": 48469,
+   "brotli -11": 44868,
+   "PNG": 43542,
+   "WebP lossless": 33720
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 83460,
+    "status": "skipped",
+    "reason": "input > 16384 B (search cost)"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 83460,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 83460,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 83460,
+    "status": "ok",
+    "stored": 97220,
+    "ratio": 1.1648693985142584,
+    "enc_s": 0.0507,
+    "dec_s": 0.0945,
+    "equation": "level 0 (the file): 667680 bits\nlevel 1: 41730 sub-equations f^4(s), s = [2,531, 40,283, 23,749, 2,843, 18,999, 23,749 \u2026] -> 777690 bits (1.165x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 83460,
+    "status": "ok",
+    "stored": 77893,
+    "ratio": 0.9332973879702852,
+    "enc_s": 0.8909,
+    "dec_s": 0.0157,
+    "equation": "4862 rules, top equation has 38206 symbols, 13 bits per symbol\nR256 = 0x02 0x02    -> b'\\x02\\x02'\nR257 = 0x00 0x00    -> b'\\x00\\x00'\nR258 = 0x03 0x03    -> b'\\x03\\x03'\nR259 = 'C' '.'    -> b'C.'\nR260 = 'H' '5'    -> b'H5'\nR261 = 'D' '/'    -> b'D/'\nR262 = 0x01 0x01    -> b'\\x01\\x01'\nR263 = 'A' '-'    -> b'A-'\nR264 = 'o' 0x99    -> b'o\\x99'\nR265 = 'J' '6'    -> b'J6'\nR266 = 'i' '\u00a1'    -> b'i\\xa1'\nR267 = 'N' '9'    -> b'N9'\n\u2026\nFILE = R378 R1226 R859 R568 R1005 R286 '\u00cc' R393 R378 R1226 R1226 R1226 R378 R568 R378 '>' \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 83460,
+    "status": "ok",
+    "stored": 55481,
+    "ratio": 0.6647615624251139,
+    "enc_s": 0.0692,
+    "dec_s": 0.0035,
+    "equation": "i in [0, 6):  literal b'A-\\xce@,\\xcd'\ni in [6, 45):  f(i) = file[i - 3]  (repeat)\ni in [45, 47):  literal b'A-'\ni in [47, 51):  f(i) = file[i - 3]  (repeat)\ni in [51, 54):  literal b'@,\\xcc'\ni in [54, 59):  f(i) = file[i - 12]  (repeat)\ni in [59, 102):  f(i) = file[i - 57]  (repeat)\ni in [102, 132):  f(i) = file[i - 3]  (repeat)\ni in [132, 141):  f(i) = file[i - 75]  (repeat)\ni in [141, 165):  literal b'A-\\xce>)\\xcd?+\\xccA-\\xceI-\\xae`'\u2026\ni in [165, 273):  f(i) = file[i - 3]  (repeat)\ni in [273, 276):  literal b'\\x91c\\xaa'\ni in [276, 309):  f(i) = file[i - 18]  (repeat)\ni in [309, 315):  f(i) = file[i - 3]  (repeat)\n\u2026 5318 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 83460,
+    "status": "ok",
+    "stored": 48273,
+    "ratio": 0.5783968368080518,
+    "enc_s": 1.3672,
+    "dec_s": 1.3764,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 4.627 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "synthetic.rgb (raw pixels)",
+  "size": 196608,
+  "baselines": {
+   "gzip -9": 148334,
+   "bzip2 -9": 113126,
+   "xz -9e": 41796,
+   "zstd -19": 158395,
+   "brotli -11": 74243,
+   "PNG": 980,
+   "WebP lossless": 232
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 196608,
+    "status": "skipped",
+    "reason": "input > 16384 B (search cost)"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 196608,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 196608,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 196608,
+    "status": "ok",
+    "stored": 229913,
+    "ratio": 1.1693979899088542,
+    "enc_s": 0.1195,
+    "dec_s": 0.2206,
+    "equation": "level 0 (the file): 1572864 bits\nlevel 1: 98304 sub-equations f^4(s), s = [10,570, 62,023, 21,816, 50,033, 75,575, 18,611 \u2026] -> 1839233 bits (1.169x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 196608,
+    "status": "ok",
+    "stored": 237684,
+    "ratio": 1.20892333984375,
+    "enc_s": 4.1016,
+    "dec_s": 0.04,
+    "equation": "11410 rules, top equation has 112996 symbols, 14 bits per symbol\nR256 = '\u00e6' '('    -> b'\\xe6('\nR257 = 0x14 0x14    -> b'\\x14\\x14'\nR258 = '\u00ff' 0x01    -> b'\\xff\\x01'\nR259 = '\u00fe' 0x03    -> b'\\xfe\\x03'\nR260 = '\u00fd' 0x05    -> b'\\xfd\\x05'\nR261 = '\u00fc' 0x07    -> b'\\xfc\\x07'\nR262 = '\u00fb' 0x09    -> b'\\xfb\\t'\nR263 = '\u00fa' 0x0b    -> b'\\xfa\\x0b'\nR264 = '\u00f9' 0x0d    -> b'\\xf9\\r'\nR265 = '\u00f8' 0x0f    -> b'\\xf8\\x0f'\nR266 = '\u00f7' 0x11    -> b'\\xf7\\x11'\nR267 = '\u00f6' 0x13    -> b'\\xf6\\x13'\n\u2026\nFILE = 0x00 0x00 R258 0x00 '\u00ff' R376 R259 0x00 '\u00fe' R625 R260 0x00 R976 0x00 R261 0x00 \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 196608,
+    "status": "ok",
+    "stored": 159029,
+    "ratio": 0.8088633219401041,
+    "enc_s": 0.1605,
+    "dec_s": 0.0017,
+    "equation": "i in [0, 46203):  literal b'\\x00\\x00\\xff\\x01\\x00\\xff\\x02\\x00\\xfe\\x03\\x00\\xfe\\x04\\x00\\xfd\\x05'\u2026\ni in [46203, 46680):  f(i) = file[i - 3]  (repeat)\ni in [46680, 46968):  literal b'\\xc8<}\\xc9<}\\xca<|\\xcb<|\\xcc<{\\xcd'\u2026\ni in [46968, 47040):  f(i) = file[i - 360]  (repeat)\ni in [47040, 47448):  f(i) = file[i - 3]  (repeat)\ni in [47448, 47735):  literal b'\\xc8=}\\xc9=|\\xca=|\\xcb={\\xcc={\\xcd'\u2026\ni in [47735, 48217):  f(i) = file[i - 768]  (repeat)\ni in [48217, 48504):  literal b'>|\\xc9>|\\xca>{\\xcb>{\\xcc>z\\xcd>'\u2026\ni in [48504, 48576):  f(i) = file[i - 360]  (repeat)\ni in [48576, 48984):  f(i) = file[i - 3]  (repeat)\ni in [48984, 49271):  literal b'\\xc8?|\\xc9?{\\xca?{\\xcb?z\\xcc?z\\xcd'\u2026\ni in [49271, 49753):  f(i) = file[i - 768]  (repeat)\ni in [49753, 50040):  literal b'@{\\xc9@{\\xca@z\\xcb@z\\xcc@y\\xcd@'\u2026\ni in [50040, 50112):  f(i) = file[i - 360]  (repeat)\n\u2026 345 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 196608,
+    "status": "ok",
+    "stored": 82675,
+    "ratio": 0.4205067952473958,
+    "enc_s": 3.1859,
+    "dec_s": 3.2316,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 3.364 bits per byte"
+   }
+  ]
+ },
+ {
+  "file": "chord.wav (raw PCM)",
+  "size": 264600,
+  "baselines": {
+   "gzip -9": 249234,
+   "bzip2 -9": 199193,
+   "xz -9e": 231832,
+   "zstd -19": 241421,
+   "brotli -11": 210174
+  },
+  "variants": [
+   {
+    "variant": "v1-poly",
+    "name": "V1 One polynomial f(i)",
+    "original": 264600,
+    "status": "skipped",
+    "reason": "input > 16384 B (search cost)"
+   },
+   {
+    "variant": "v2-loop",
+    "name": "V2 Loop: x0=1, x<-f(x), L times",
+    "original": 264600,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v3-seed",
+    "name": "V3 Seed + loop: f^R(s)",
+    "original": 264600,
+    "status": "skipped",
+    "reason": "input > 3 B (search cost)"
+   },
+   {
+    "variant": "v4-tree",
+    "name": "V4 FunnelBrain tree of sub-equations",
+    "original": 264600,
+    "status": "ok",
+    "stored": 308272,
+    "ratio": 1.1650491307634165,
+    "enc_s": 0.1617,
+    "dec_s": 0.2909,
+    "equation": "level 0 (the file): 2116800 bits\nlevel 1: 132300 sub-equations f^4(s), s = [10,570, 5,536, 84,321, 30,191, 41,781, 13,055 \u2026] -> 2466094 bits (1.165x the file)\nthe funnel never narrows: each seed costs more bits than the chunk it prints"
+   },
+   {
+    "variant": "v5-grammar",
+    "name": "V5a Nested rules R = A B",
+    "original": 264600,
+    "status": "ok",
+    "stored": 317229,
+    "ratio": 1.1989002267573696,
+    "enc_s": 18.7199,
+    "dec_s": 0.0572,
+    "equation": "15144 rules, top equation has 150982 symbols, 14 bits per symbol\nR256 = 0x00 0x00    -> b'\\x00\\x00'\nR257 = '\u00fd' '\u00fc'    -> b'\\xfd\\xfc'\nR258 = '\u00f8' '\u00f6'    -> b'\\xf8\\xf6'\nR259 = 0x0a 0x04    -> b'\\n\\x04'\nR260 = 0x05 '\u00f7'    -> b'\\x05\\xf7'\nR261 = '\u00fb' '\u00f3'    -> b'\\xfb\\xf3'\nR262 = '\u00ff' '\u00fe'    -> b'\\xff\\xfe'\nR263 = 0x0b '\u00f9'    -> b'\\x0b\\xf9'\nR264 = 0x03 0x0c    -> b'\\x03\\x0c'\nR265 = '\u00fa' '\u00fa'    -> b'\\xfa\\xfa'\nR266 = '\u00f5' 0x08    -> b'\\xf5\\x08'\nR267 = 0x01 '\u00f4'    -> b'\\x01\\xf4'\n\u2026\nFILE = R256 0x03 R639 0x06 R629 '\u00d9' R4823 R321 0x11 R2301 R4563 R2218 R698 R1163 '\u00b3' 0x1e \u2026"
+   },
+   {
+    "variant": "v5-symbolic",
+    "name": "V5b Segment equations a+b\u00b7i / repeat",
+    "original": 264600,
+    "status": "ok",
+    "stored": 264747,
+    "ratio": 1.0005555555555556,
+    "enc_s": 0.2625,
+    "dec_s": 0.0003,
+    "equation": "i in [0, 18205):  literal b'\\x00\\x00\\x03\\x03\\x01\\x06\\xf4\\x08\\xd9\\x0b\\xa9\\x0ea\\x11\\xfb\\x13'\u2026\ni in [18205, 18210):  f(i) = file[i - 5968]  (repeat)\ni in [18210, 22775):  literal b'\\xfa\\x00X\\x01\\xa8\\x01\\xea\\x01\\x1c\\x02>\\x02P\\x02R\\x02'\u2026\ni in [22775, 22780):  f(i) = file[i - 10032]  (repeat)\ni in [22780, 26871):  literal b'^\\x0e\\x13\\x0e\\xa3\\r\\x0e\\rW\\x0c}\\x0b\\x83\\nj\\t'\u2026\ni in [26871, 26876):  f(i) = file[i - 23682]  (repeat)\ni in [26876, 29965):  literal b\"\\x92\\xf7!\\xfa\\xc2\\xfcq\\xff'\\x02\\xe4\\x04\\xa0\\x07V\\n\"\u2026\ni in [29965, 29970):  f(i) = file[i - 23694]  (repeat)\ni in [29970, 30499):  literal b'3\\t\\xdd\\x08w\\x08\\xff\\x07v\\x07\\xdb\\x06.\\x06n\\x05'\u2026\ni in [30499, 30504):  f(i) = file[i - 15398]  (repeat)\ni in [30504, 32331):  literal b'\\xd6\\xfeH\\x00\\xc2\\x01>\\x03\\xb9\\x041\\x06\\xa3\\x07\\x0c\\t'\u2026\ni in [32331, 32336):  f(i) = file[i - 30260]  (repeat)\ni in [32336, 33233):  literal b'\\x8a\\x0c\\xda\\x0b&\\x0bo\\n\\xb6\\t\\xfc\\x08B\\x08\\x89\\x07'\u2026\ni in [33233, 33238):  f(i) = (242 + 128\u00b7i) mod 256\n\u2026 439 pieces in total"
+   },
+   {
+    "variant": "v6-predict",
+    "name": "V6 Predictive equation (context mixing)",
+    "original": 264600,
+    "status": "ok",
+    "stored": 219547,
+    "ratio": 0.8297316704459562,
+    "enc_s": 4.3865,
+    "dec_s": 4.4359,
+    "equation": "P(bit=1 | last 0-4 bytes) = \u03c3(\u03a3\u2096 w\u2096 \u00b7 logit(p\u2096)),  5 context tables, learned while reading\narithmetic code spends -log2 P per bit -> 6.638 bits per byte"
+   }
+  ]
+ }
+]

@@ -1,0 +1,1249 @@
+{
+ "rows": [
+  {
+   "file": "hi.txt",
+   "kind": "text/data",
+   "size": 2,
+   "funnelzip": 5,
+   "ok": true,
+   "enc_s": 1.09,
+   "dec_s": 0.0,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    5575
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 22,
+    "bzip2 -9": 37,
+    "xz -9e": 60,
+    "zstd -19": 11,
+    "brotli -11": 6,
+    "zstd -22": 11
+   },
+   "best_existing": [
+    "brotli -11",
+    6
+   ]
+  },
+  {
+   "file": "sentence.txt",
+   "kind": "text/data",
+   "size": 77,
+   "funnelzip": 34,
+   "ok": true,
+   "enc_s": 0.54,
+   "dec_s": 0.13,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    5575
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 73,
+    "bzip2 -9": 98,
+    "xz -9e": 120,
+    "zstd -19": 66,
+    "brotli -11": 61,
+    "zstd -22": 66
+   },
+   "best_existing": [
+    "brotli -11",
+    61
+   ]
+  },
+  {
+   "file": "license.txt",
+   "kind": "text/data",
+   "size": 13809,
+   "funnelzip": 3348,
+   "ok": true,
+   "enc_s": 0.6,
+   "dec_s": 0.14,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 4304,
+    "bzip2 -9": 4419,
+    "xz -9e": 4140,
+    "zstd -19": 4172,
+    "brotli -11": 3264,
+    "zstd -22": 4172
+   },
+   "best_existing": [
+    "brotli -11",
+    3264
+   ]
+  },
+  {
+   "file": "json_decoder.py",
+   "kind": "text/data",
+   "size": 12872,
+   "funnelzip": 2683,
+   "ok": true,
+   "enc_s": 0.57,
+   "dec_s": 0.12,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 3669,
+    "bzip2 -9": 3651,
+    "xz -9e": 3592,
+    "zstd -19": 3528,
+    "brotli -11": 3158,
+    "zstd -22": 3528
+   },
+   "best_existing": [
+    "brotli -11",
+    3158
+   ]
+  },
+  {
+   "file": "typing.py",
+   "kind": "text/data",
+   "size": 132718,
+   "funnelzip": 24672,
+   "ok": true,
+   "enc_s": 1.18,
+   "dec_s": 0.25,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 33996,
+    "bzip2 -9": 28679,
+    "xz -9e": 30340,
+    "zstd -19": 30570,
+    "brotli -11": 28616,
+    "zstd -22": 30568
+   },
+   "best_existing": [
+    "brotli -11",
+    28616
+   ]
+  },
+  {
+   "file": "sensor.csv",
+   "kind": "text/data",
+   "size": 32918,
+   "funnelzip": 3137,
+   "ok": true,
+   "enc_s": 0.34,
+   "dec_s": 0.04,
+   "params": [
+    1,
+    1,
+    0,
+    136,
+    0,
+    0,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 11231,
+    "bzip2 -9": 7929,
+    "xz -9e": 6564,
+    "zstd -19": 8700,
+    "brotli -11": 7470,
+    "zstd -22": 8706
+   },
+   "best_existing": [
+    "xz -9e",
+    6564
+   ]
+  },
+  {
+   "file": "counter.bin",
+   "kind": "text/data",
+   "size": 4096,
+   "funnelzip": 41,
+   "ok": true,
+   "enc_s": 0.06,
+   "dec_s": 0.01,
+   "params": [
+    1,
+    1,
+    0,
+    128,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 327,
+    "bzip2 -9": 657,
+    "xz -9e": 324,
+    "zstd -19": 276,
+    "brotli -11": 217,
+    "zstd -22": 276
+   },
+   "best_existing": [
+    "brotli -11",
+    217
+   ]
+  },
+  {
+   "file": "random.bin",
+   "kind": "text/data",
+   "size": 4096,
+   "funnelzip": 4113,
+   "ok": true,
+   "enc_s": 0.08,
+   "dec_s": 0.01,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    8191
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 4119,
+    "bzip2 -9": 4586,
+    "xz -9e": 4156,
+    "zstd -19": 4106,
+    "brotli -11": 4100,
+    "zstd -22": 4106
+   },
+   "best_existing": [
+    "brotli -11",
+    4100
+   ]
+  },
+  {
+   "file": "stdlib_2mb.txt (Python source)",
+   "kind": "text/data",
+   "size": 2097152,
+   "funnelzip": 361854,
+   "ok": true,
+   "enc_s": 3.12,
+   "dec_s": 2.22,
+   "params": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 505481,
+    "bzip2 -9": 426498,
+    "xz -9e": 413148,
+    "zstd -19": 420767,
+    "brotli -11": 409022,
+    "zstd -22": 420686
+   },
+   "best_existing": [
+    "brotli -11",
+    409022
+   ]
+  },
+  {
+   "file": "zsh (program binary)",
+   "kind": "binary",
+   "size": 1361216,
+   "funnelzip": 483800,
+   "ok": true,
+   "enc_s": 4.15,
+   "dec_s": 2.55,
+   "params": [
+    1,
+    1,
+    16,
+    0,
+    3,
+    0,
+    8189
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 665717,
+    "bzip2 -9": 651665,
+    "xz -9e": 519924,
+    "zstd -19": 566615,
+    "brotli -11": 533632,
+    "zstd -22": 566612,
+    "xz -9e + BCJ x86/arm64": 486188
+   },
+   "best_existing": [
+    "xz -9e + BCJ x86/arm64",
+    486188
+   ]
+  },
+  {
+   "file": "chord.wav",
+   "kind": "audio",
+   "size": 264644,
+   "funnelzip": 33824,
+   "ok": true,
+   "enc_s": 1.78,
+   "dec_s": 0.55,
+   "params": [
+    2,
+    1,
+    0,
+    27762,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 249275,
+    "bzip2 -9": 199208,
+    "xz -9e": 231848,
+    "zstd -19": 241460,
+    "brotli -11": 210058,
+    "zstd -22": 241460,
+    "FLAC -12": 46588
+   },
+   "best_existing": [
+    "FLAC -12",
+    46588
+   ]
+  },
+  {
+   "file": "system_sounds.wav",
+   "kind": "audio",
+   "size": 1019922,
+   "funnelzip": 76721,
+   "ok": true,
+   "enc_s": 2.39,
+   "dec_s": 1.69,
+   "params": [
+    2,
+    1,
+    0,
+    682,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 353095,
+    "bzip2 -9": 237762,
+    "xz -9e": 263836,
+    "zstd -19": 307482,
+    "brotli -11": 259614,
+    "zstd -22": 307411,
+    "FLAC -12": 139535
+   },
+   "best_existing": [
+    "FLAC -12",
+    139535
+   ]
+  },
+  {
+   "file": "beach_photo (raw RGB)",
+   "kind": "image",
+   "size": 83460,
+   "funnelzip": 30151,
+   "ok": true,
+   "enc_s": 1.4,
+   "dec_s": 0.16,
+   "params": [
+    1,
+    3,
+    642,
+    633,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 49409,
+    "bzip2 -9": 50112,
+    "xz -9e": 43624,
+    "zstd -19": 48469,
+    "brotli -11": 44868,
+    "zstd -22": 48467,
+    "PNG": 43542,
+    "WebP lossless": 33720
+   },
+   "best_existing": [
+    "WebP lossless",
+    33720
+   ]
+  },
+  {
+   "file": "landscape (raw RGB)",
+   "kind": "image",
+   "size": 786432,
+   "funnelzip": 91442,
+   "ok": true,
+   "enc_s": 3.38,
+   "dec_s": 1.56,
+   "params": [
+    1,
+    3,
+    1536,
+    3072,
+    0,
+    0,
+    8189
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 263141,
+    "bzip2 -9": 187128,
+    "xz -9e": 163560,
+    "zstd -19": 214021,
+    "brotli -11": 181729,
+    "zstd -22": 214021,
+    "PNG": 168916,
+    "WebP lossless": 119562
+   },
+   "best_existing": [
+    "WebP lossless",
+    119562
+   ]
+  },
+  {
+   "file": "wallpaper (raw RGB)",
+   "kind": "image",
+   "size": 442368,
+   "funnelzip": 147760,
+   "ok": true,
+   "enc_s": 2.61,
+   "dec_s": 0.8,
+   "params": [
+    1,
+    3,
+    1536,
+    1527,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 266388,
+    "bzip2 -9": 235124,
+    "xz -9e": 222528,
+    "zstd -19": 251617,
+    "brotli -11": 216909,
+    "zstd -22": 251597,
+    "PNG": 202260,
+    "WebP lossless": 154976
+   },
+   "best_existing": [
+    "WebP lossless",
+    154976
+   ]
+  },
+  {
+   "file": "synthetic (raw RGB)",
+   "kind": "image",
+   "size": 196608,
+   "funnelzip": 175,
+   "ok": true,
+   "enc_s": 2.24,
+   "dec_s": 0.26,
+   "params": [
+    1,
+    3,
+    1536,
+    768,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 148334,
+    "bzip2 -9": 113126,
+    "xz -9e": 41796,
+    "zstd -19": 158395,
+    "brotli -11": 74243,
+    "zstd -22": 158395,
+    "PNG": 980,
+    "WebP lossless": 232
+   },
+   "best_existing": [
+    "WebP lossless",
+    232
+   ]
+  },
+  {
+   "file": "doc_versions.txt",
+   "kind": "repeats",
+   "size": 41459,
+   "funnelzip": 3561,
+   "ok": true,
+   "enc_s": 0.87,
+   "dec_s": 0.21,
+   "params": [
+    1,
+    1,
+    0,
+    13816,
+    0,
+    1,
+    1479
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 4899,
+    "bzip2 -9": 6082,
+    "xz -9e": 4444,
+    "zstd -19": 4471,
+    "brotli -11": 3556,
+    "zstd -22": 4465
+   },
+   "best_existing": [
+    "brotli -11",
+    3556
+   ]
+  },
+  {
+   "file": "server.log",
+   "kind": "repeats",
+   "size": 1740137,
+   "funnelzip": 121034,
+   "ok": true,
+   "enc_s": 2.76,
+   "dec_s": 1.93,
+   "params": [
+    1,
+    1,
+    0,
+    69,
+    0,
+    0,
+    5575
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 252648,
+    "bzip2 -9": 176472,
+    "xz -9e": 211428,
+    "zstd -19": 216477,
+    "brotli -11": 214373,
+    "zstd -22": 216477
+   },
+   "best_existing": [
+    "bzip2 -9",
+    176472
+   ]
+  },
+  {
+   "file": "music_loop.wav",
+   "kind": "repeats",
+   "size": 529244,
+   "funnelzip": 148212,
+   "ok": true,
+   "enc_s": 2.74,
+   "dec_s": 1.0,
+   "params": [
+    2,
+    1,
+    0,
+    66150,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 377632,
+    "bzip2 -9": 260730,
+    "xz -9e": 282176,
+    "zstd -19": 344617,
+    "brotli -11": 289013,
+    "zstd -22": 344617,
+    "FLAC -12": 169218
+   },
+   "best_existing": [
+    "FLAC -12",
+    169218
+   ]
+  },
+  {
+   "file": "music_loop_clean.wav",
+   "kind": "repeats",
+   "size": 529244,
+   "funnelzip": 44945,
+   "ok": true,
+   "enc_s": 2.79,
+   "dec_s": 0.96,
+   "params": [
+    2,
+    1,
+    0,
+    66150,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 331748,
+    "bzip2 -9": 197312,
+    "xz -9e": 214496,
+    "zstd -19": 256326,
+    "brotli -11": 211339,
+    "zstd -22": 256342,
+    "FLAC -12": 112427
+   },
+   "best_existing": [
+    "FLAC -12",
+    112427
+   ]
+  },
+  {
+   "file": "stereo_mix.wav",
+   "kind": "audio",
+   "size": 1256068,
+   "funnelzip": 102525,
+   "ok": true,
+   "enc_s": 3.01,
+   "dec_s": 2.19,
+   "params": [
+    2,
+    2,
+    0,
+    1100,
+    0,
+    0,
+    3581
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 471130,
+    "bzip2 -9": 385276,
+    "xz -9e": 324080,
+    "zstd -19": 405870,
+    "brotli -11": 343315,
+    "zstd -22": 405640,
+    "FLAC -12": 185351
+   },
+   "best_existing": [
+    "FLAC -12",
+    185351
+   ]
+  },
+  {
+   "file": "landscape.png (PNG file)",
+   "kind": "image file",
+   "size": 183871,
+   "funnelzip": 91992,
+   "ok": true,
+   "enc_s": 5.37,
+   "dec_s": 1.53,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "pixels",
+   "baselines": {
+    "gzip -9": 183949,
+    "bzip2 -9": 185028,
+    "xz -9e": 183940,
+    "zstd -19": 183886,
+    "brotli -11": 183876,
+    "zstd -22": 183886,
+    "the PNG itself": 183871
+   },
+   "best_existing": [
+    "the PNG itself",
+    183871
+   ]
+  },
+  {
+   "file": "beach_photo.png (PNG file)",
+   "kind": "image file",
+   "size": 44550,
+   "funnelzip": 30164,
+   "ok": true,
+   "enc_s": 2.08,
+   "dec_s": 0.16,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "pixels",
+   "baselines": {
+    "gzip -9": 44583,
+    "bzip2 -9": 45041,
+    "xz -9e": 44612,
+    "zstd -19": 44560,
+    "brotli -11": 44554,
+    "zstd -22": 44560,
+    "the PNG itself": 44550
+   },
+   "best_existing": [
+    "the PNG itself",
+    44550
+   ]
+  },
+  {
+   "file": "wallpaper.png (PNG file)",
+   "kind": "image file",
+   "size": 207776,
+   "funnelzip": 147773,
+   "ok": true,
+   "enc_s": 4.67,
+   "dec_s": 0.79,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "pixels",
+   "baselines": {
+    "gzip -9": 207859,
+    "bzip2 -9": 208922,
+    "xz -9e": 207848,
+    "zstd -19": 207791,
+    "brotli -11": 207781,
+    "zstd -22": 207791,
+    "the PNG itself": 207776
+   },
+   "best_existing": [
+    "the PNG itself",
+    207776
+   ]
+  },
+  {
+   "file": "synthetic.png (PNG file)",
+   "kind": "image file",
+   "size": 1832,
+   "funnelzip": 187,
+   "ok": true,
+   "enc_s": 2.21,
+   "dec_s": 0.26,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "pixels",
+   "baselines": {
+    "gzip -9": 775,
+    "bzip2 -9": 1104,
+    "xz -9e": 800,
+    "zstd -19": 749,
+    "brotli -11": 749,
+    "zstd -22": 749,
+    "the PNG itself": 1832
+   },
+   "best_existing": [
+    "zstd -19",
+    749
+   ]
+  },
+  {
+   "file": "landscape_q90.jpg (JPEG file)",
+   "kind": "image file",
+   "size": 24498,
+   "funnelzip": 16894,
+   "ok": true,
+   "enc_s": 0.75,
+   "dec_s": 0.34,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "coefficients",
+   "baselines": {
+    "gzip -9": 23585,
+    "bzip2 -9": 24041,
+    "xz -9e": 23584,
+    "zstd -19": 23540,
+    "brotli -11": 23509,
+    "zstd -22": 23540,
+    "the JPEG itself": 24498
+   },
+   "best_existing": [
+    "brotli -11",
+    23509
+   ]
+  },
+  {
+   "file": "landscape_q75.jpg (JPEG file)",
+   "kind": "image file",
+   "size": 15335,
+   "funnelzip": 9522,
+   "ok": true,
+   "enc_s": 0.6,
+   "dec_s": 0.33,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "coefficients",
+   "baselines": {
+    "gzip -9": 14195,
+    "bzip2 -9": 14671,
+    "xz -9e": 14184,
+    "zstd -19": 14133,
+    "brotli -11": 14213,
+    "zstd -22": 14133,
+    "the JPEG itself": 15335
+   },
+   "best_existing": [
+    "zstd -19",
+    14133
+   ]
+  },
+  {
+   "file": "sonoma_apple.jpg (JPEG file)",
+   "kind": "image file",
+   "size": 73364,
+   "funnelzip": 43335,
+   "ok": true,
+   "enc_s": 2.48,
+   "dec_s": 1.32,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "coefficients",
+   "baselines": {
+    "gzip -9": 68640,
+    "bzip2 -9": 68705,
+    "xz -9e": 67880,
+    "zstd -19": 68165,
+    "brotli -11": 68392,
+    "zstd -22": 68165,
+    "the JPEG itself": 73364
+   },
+   "best_existing": [
+    "xz -9e",
+    67880
+   ]
+  },
+  {
+   "file": "beach_apple.jpg (JPEG file)",
+   "kind": "image file",
+   "size": 19577,
+   "funnelzip": 14142,
+   "ok": true,
+   "enc_s": 0.43,
+   "dec_s": 0.07,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "coefficients",
+   "baselines": {
+    "gzip -9": 15426,
+    "bzip2 -9": 15862,
+    "xz -9e": 15472,
+    "zstd -19": 15407,
+    "brotli -11": 15209,
+    "zstd -22": 15407,
+    "the JPEG itself": 19577
+   },
+   "best_existing": [
+    "brotli -11",
+    15209
+   ]
+  },
+  {
+   "file": "macOS DefaultBackground.jpg (4K) (JPEG file)",
+   "kind": "image file",
+   "size": 5617703,
+   "funnelzip": 4497813,
+   "ok": true,
+   "enc_s": 5.53,
+   "dec_s": 5.24,
+   "params": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "path": "coefficients",
+   "baselines": {
+    "gzip -9": 5559219,
+    "bzip2 -9": 5441742,
+    "xz -9e": 5522872,
+    "zstd -19": 5516262,
+    "brotli -11": 5538401,
+    "zstd -22": 5516262,
+    "the JPEG itself": 5617703
+   },
+   "best_existing": [
+    "bzip2 -9",
+    5441742
+   ]
+  },
+  {
+   "file": "static camera video (raw RGB, 24 frames)",
+   "kind": "repeats",
+   "size": 2654208,
+   "funnelzip": 685717,
+   "ok": true,
+   "enc_s": 9.02,
+   "dec_s": 5.65,
+   "params": [
+    1,
+    3,
+    768,
+    110592,
+    0,
+    0,
+    4093
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 1968820,
+    "bzip2 -9": 1136600,
+    "xz -9e": 1261612,
+    "zstd -19": 1561854,
+    "brotli -11": 1335177,
+    "zstd -22": 1561854,
+    "FFV1": 911356,
+    "x264 lossless": 752477
+   },
+   "best_existing": [
+    "x264 lossless",
+    752477
+   ]
+  },
+  {
+   "file": "camera pan video (raw RGB, 48 frames)",
+   "kind": "video",
+   "size": 5308416,
+   "funnelzip": 441915,
+   "ok": true,
+   "enc_s": 13.69,
+   "dec_s": 10.31,
+   "params": [
+    1,
+    3,
+    768,
+    110592,
+    0,
+    0,
+    4093
+   ],
+   "path": null,
+   "baselines": {
+    "gzip -9": 2596724,
+    "bzip2 -9": 1119917,
+    "xz -9e": 778468,
+    "zstd -19": 995901,
+    "brotli -11": 844488,
+    "zstd -22": 995695,
+    "FFV1": 1171587,
+    "x264 lossless": 579083
+   },
+   "best_existing": [
+    "x264 lossless",
+    579083
+   ]
+  }
+ ],
+ "ablation": {
+  "license.txt": {
+   "all": 3342,
+   "-memory": 4222,
+   "-word": 3393,
+   "-echo": 3563,
+   "-equation": 3342,
+   "-resonator": 3342,
+   "-grid": 3342,
+   "-funnel": 3384,
+   "-refine": 3369,
+   "-rhythm": 3345,
+   "-motion": 3342,
+   "-precise": 3347,
+   "-stereo": 3342,
+   "-code": 3342,
+   "-primer": 3496,
+   "memory only": 3727
+  },
+  "typing.py": {
+   "all": 24807,
+   "-memory": 33013,
+   "-word": 25079,
+   "-echo": 26796,
+   "-equation": 24807,
+   "-resonator": 24807,
+   "-grid": 24807,
+   "-funnel": 25419,
+   "-refine": 25173,
+   "-rhythm": 24780,
+   "-motion": 24807,
+   "-precise": 24843,
+   "-stereo": 24807,
+   "-code": 24807,
+   "-primer": 25981,
+   "memory only": 28811
+  },
+  "sensor.csv": {
+   "all": 3121,
+   "-memory": 3226,
+   "-word": 5366,
+   "-echo": 3141,
+   "-equation": 3121,
+   "-resonator": 3121,
+   "-grid": 3121,
+   "-funnel": 3162,
+   "-refine": 3152,
+   "-rhythm": 3131,
+   "-motion": 3121,
+   "-precise": 3121,
+   "-stereo": 3121,
+   "-code": 3121,
+   "memory only": 6587
+  },
+  "counter.bin": {
+   "all": 30,
+   "-memory": 29,
+   "-word": 30,
+   "-echo": 27,
+   "-equation": 33,
+   "-resonator": 45,
+   "-grid": 30,
+   "-funnel": 39,
+   "-refine": 30,
+   "-rhythm": 23,
+   "-motion": 30,
+   "-precise": 32,
+   "-stereo": 30,
+   "-code": 30,
+   "memory only": 262
+  },
+  "zsh (program binary)": {
+   "all": 483789,
+   "-memory": 535641,
+   "-word": 483789,
+   "-echo": 504821,
+   "-equation": 484488,
+   "-resonator": 484997,
+   "-grid": 483999,
+   "-funnel": 495450,
+   "-refine": 488918,
+   "-rhythm": 487482,
+   "-motion": 483390,
+   "-precise": 484941,
+   "-stereo": 483789,
+   "-code": 494050,
+   "-codefilter": 516318,
+   "memory only": 599934
+  },
+  "system_sounds.wav": {
+   "all": 76709,
+   "-memory": 76134,
+   "-word": 76709,
+   "-echo": 76544,
+   "-equation": 77704,
+   "-resonator": 77625,
+   "-grid": 76708,
+   "-funnel": 79277,
+   "-refine": 76990,
+   "-rhythm": 77770,
+   "-motion": 76709,
+   "-precise": 76755,
+   "-stereo": 76709,
+   "-code": 76709,
+   "memory only": 239635
+  },
+  "beach_photo (raw RGB)": {
+   "all": 35137,
+   "-memory": 35955,
+   "-word": 35137,
+   "-echo": 35144,
+   "-equation": 35288,
+   "-resonator": 35315,
+   "-grid": 36730,
+   "-funnel": 36179,
+   "-refine": 35162,
+   "-rhythm": 35585,
+   "-motion": 35137,
+   "-precise": 35122,
+   "-stereo": 35137,
+   "-code": 35137,
+   "memory only": 46189
+  },
+  "synthetic (raw RGB)": {
+   "all": 463,
+   "-memory": 452,
+   "-word": 463,
+   "-echo": 456,
+   "-equation": 468,
+   "-resonator": 496,
+   "-grid": 2712,
+   "-funnel": 1370,
+   "-refine": 464,
+   "-rhythm": 536,
+   "-motion": 463,
+   "-precise": 603,
+   "-stereo": 463,
+   "-code": 463,
+   "memory only": 101488
+  },
+  "server.log": {
+   "all": 121025,
+   "-memory": 128303,
+   "-word": 125691,
+   "-echo": 122526,
+   "-equation": 121025,
+   "-resonator": 121025,
+   "-grid": 121025,
+   "-funnel": 124441,
+   "-refine": 126310,
+   "-rhythm": 121210,
+   "-motion": 121025,
+   "-precise": 121731,
+   "-stereo": 121025,
+   "-code": 123569,
+   "memory only": 143992
+  },
+  "music_loop_clean.wav": {
+   "all": 44932,
+   "-memory": 44142,
+   "-word": 44932,
+   "-echo": 46775,
+   "-equation": 45725,
+   "-resonator": 45223,
+   "-grid": 44932,
+   "-funnel": 47913,
+   "-refine": 44998,
+   "-rhythm": 67843,
+   "-motion": 44932,
+   "-precise": 44996,
+   "-stereo": 44932,
+   "-code": 44932,
+   "memory only": 204059
+  },
+  "stereo_mix.wav": {
+   "all": 102513,
+   "-memory": 102727,
+   "-word": 102513,
+   "-echo": 104002,
+   "-equation": 104379,
+   "-resonator": 104184,
+   "-grid": 102512,
+   "-funnel": 105796,
+   "-refine": 102920,
+   "-rhythm": 103403,
+   "-motion": 102513,
+   "-precise": 102597,
+   "-stereo": 103782,
+   "-code": 102513,
+   "memory only": 362284
+  },
+  "static camera video (raw RGB, 24 frames)": {
+   "all": 685702,
+   "-memory": 685108,
+   "-word": 685702,
+   "-echo": 685301,
+   "-equation": 685453,
+   "-resonator": 686696,
+   "-grid": 697307,
+   "-funnel": 705056,
+   "-refine": 691087,
+   "-rhythm": 694914,
+   "-motion": 685582,
+   "-precise": 686983,
+   "-stereo": 685702,
+   "-code": 685702,
+   "memory only": 1030819
+  },
+  "camera pan video (raw RGB, 48 frames)": {
+   "all": 441900,
+   "-memory": 463997,
+   "-word": 441900,
+   "-echo": 456770,
+   "-equation": 442738,
+   "-resonator": 443255,
+   "-grid": 460576,
+   "-funnel": 485072,
+   "-refine": 448428,
+   "-rhythm": 460458,
+   "-motion": 477202,
+   "-precise": 442900,
+   "-stereo": 441900,
+   "-code": 441900,
+   "memory only": 818474
+  }
+ }
+}

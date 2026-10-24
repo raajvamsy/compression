@@ -1,0 +1,47 @@
+[
+ {
+  "file": "landscape.png",
+  "kind": "PNG",
+  "file_bytes": 183871,
+  "pixels_raw": 786432,
+  "fz_file": 183887,
+  "fz_pixels": 95449,
+  "file_exact_from_pixels": true
+ },
+ {
+  "file": "beach_photo.png",
+  "kind": "PNG",
+  "file_bytes": 44550,
+  "pixels_raw": 83460,
+  "fz_file": 44534,
+  "fz_pixels": 33870,
+  "file_exact_from_pixels": true
+ },
+ {
+  "file": "wallpaper.png",
+  "kind": "PNG",
+  "file_bytes": 207776,
+  "pixels_raw": 442368,
+  "fz_file": 207485,
+  "fz_pixels": 153596,
+  "file_exact_from_pixels": true
+ },
+ {
+  "file": "landscape_q90.jpg",
+  "kind": "JPG",
+  "file_bytes": 24498,
+  "pixels_raw": 786432,
+  "fz_file": 23257,
+  "fz_pixels": 100513,
+  "file_exact_from_pixels": false
+ },
+ {
+  "file": "landscape_q75.jpg",
+  "kind": "JPG",
+  "file_bytes": 15335,
+  "pixels_raw": 786432,
+  "fz_file": 13880,
+  "fz_pixels": 107308,
+  "file_exact_from_pixels": false
+ }
+]

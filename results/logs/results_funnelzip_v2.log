@@ -1,0 +1,34 @@
+hi.txt                                           2 fz=       10 best=brotli -11:        6 OK  +66.7%  enc 0.0s dec 0.0s  WCSR=1,1,0,0
+sentence.txt                                    77 fz=       54 best=brotli -11:       61 OK  -11.5%  enc 0.0s dec 0.0s  WCSR=1,1,0,0
+license.txt                                  13809 fz=     3544 best=brotli -11:     3264 OK   +8.6%  enc 0.1s dec 0.0s  WCSR=1,1,0,0
+json_decoder.py                              12872 fz=     3142 best=brotli -11:     3158 OK   -0.5%  enc 0.1s dec 0.0s  WCSR=1,1,0,0
+typing.py                                   132718 fz=    26650 best=brotli -11:    28616 OK   -6.9%  enc 0.7s dec 0.2s  WCSR=1,1,0,0
+sensor.csv                                   32918 fz=     3166 best=xz -9e:     6564 OK  -51.8%  enc 1.0s dec 0.1s  WCSR=1,3,816,136
+counter.bin                                   4096 fz=       43 best=brotli -11:      217 OK  -80.2%  enc 0.1s dec 0.0s  WCSR=1,1,0,85
+random.bin                                    4096 fz=     4131 best=brotli -11:     4100 OK   +0.8%  enc 0.0s dec 0.0s  WCSR=2,1,0,0
+stdlib_2mb.txt (Python source)             2097152 fz=   379364 best=brotli -11:   409022 OK   -7.3%  enc 3.8s dec 3.1s  WCSR=1,1,0,0
+zsh (program binary)                       1361216 fz=   535103 best=xz -9e:   519924 OK   +2.9%  enc 6.9s dec 3.4s  WCSR=1,4,8,0
+chord.wav                                   264644 fz=    33830 best=FLAC -12:    46588 OK  -27.4%  enc 9.9s dec 0.7s  WCSR=2,1,0,56324
+system_sounds.wav                          1019922 fz=    78722 best=FLAC -12:   139535 OK  -43.6%  enc 7.1s dec 2.3s  WCSR=2,1,0,454
+beach_photo (raw RGB)                        83460 fz=    33870 best=WebP lossless:    33720 OK   +0.4%  enc 3.0s dec 0.2s  WCSR=1,1,642,640
+landscape (raw RGB)                         786432 fz=    95449 best=WebP lossless:   119562 OK  -20.2%  enc 6.5s dec 1.9s  WCSR=1,3,1536,1545
+wallpaper (raw RGB)                         442368 fz=   153596 best=WebP lossless:   154976 OK   -0.9%  enc 4.9s dec 1.0s  WCSR=1,1,1536,1527
+synthetic (raw RGB)                         196608 fz=     1017 best=WebP lossless:      232 OK +338.4%  enc 4.9s dec 0.5s  WCSR=1,3,1536,384
+landscape.png (already compressed)          183871 fz=   183887 best=brotli -11:   183876 OK   +0.0%  enc 1.3s dec 0.3s  WCSR=1,1,0,0
+doc_versions.txt                             41459 fz=     3738 best=brotli -11:     3556 OK   +5.1%  enc 0.9s dec 0.1s  WCSR=1,1,13816,0
+server.log                                 1740137 fz=   123409 best=bzip2 -9:   176472 OK  -30.1%  enc 4.5s dec 2.9s  WCSR=1,1,0,69
+music_loop.wav                              529244 fz=   148713 best=FLAC -12:   169218 OK  -12.1%  enc 13.8s dec 1.3s  WCSR=2,1,0,66150
+music_loop_clean.wav                        529244 fz=    45699 best=FLAC -12:   112427 OK  -59.4%  enc 13.5s dec 1.3s  WCSR=2,1,0,66150
+static camera video (raw RGB, 24 frames)   2654208 fz=   690169 best=x264 lossless:   752477 OK   -8.3%  enc 24.8s dec 6.7s  WCSR=1,3,768,110592
+camera pan video (raw RGB, 48 frames)      5308416 fz=   493957 best=x264 lossless:   579083 OK  -14.7%  enc 35.9s dec 12.6s  WCSR=1,3,768,110592
+ablation license.txt {'all': 3535, '-memory': 4132, '-word': 3567, '-echo': 3635, '-equation': 3522, '-resonator': 3537, '-grid': 3535, '-funnel': 3599, '-refine': 3543, '-rhythm': 3538, 'memory only': 3779}
+ablation typing.py {'all': 26640, '-memory': 33261, '-word': 26722, '-echo': 28628, '-equation': 26554, '-resonator': 26620, '-grid': 26640, '-funnel': 27384, '-refine': 26806, '-rhythm': 26613, 'memory only': 29771}
+ablation sensor.csv {'all': 3154, '-memory': 3225, '-word': 4519, '-echo': 3172, '-equation': 3150, '-resonator': 3127, '-grid': 3171, '-funnel': 3227, '-refine': 3195, '-rhythm': 3149, 'memory only': 6724}
+ablation counter.bin {'all': 34, '-memory': 32, '-word': 31, '-echo': 31, '-equation': 37, '-resonator': 51, '-grid': 34, '-funnel': 45, '-refine': 34, '-rhythm': 28, 'memory only': 262}
+ablation zsh (program binary) {'all': 535093, '-memory': 624253, '-word': 533368, '-echo': 562831, '-equation': 534677, '-resonator': 537838, '-grid': 540441, '-funnel': 547999, '-refine': 540257, '-rhythm': 540458, 'memory only': 616220}
+ablation system_sounds.wav {'all': 78711, '-memory': 77999, '-word': 78455, '-echo': 78531, '-equation': 79590, '-resonator': 79673, '-grid': 78712, '-funnel': 86295, '-refine': 79240, '-rhythm': 79837, 'memory only': 250860}
+ablation beach_photo (raw RGB) {'all': 33858, '-memory': 34227, '-word': 33779, '-echo': 33875, '-equation': 33828, '-resonator': 34245, '-grid': 36168, '-funnel': 35373, '-refine': 33889, '-rhythm': 34201, 'memory only': 47323}
+ablation server.log {'all': 123399, '-memory': 129398, '-word': 128181, '-echo': 126313, '-equation': 123715, '-resonator': 124995, '-grid': 123399, '-funnel': 127382, '-refine': 128699, '-rhythm': 123487, 'memory only': 151105}
+ablation music_loop_clean.wav {'all': 45687, '-memory': 45173, '-word': 45474, '-echo': 47014, '-equation': 46421, '-resonator': 45883, '-grid': 45687, '-funnel': 51373, '-refine': 45825, '-rhythm': 68613, 'memory only': 217425}
+ablation static camera video (raw RGB, 24 frames) {'all': 690155, '-memory': 690076, '-word': 688790, '-echo': 689666, '-equation': 689266, '-resonator': 691705, '-grid': 702069, '-funnel': 707729, '-refine': 694473, '-rhythm': 788515, 'memory only': 1129921}
+wrote results/funnelzip.json

@@ -1,0 +1,323 @@
+{
+ "note": "Measured 2026-10-17 during the next-steps round (FunnelZip v3). 'before' = same file before the step (or the step's lens switched off), 'after' = with it; 'best' = best existing tool for that file.",
+ "steps": [
+  {
+   "key": "precise",
+   "title": "Finer probabilities for near-certain bits",
+   "verdict": "worked",
+   "idea": "Probabilities were capped at 4095/4096, so even a certain bit cost 0.00035 bits. A final 16-bit stage blends the refined guess with the funnel's raw confidence, and the coder now works in 16-bit.",
+   "rows": [
+    [
+     "synthetic image (raw)",
+     1013,
+     909,
+     [
+      "WebP-lossless",
+      232
+     ]
+    ],
+    [
+     "100 KB of zeros",
+     44,
+     14,
+     null
+    ],
+    [
+     "system sounds",
+     78719,
+     78246,
+     [
+      "FLAC -12",
+      139535
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "motion",
+   "title": "Motion lens for video",
+   "verdict": "partly",
+   "idea": "Each new frame: estimate how every 16x16 block moved between the two previous frames (both known to the decoder, so nothing is stored), assume it keeps moving, and predict each pixel from where it was.",
+   "rows": [
+    [
+     "camera pan video",
+     493035,
+     460974,
+     [
+      "x264 lossless",
+      579083
+     ]
+    ],
+    [
+     "static camera video",
+     689007,
+     691408,
+     [
+      "x264 lossless",
+      752477
+     ]
+    ],
+    [
+     "test pattern video",
+     150394,
+     150550,
+     null
+    ]
+   ]
+  },
+  {
+   "key": "stereo",
+   "title": "Stereo lens for audio",
+   "verdict": "worked",
+   "idea": "Left and right are nearly the same sound. Model the two channels separately, and let each channel's leftover also be predicted from the other channel's leftover a few samples back.",
+   "rows": [
+    [
+     "stereo mix: treated as mono",
+     122467,
+     106323,
+     [
+      "FLAC -12",
+      185351
+     ]
+    ],
+    [
+     "stereo mix: + cross-channel taps",
+     106323,
+     104622,
+     [
+      "FLAC -12",
+      185351
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "code",
+   "title": "Code lens for program files",
+   "verdict": "worked",
+   "idea": "Machine code says 'jump N bytes from here', so the same call looks different everywhere. A reversible filter rewrites ARM64 BL/ADRP and x86 CALL/JMP targets as absolute addresses, a code lens reads 4-byte instruction words, and Listen tries the filters with and without a row stride. It now just edges out xz with its own BCJ filters.",
+   "rows": [
+    [
+     "zsh: + code lens",
+     541389,
+     526308,
+     [
+      "xz -9e",
+      519932
+     ]
+    ],
+    [
+     "zsh: + ARM64 & x86 filters + stride",
+     526308,
+     485935,
+     [
+      "xz -9e + its BCJ filters",
+      486188
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "primer",
+   "title": "Text primer (built-in knowledge) + tiny header",
+   "verdict": "worked",
+   "idea": "brotli ships a 122 KB dictionary of common text. FunnelZip now reads a same-sized primer of Python docs and code (none of it in any test file) before the file, and small files get a one-byte header.",
+   "rows": [
+    [
+     "hi.txt (2 bytes)",
+     10,
+     5,
+     [
+      "brotli -11",
+      6
+     ]
+    ],
+    [
+     "sentence.txt",
+     54,
+     34,
+     [
+      "brotli -11",
+      61
+     ]
+    ],
+    [
+     "license.txt",
+     3544,
+     3368,
+     [
+      "brotli -11",
+      3264
+     ]
+    ],
+    [
+     "json_decoder.py",
+     3142,
+     2687,
+     [
+      "brotli -11",
+      3158
+     ]
+    ],
+    [
+     "typing.py",
+     26650,
+     24767,
+     [
+      "brotli -11",
+      28616
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "jpeg",
+   "title": "JPEG lens: compress the cosine coefficients",
+   "verdict": "worked",
+   "idea": "A JPEG is already an equation (cosine coefficients) written with Huffman codes. Undo only the Huffman layer, lay the coefficients out as frequency planes, FunnelZip them, and rebuild the identical file (checked byte for byte; restart markers supported).",
+   "rows": [
+    [
+     "landscape q90 (PIL)",
+     24498,
+     17574,
+     [
+      "FunnelZip on the file bytes",
+      23257
+     ]
+    ],
+    [
+     "landscape q75 (PIL)",
+     15335,
+     10037,
+     [
+      "FunnelZip on the file bytes",
+      13880
+     ]
+    ],
+    [
+     "Sonoma wallpaper (Apple)",
+     73364,
+     45820,
+     [
+      "xz -9e on the JPEG",
+      67880
+     ]
+    ],
+    [
+     "beach photo (Apple)",
+     19577,
+     14271,
+     [
+      "brotli -11 on the JPEG",
+      15209
+     ]
+    ],
+    [
+     "macOS default background, 4K",
+     5617703,
+     4846803,
+     [
+      "bzip2 -9 on the JPEG",
+      5441742
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "png",
+   "title": "PNG lens: compress the pixels, rebuild the file",
+   "verdict": "worked",
+   "idea": "Decode the PNG, FunnelZip the pixels, and re-encode with the same settings and colour profile. The path is used only if the rebuilt file is byte-identical, otherwise it falls back. If plain FunnelZip on the file's bytes is smaller (tiny files), that path is kept instead.",
+   "rows": [
+    [
+     "landscape.png",
+     183871,
+     94794,
+     [
+      "WebP-lossless",
+      119562
+     ]
+    ],
+    [
+     "beach_photo.png",
+     44550,
+     30375,
+     [
+      "WebP-lossless",
+      33720
+     ]
+    ],
+    [
+     "wallpaper.png",
+     207776,
+     148991,
+     [
+      "WebP-lossless",
+      154976
+     ]
+    ],
+    [
+     "synthetic.png",
+     1832,
+     269,
+     [
+      "WebP-lossless",
+      232
+     ]
+    ]
+   ]
+  },
+  {
+   "key": "speed",
+   "title": "Speed",
+   "verdict": "partly",
+   "idea": "Listen now picks the lens set (text skips the signal lenses), runs its trial codings in parallel on all cores, and samples the whole file. Cache-line-friendly tables made text 3.7% smaller but not faster. Compiler flags gave only ~3%. Optional fast mode splits big files across cores.",
+   "speed": [
+    [
+     "2 MB text, compress",
+     0.28,
+     0.55
+    ],
+    [
+     "2 MB text, decompress",
+     0.51,
+     0.68
+    ],
+    [
+     "1 MB sound, compress",
+     0.15,
+     0.29
+    ],
+    [
+     "5.3 MB video, decompress (fast mode, +16% size)",
+     0.33,
+     1.39
+    ]
+   ]
+  },
+  {
+   "key": "listen",
+   "title": "Listen bug found on the way",
+   "verdict": "worked",
+   "idea": "Listen judged the layout from the first 128 KB only. The wallpaper's sky preferred 3 interleaved colours, the whole picture did not. Trials now sample start, middle and end.",
+   "rows": [
+    [
+     "wallpaper (raw pixels)",
+     166642,
+     153966,
+     [
+      "WebP-lossless",
+      154976
+     ]
+    ]
+   ]
+  }
+ ],
+ "future": [
+  "English prose: brotli still wins license.txt by 3% thanks to its English dictionary; a prose primer or bigger word model next",
+  "PNG from other encoders: store a small re-encode recipe (preflate-style) instead of falling back",
+  "Video: sub-pixel motion and zoom; flat synthetic pictures: colour cache like WebP (25 bytes left to close)",
+  "JPEG: predict each block's coefficients from its neighbours (Lepton-style) \u2014 Huffman is now in C, so this is the next ratio step",
+  "Speed for signals (sound, pixels, code: ~0.55\u20130.65 MB/s on one core): fewer lenses per bit when Listen finds them quiet, or split files into parts that really differ, as JPEG planes do"
+ ]
+}

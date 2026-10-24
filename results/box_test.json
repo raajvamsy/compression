@@ -1,0 +1,526 @@
+[
+ {
+  "file": "landscape (raw RGB)",
+  "w": 512,
+  "h": 512,
+  "full_funnelzip": 94035,
+  "best_existing": [
+   "WebP lossless",
+   119562
+  ],
+  "runs": [
+   {
+    "how": "whole image, one model",
+    "bytes": 97495,
+    "boxes": 1,
+    "s": 1.25
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 1",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 1,
+    "bytes": 97089,
+    "boxes": 4,
+    "s": 0.37
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 1",
+    "kind": "warm",
+    "n": 2,
+    "depth": 1,
+    "bytes": 97060,
+    "boxes": 4,
+    "s": 1.03
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 2",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 2,
+    "bytes": 100313,
+    "boxes": 16,
+    "s": 0.24
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 2",
+    "kind": "warm",
+    "n": 2,
+    "depth": 2,
+    "bytes": 96800,
+    "boxes": 16,
+    "s": 0.54
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 3",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 3,
+    "bytes": 108680,
+    "boxes": 64,
+    "s": 0.22
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 3",
+    "kind": "warm",
+    "n": 2,
+    "depth": 3,
+    "bytes": 99014,
+    "boxes": 64,
+    "s": 0.52
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 1",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 1,
+    "bytes": 98592,
+    "boxes": 9,
+    "s": 0.21
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 1",
+    "kind": "warm",
+    "n": 3,
+    "depth": 1,
+    "bytes": 97378,
+    "boxes": 9,
+    "s": 0.54
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 2",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 2,
+    "bytes": 110531,
+    "boxes": 81,
+    "s": 0.22
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 2",
+    "kind": "warm",
+    "n": 3,
+    "depth": 2,
+    "bytes": 100263,
+    "boxes": 81,
+    "s": 0.51
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 3",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 3,
+    "bytes": 153052,
+    "boxes": 729,
+    "s": 0.45
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 3",
+    "kind": "warm",
+    "n": 3,
+    "depth": 3,
+    "bytes": 116104,
+    "boxes": 729,
+    "s": 0.95
+   },
+   {
+    "how": "adaptive quadtree (split only if smaller)",
+    "kind": "adaptive",
+    "bytes": 97091,
+    "boxes": 4,
+    "s": 7.65
+   },
+   {
+    "how": "one model, pixels in box-in-box (Z) order",
+    "kind": "nested",
+    "bytes": 168949,
+    "boxes": 1,
+    "s": 1.22
+   }
+  ]
+ },
+ {
+  "file": "wallpaper (raw RGB)",
+  "w": 512,
+  "h": 288,
+  "full_funnelzip": 148302,
+  "best_existing": [
+   "WebP lossless",
+   154976
+  ],
+  "runs": [
+   {
+    "how": "whole image, one model",
+    "bytes": 166858,
+    "boxes": 1,
+    "s": 0.71
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 1",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 1,
+    "bytes": 165520,
+    "boxes": 4,
+    "s": 0.23
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 1",
+    "kind": "warm",
+    "n": 2,
+    "depth": 1,
+    "bytes": 166304,
+    "boxes": 4,
+    "s": 0.59
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 2",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 2,
+    "bytes": 166574,
+    "boxes": 16,
+    "s": 0.14
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 2",
+    "kind": "warm",
+    "n": 2,
+    "depth": 2,
+    "bytes": 165308,
+    "boxes": 16,
+    "s": 0.32
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 3",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 3,
+    "bytes": 170414,
+    "boxes": 64,
+    "s": 0.15
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 3",
+    "kind": "warm",
+    "n": 2,
+    "depth": 3,
+    "bytes": 166096,
+    "boxes": 64,
+    "s": 0.34
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 1",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 1,
+    "bytes": 166095,
+    "boxes": 9,
+    "s": 0.13
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 1",
+    "kind": "warm",
+    "n": 3,
+    "depth": 1,
+    "bytes": 166134,
+    "boxes": 9,
+    "s": 0.32
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 2",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 2,
+    "bytes": 171750,
+    "boxes": 81,
+    "s": 0.16
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 2",
+    "kind": "warm",
+    "n": 3,
+    "depth": 2,
+    "bytes": 166943,
+    "boxes": 81,
+    "s": 0.34
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 3",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 3,
+    "bytes": 194111,
+    "boxes": 729,
+    "s": 0.25
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 3",
+    "kind": "warm",
+    "n": 3,
+    "depth": 3,
+    "bytes": 176413,
+    "boxes": 729,
+    "s": 0.55
+   },
+   {
+    "how": "adaptive quadtree (split only if smaller)",
+    "kind": "adaptive",
+    "bytes": 165522,
+    "boxes": 4,
+    "s": 3.17
+   },
+   {
+    "how": "one model, pixels in box-in-box (Z) order",
+    "kind": "nested",
+    "bytes": 191199,
+    "boxes": 1,
+    "s": 0.65
+   }
+  ]
+ },
+ {
+  "file": "beach_photo (raw RGB)",
+  "w": 214,
+  "h": 130,
+  "full_funnelzip": 30171,
+  "best_existing": [
+   "WebP lossless",
+   33720
+  ],
+  "runs": [
+   {
+    "how": "whole image, one model",
+    "bytes": 35641,
+    "boxes": 1,
+    "s": 0.14
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 1",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 1,
+    "bytes": 36012,
+    "boxes": 4,
+    "s": 0.05
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 1",
+    "kind": "warm",
+    "n": 2,
+    "depth": 1,
+    "bytes": 35800,
+    "boxes": 4,
+    "s": 0.12
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 2",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 2,
+    "bytes": 36870,
+    "boxes": 16,
+    "s": 0.04
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 2",
+    "kind": "warm",
+    "n": 2,
+    "depth": 2,
+    "bytes": 36124,
+    "boxes": 16,
+    "s": 0.07
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 3",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 3,
+    "bytes": 38847,
+    "boxes": 64,
+    "s": 0.05
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 3",
+    "kind": "warm",
+    "n": 2,
+    "depth": 3,
+    "bytes": 36617,
+    "boxes": 64,
+    "s": 0.1
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 1",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 1,
+    "bytes": 36509,
+    "boxes": 9,
+    "s": 0.03
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 1",
+    "kind": "warm",
+    "n": 3,
+    "depth": 1,
+    "bytes": 35889,
+    "boxes": 9,
+    "s": 0.07
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 2",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 2,
+    "bytes": 39366,
+    "boxes": 81,
+    "s": 0.04
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 2",
+    "kind": "warm",
+    "n": 3,
+    "depth": 2,
+    "bytes": 36958,
+    "boxes": 81,
+    "s": 0.11
+   },
+   {
+    "how": "adaptive quadtree (split only if smaller)",
+    "kind": "adaptive",
+    "bytes": 35642,
+    "boxes": 1,
+    "s": 0.51
+   },
+   {
+    "how": "one model, pixels in box-in-box (Z) order",
+    "kind": "nested",
+    "bytes": 41835,
+    "boxes": 1,
+    "s": 0.13
+   }
+  ]
+ },
+ {
+  "file": "synthetic (raw RGB)",
+  "w": 512,
+  "h": 128,
+  "full_funnelzip": 255,
+  "best_existing": [
+   "WebP lossless",
+   232
+  ],
+  "runs": [
+   {
+    "how": "whole image, one model",
+    "bytes": 1020,
+    "boxes": 1,
+    "s": 0.33
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 1",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 1,
+    "bytes": 1332,
+    "boxes": 4,
+    "s": 0.1
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 1",
+    "kind": "warm",
+    "n": 2,
+    "depth": 1,
+    "bytes": 995,
+    "boxes": 4,
+    "s": 0.27
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 2",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 2,
+    "bytes": 2989,
+    "boxes": 16,
+    "s": 0.07
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 2",
+    "kind": "warm",
+    "n": 2,
+    "depth": 2,
+    "bytes": 1743,
+    "boxes": 16,
+    "s": 0.16
+   },
+   {
+    "how": "fixed: 2x2 boxes, depth 3",
+    "kind": "fixed",
+    "n": 2,
+    "depth": 3,
+    "bytes": 6890,
+    "boxes": 64,
+    "s": 0.09
+   },
+   {
+    "how": "warm: 2x2 boxes, depth 3",
+    "kind": "warm",
+    "n": 2,
+    "depth": 3,
+    "bytes": 3068,
+    "boxes": 64,
+    "s": 0.18
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 1",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 1,
+    "bytes": 2382,
+    "boxes": 9,
+    "s": 0.07
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 1",
+    "kind": "warm",
+    "n": 3,
+    "depth": 1,
+    "bytes": 1398,
+    "boxes": 9,
+    "s": 0.16
+   },
+   {
+    "how": "fixed: 3x3 boxes, depth 2",
+    "kind": "fixed",
+    "n": 3,
+    "depth": 2,
+    "bytes": 8760,
+    "boxes": 81,
+    "s": 0.11
+   },
+   {
+    "how": "warm: 3x3 boxes, depth 2",
+    "kind": "warm",
+    "n": 3,
+    "depth": 2,
+    "bytes": 4109,
+    "boxes": 81,
+    "s": 0.19
+   },
+   {
+    "how": "adaptive quadtree (split only if smaller)",
+    "kind": "adaptive",
+    "bytes": 1021,
+    "boxes": 1,
+    "s": 1.05
+   },
+   {
+    "how": "one model, pixels in box-in-box (Z) order",
+    "kind": "nested",
+    "bytes": 23254,
+    "boxes": 1,
+    "s": 0.3
+   }
+  ]
+ }
+]

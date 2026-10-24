@@ -1,0 +1,3098 @@
+'assert': r'''The "assert" statement
+**********************
+
+Assert statements are a convenient way to insert debugging assertions
+into a program:
+
+   assert_stmt ::= "assert" expression ["," expression]
+
+The simple form, "assert expression", is equivalent to
+
+   if __debug__:
+       if not expression: raise AssertionError
+
+The extended form, "assert expression1, expression2", is equivalent to
+
+   if __debug__:
+       if not expression1: raise AssertionError(expression2)
+
+These equivalences assume that "__debug__" and "AssertionError" refer
+to the built-in variables with those names.  In the current
+implementation, the built-in variable "__debug__" is "True" under
+normal circumstances, "False" when optimization is requested (command
+line option "-O").  The current code generator emits no code for an
+"assert" statement when optimization is requested at compile time.
+Note that it is unnecessary to include the source code for the
+expression that failed in the error message; it will be displayed as
+part of the stack trace.
+
+Assignments to "__debug__" are illegal.  The value for the built-in
+variable is determined when the interpreter starts.
+''',
+    'assignment': r'''Assignment statements
+*********************
+
+Assignment statements are used to (re)bind names to values and to
+modify attributes or items of mutable objects:
+
+   assignment_stmt ::= (target_list "=")+ (starred_expression | yield_expression)
+   target_list     ::= target ("," target)* [","]
+   target          ::= identifier
+                       | "(" [target_list] ")"
+                       | "[" [target_list] "]"
+                       | attributeref
+                       | subscription
+                       | slicing
+                       | "*" target
+
+(See section Primaries for the syntax definitions for *attributeref*,
+*subscription*, and *slicing*.)
+
+An assignment statement evaluates the expression list (remember that
+this can be a single expression or a comma-separated list, the latter
+yielding a tuple) and assigns the single resulting object to each of
+the target lists, from left to right.
+
+Assignment is defined recursively depending on the form of the target
+(list). When a target is part of a mutable object (an attribute
+reference, subscription or slicing), the mutable object must
+ultimately perform the assignment and decide about its validity, and
+may raise an exception if the assignment is unacceptable.  The rules
+observed by various types and the exceptions raised are given with the
+definition of the object types (see section The standard type
+hierarchy).
+
+Assignment of an object to a target list, optionally enclosed in
+parentheses or square brackets, is recursively defined as follows.
+
+* If the target list is a single target with no trailing comma,
+  optionally in parentheses, the object is assigned to that target.
+
+* Else:
+
+  * If the target list contains one target prefixed with an asterisk,
+    called a “starred” target: The object must be an iterable with at
+    least as many items as there are targets in the target list, minus
+    one.  The first items of the iterable are assigned, from left to
+    right, to the targets before the starred target.  The final items
+    of the iterable are assigned to the targets after the starred
+    target.  A list of the remaining items in the iterable is then
+    assigned to the starred target (the list can be empty).
+
+  * Else: The object must be an iterable with the same number of items
+    as there are targets in the target list, and the items are
+    assigned, from left to right, to the corresponding targets.
+
+Assignment of an object to a single target is recursively defined as
+follows.
+
+* If the target is an identifier (name):
+
+  * If the name does not occur in a "global" or "nonlocal" statement
+    in the current code block: the name is bound to the object in the
+    current local namespace.
+
+  * Otherwise: the name is bound to the object in the global namespace
+    or the outer namespace determined by "nonlocal", respectively.
+
+  The name is rebound if it was already bound.  This may cause the
+  reference count for the object previously bound to the name to reach
+  zero, causing the object to be deallocated and its destructor (if it
+  has one) to be called.
+
+* If the target is an attribute reference: The primary expression in
+  the reference is evaluated.  It should yield an object with
+  assignable attributes; if this is not the case, "TypeError" is
+  raised.  That object is then asked to assign the assigned object to
+  the given attribute; if it cannot perform the assignment, it raises
+  an exception (usually but not necessarily "AttributeError").
+
+  Note: If the object is a class instance and the attribute reference
+  occurs on both sides of the assignment operator, the right-hand side
+  expression, "a.x" can access either an instance attribute or (if no
+  instance attribute exists) a class attribute.  The left-hand side
+  target "a.x" is always set as an instance attribute, creating it if
+  necessary.  Thus, the two occurrences of "a.x" do not necessarily
+  refer to the same attribute: if the right-hand side expression
+  refers to a class attribute, the left-hand side creates a new
+  instance attribute as the target of the assignment:
+
+     class Cls:
+         x = 3             # class variable
+     inst = Cls()
+     inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
+
+  This description does not necessarily apply to descriptor
+  attributes, such as properties created with "property()".
+
+* If the target is a subscription: The primary expression in the
+  reference is evaluated.  It should yield either a mutable sequence
+  object (such as a list) or a mapping object (such as a dictionary).
+  Next, the subscript expression is evaluated.
+
+  If the primary is a mutable sequence object (such as a list), the
+  subscript must yield an integer.  If it is negative, the sequence’s
+  length is added to it.  The resulting value must be a nonnegative
+  integer less than the sequence’s length, and the sequence is asked
+  to assign the assigned object to its item with that index.  If the
+  index is out of range, "IndexError" is raised (assignment to a
+  subscripted sequence cannot add new items to a list).
+
+  If the primary is a mapping object (such as a dictionary), the
+  subscript must have a type compatible with the mapping’s key type,
+  and the mapping is then asked to create a key/value pair which maps
+  the subscript to the assigned object.  This can either replace an
+  existing key/value pair with the same key value, or insert a new
+  key/value pair (if no key with the same value existed).
+
+  For user-defined objects, the "__setitem__()" method is called with
+  appropriate arguments.
+
+* If the target is a slicing: The primary expression in the reference
+  is evaluated.  It should yield a mutable sequence object (such as a
+  list).  The assigned object should be a sequence object of the same
+  type.  Next, the lower and upper bound expressions are evaluated,
+  insofar they are present; defaults are zero and the sequence’s
+  length.  The bounds should evaluate to integers. If either bound is
+  negative, the sequence’s length is added to it.  The resulting
+  bounds are clipped to lie between zero and the sequence’s length,
+  inclusive.  Finally, the sequence object is asked to replace the
+  slice with the items of the assigned sequence.  The length of the
+  slice may be different from the length of the assigned sequence,
+  thus changing the length of the target sequence, if the target
+  sequence allows it.
+
+**CPython implementation detail:** In the current implementation, the
+syntax for targets is taken to be the same as for expressions, and
+invalid syntax is rejected during the code generation phase, causing
+less detailed error messages.
+
+Although the definition of assignment implies that overlaps between
+the left-hand side and the right-hand side are ‘simultaneous’ (for
+example "a, b = b, a" swaps two variables), overlaps *within* the
+collection of assigned-to variables occur left-to-right, sometimes
+resulting in confusion.  For instance, the following program prints
+"[0, 2]":
+
+   x = [0, 1]
+   i = 0
+   i, x[i] = 1, 2         # i is updated, then x[i] is updated
+   print(x)
+
+See also:
+
+  **PEP 3132** - Extended Iterable Unpacking
+     The specification for the "*target" feature.
+
+
+Augmented assignment statements
+===============================
+
+Augmented assignment is the combination, in a single statement, of a
+binary operation and an assignment statement:
+
+   augmented_assignment_stmt ::= augtarget augop (expression_list | yield_expression)
+   augtarget                 ::= identifier | attributeref | subscription | slicing
+   augop                     ::= "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
+                                 | ">>=" | "<<=" | "&=" | "^=" | "|="
+
+(See section Primaries for the syntax definitions of the last three
+symbols.)
+
+An augmented assignment evaluates the target (which, unlike normal
+assignment statements, cannot be an unpacking) and the expression
+list, performs the binary operation specific to the type of assignment
+on the two operands, and assigns the result to the original target.
+The target is only evaluated once.
+
+An augmented assignment statement like "x += 1" can be rewritten as "x
+= x + 1" to achieve a similar, but not exactly equal effect. In the
+augmented version, "x" is only evaluated once. Also, when possible,
+the actual operation is performed *in-place*, meaning that rather than
+creating a new object and assigning that to the target, the old object
+is modified instead.
+
+Unlike normal assignments, augmented assignments evaluate the left-
+hand side *before* evaluating the right-hand side.  For example, "a[i]
++= f(x)" first looks-up "a[i]", then it evaluates "f(x)" and performs
+the addition, and lastly, it writes the result back to "a[i]".
+
+With the exception of assigning to tuples and multiple targets in a
+single statement, the assignment done by augmented assignment
+statements is handled the same way as normal assignments. Similarly,
+with the exception of the possible *in-place* behavior, the binary
+operation performed by augmented assignment is the same as the normal
+binary operations.
+
+For targets which are attribute references, the same caveat about
+class and instance attributes applies as for regular assignments.
+
+
+Annotated assignment statements
+===============================
+
+*Annotation* assignment is the combination, in a single statement, of
+a variable or attribute annotation and an optional assignment
+statement:
+
+   annotated_assignment_stmt ::= augtarget ":" expression
+                                 ["=" (starred_expression | yield_expression)]
+
+The difference from normal Assignment statements is that only a single
+target is allowed.
+
+The assignment target is considered “simple” if it consists of a
+single name that is not enclosed in parentheses. For simple assignment
+targets, if in class or module scope, the annotations are evaluated
+and stored in a special class or module attribute "__annotations__"
+that is a dictionary mapping from variable names (mangled if private)
+to evaluated annotations. This attribute is writable and is
+automatically created at the start of class or module body execution,
+if annotations are found statically.
+
+If the assignment target is not simple (an attribute, subscript node,
+or parenthesized name), the annotation is evaluated if in class or
+module scope, but not stored.
+
+If a name is annotated in a function scope, then this name is local
+for that scope. Annotations are never evaluated and stored in function
+scopes.
+
+If the right hand side is present, an annotated assignment performs
+the actual assignment before evaluating annotations (where
+applicable). If the right hand side is not present for an expression
+target, then the interpreter evaluates the target except for the last
+"__setitem__()" or "__setattr__()" call.
+
+See also:
+
+  **PEP 526** - Syntax for Variable Annotations
+     The proposal that added syntax for annotating the types of
+     variables (including class variables and instance variables),
+     instead of expressing them through comments.
+
+  **PEP 484** - Type hints
+     The proposal that added the "typing" module to provide a standard
+     syntax for type annotations that can be used in static analysis
+     tools and IDEs.
+
+Changed in version 3.8: Now annotated assignments allow the same
+expressions in the right hand side as regular assignments. Previously,
+some expressions (like un-parenthesized tuple expressions) caused a
+syntax error.
+''',
+    'assignment-expressions': r'''Assignment expressions
+**********************
+
+   assignment_expression ::= [identifier ":="] expression
+
+An assignment expression (sometimes also called a “named expression”
+or “walrus”) assigns an "expression" to an "identifier", while also
+returning the value of the "expression".
+
+One common use case is when handling matched regular expressions:
+
+   if matching := pattern.search(data):
+       do_something(matching)
+
+Or, when processing a file stream in chunks:
+
+   while chunk := file.read(9000):
+       process(chunk)
+
+Assignment expressions must be surrounded by parentheses when used as
+expression statements and when used as sub-expressions in slicing,
+conditional, lambda, keyword-argument, and comprehension-if
+expressions and in "assert", "with", and "assignment" statements. In
+all other places where they can be used, parentheses are not required,
+including in "if" and "while" statements.
+
+Added in version 3.8: See **PEP 572** for more details about
+assignment expressions.
+''',
+    'async': r'''Coroutines
+**********
+
+Added in version 3.5.
+
+
+Coroutine function definition
+=============================
+
+   async_funcdef ::= [decorators] "async" "def" funcname "(" [parameter_list] ")"
+                     ["->" expression] ":" suite
+
+Execution of Python coroutines can be suspended and resumed at many
+points (see *coroutine*). "await" expressions, "async for" and "async
+with" can only be used in the body of a coroutine function.
+
+Functions defined with "async def" syntax are always coroutine
+functions, even if they do not contain "await" or "async" keywords.
+
+It is a "SyntaxError" to use a "yield from" expression inside the body
+of a coroutine function.
+
+An example of a coroutine function:
+
+   async def func(param1, param2):
+       do_stuff()
+       await some_coroutine()
+
+Changed in version 3.7: "await" and "async" are now keywords;
+previously they were only treated as such inside the body of a
+coroutine function.
+
+
+The "async for" statement
+=========================
+
+   async_for_stmt ::= "async" for_stmt
+
+An *asynchronous iterable* provides an "__aiter__" method that
+directly returns an *asynchronous iterator*, which can call
+asynchronous code in its "__anext__" method.
+
+The "async for" statement allows convenient iteration over
+asynchronous iterables.
+
+The following code:
+
+   async for TARGET in ITER:
+       SUITE
+   else:
+       SUITE2
+
+Is semantically equivalent to:
+
+   iter = (ITER)
+   iter = type(iter).__aiter__(iter)
+   running = True
+
+   while running:
+       try:
+           TARGET = await type(iter).__anext__(iter)
+       except StopAsyncIteration:
+           running = False
+       else:
+           SUITE
+   else:
+       SUITE2
+
+See also "__aiter__()" and "__anext__()" for details.
+
+It is a "SyntaxError" to use an "async for" statement outside the body
+of a coroutine function.
+
+
+The "async with" statement
+==========================
+
+   async_with_stmt ::= "async" with_stmt
+
+An *asynchronous context manager* is a *context manager* that is able
+to suspend execution in its *enter* and *exit* methods.
+
+The following code:
+
+   async with EXPRESSION as TARGET:
+       SUITE
+
+is semantically equivalent to:
+
+   manager = (EXPRESSION)
+   aenter = type(manager).__aenter__
+   aexit = type(manager).__aexit__
+   value = await aenter(manager)
+   hit_except = False
+
+   try:
+       TARGET = value
+       SUITE
+   except:
+       hit_except = True
+       if not await aexit(manager, *sys.exc_info()):
+           raise
+   finally:
+       if not hit_except:
+           await aexit(manager, None, None, None)
+
+See also "__aenter__()" and "__aexit__()" for details.
+
+It is a "SyntaxError" to use an "async with" statement outside the
+body of a coroutine function.
+
+See also:
+
+  **PEP 492** - Coroutines with async and await syntax
+     The proposal that made coroutines a proper standalone concept in
+     Python, and added supporting syntax.
+''',
+    'atom-identifiers': r'''Identifiers (Names)
+*******************
+
+An identifier occurring as an atom is a name.  See section Identifiers
+and keywords for lexical definition and section Naming and binding for
+documentation of naming and binding.
+
+When the name is bound to an object, evaluation of the atom yields
+that object. When a name is not bound, an attempt to evaluate it
+raises a "NameError" exception.
+
+
+Private name mangling
+=====================
+
+When an identifier that textually occurs in a class definition begins
+with two or more underscore characters and does not end in two or more
+underscores, it is considered a *private name* of that class.
+
+See also: The class specifications.
+
+More precisely, private names are transformed to a longer form before
+code is generated for them.  If the transformed name is longer than
+255 characters, implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which
+the identifier is used but only the following private identifiers are
+mangled:
+
+* Any name used as the name of a variable that is assigned or read or
+  any name of an attribute being accessed.
+
+  The "__name__" attribute of nested functions, classes, and type
+  aliases is however not mangled.
+
+* The name of imported modules, e.g., "__spam" in "import __spam". If
+  the module is part of a package (i.e., its name contains a dot), the
+  name is *not* mangled, e.g., the "__foo" in "import __foo.bar" is
+  not mangled.
+
+* The name of an imported member, e.g., "__f" in "from spam import
+  __f".
+
+The transformation rule is defined as follows:
+
+* The class name, with leading underscores removed and a single
+  leading underscore inserted, is inserted in front of the identifier,
+  e.g., the identifier "__spam" occurring in a class named "Foo",
+  "_Foo" or "__Foo" is transformed to "_Foo__spam".
+
+* If the class name consists only of underscores, the transformation
+  is the identity, e.g., the identifier "__spam" occurring in a class
+  named "_" or "__" is left as is.
+''',
+    'atom-literals': r'''Literals
+********
+
+Python supports string and bytes literals and various numeric
+literals:
+
+   literal ::= stringliteral | bytesliteral
+               | integer | floatnumber | imagnumber
+
+Evaluation of a literal yields an object of the given type (string,
+bytes, integer, floating-point number, complex number) with the given
+value.  The value may be approximated in the case of floating-point
+and imaginary (complex) literals.  See section Literals for details.
+
+All literals correspond to immutable data types, and hence the
+object’s identity is less important than its value.  Multiple
+evaluations of literals with the same value (either the same
+occurrence in the program text or a different occurrence) may obtain
+the same object or a different object with the same value.
+''',
+    'attribute-access': r'''Customizing attribute access
+****************************
+
+The following methods can be defined to customize the meaning of
+attribute access (use of, assignment to, or deletion of "x.name") for
+class instances.
+
+object.__getattr__(self, name)
+
+   Called when the default attribute access fails with an
+   "AttributeError" (either "__getattribute__()" raises an
+   "AttributeError" because *name* is not an instance attribute or an
+   attribute in the class tree for "self"; or "__get__()" of a *name*
+   property raises "AttributeError").  This method should either
+   return the (computed) attribute value or raise an "AttributeError"
+   exception. The "object" class itself does not provide this method.
+
+   Note that if the attribute is found through the normal mechanism,
+   "__getattr__()" is not called.  (This is an intentional asymmetry
+   between "__getattr__()" and "__setattr__()".) This is done both for
+   efficiency reasons and because otherwise "__getattr__()" would have
+   no way to access other attributes of the instance.  Note that at
+   least for instance variables, you can take total control by not
+   inserting any values in the instance attribute dictionary (but
+   instead inserting them in another object).  See the
+   "__getattribute__()" method below for a way to actually get total
+   control over attribute access.
+
+object.__getattribute__(self, name)
+
+   Called unconditionally to implement attribute accesses for
+   instances of the class. If the class also defines "__getattr__()",
+   the latter will not be called unless "__getattribute__()" either
+   calls it explicitly or raises an "AttributeError". This method
+   should return the (computed) attribute value or raise an
+   "AttributeError" exception. In order to avoid infinite recursion in
+   this method, its implementation should always call the base class
+   method with the same name to access any attributes it needs, for
+   example, "object.__getattribute__(self, name)".
+
+   Note:
+
+     This method may still be bypassed when looking up special methods
+     as the result of implicit invocation via language syntax or
+     built-in functions. See Special method lookup.
+
+   For certain sensitive attribute accesses, raises an auditing event
+   "object.__getattr__" with arguments "obj" and "name".
+
+object.__setattr__(self, name, value)
+
+   Called when an attribute assignment is attempted.  This is called
+   instead of the normal mechanism (i.e. store the value in the
+   instance dictionary). *name* is the attribute name, *value* is the
+   value to be assigned to it.
+
+   If "__setattr__()" wants to assign to an instance attribute, it
+   should call the base class method with the same name, for example,
+   "object.__setattr__(self, name, value)".
+
+   For certain sensitive attribute assignments, raises an auditing
+   event "object.__setattr__" with arguments "obj", "name", "value".
+
+object.__delattr__(self, name)
+
+   Like "__setattr__()" but for attribute deletion instead of
+   assignment.  This should only be implemented if "del obj.name" is
+   meaningful for the object.
+
+   For certain sensitive attribute deletions, raises an auditing event
+   "object.__delattr__" with arguments "obj" and "name".
+
+object.__dir__(self)
+
+   Called when "dir()" is called on the object. An iterable must be
+   returned. "dir()" converts the returned iterable to a list and
+   sorts it.
+
+
+Customizing module attribute access
+===================================
+
+Special names "__getattr__" and "__dir__" can be also used to
+customize access to module attributes. The "__getattr__" function at
+the module level should accept one argument which is the name of an
+attribute and return the computed value or raise an "AttributeError".
+If an attribute is not found on a module object through the normal
+lookup, i.e. "object.__getattribute__()", then "__getattr__" is
+searched in the module "__dict__" before raising an "AttributeError".
+If found, it is called with the attribute name and the result is
+returned.
+
+The "__dir__" function should accept no arguments, and return an
+iterable of strings that represents the names accessible on module. If
+present, this function overrides the standard "dir()" search on a
+module.
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the "__class__" attribute
+of a module object to a subclass of "types.ModuleType". For example:
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           super().__setattr__(attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+Note:
+
+  Defining module "__getattr__" and setting module "__class__" only
+  affect lookups made using the attribute access syntax – directly
+  accessing the module globals (whether by code within the module, or
+  via a reference to the module’s globals dictionary) is unaffected.
+
+Changed in version 3.5: "__class__" module attribute is now writable.
+
+Added in version 3.7: "__getattr__" and "__dir__" module attributes.
+
+See also:
+
+  **PEP 562** - Module __getattr__ and __dir__
+     Describes the "__getattr__" and "__dir__" functions on modules.
+
+
+Implementing Descriptors
+========================
+
+The following methods only apply when an instance of the class
+containing the method (a so-called *descriptor* class) appears in an
+*owner* class (the descriptor must be in either the owner’s class
+dictionary or in the class dictionary for one of its parents).  In the
+examples below, “the attribute” refers to the attribute whose name is
+the key of the property in the owner class’ "__dict__".  The "object"
+class itself does not implement any of these protocols.
+
+object.__get__(self, instance, owner=None)
+
+   Called to get the attribute of the owner class (class attribute
+   access) or of an instance of that class (instance attribute
+   access). The optional *owner* argument is the owner class, while
+   *instance* is the instance that the attribute was accessed through,
+   or "None" when the attribute is accessed through the *owner*.
+
+   This method should return the computed attribute value or raise an
+   "AttributeError" exception.
+
+   **PEP 252** specifies that "__get__()" is callable with one or two
+   arguments.  Python’s own built-in descriptors support this
+   specification; however, it is likely that some third-party tools
+   have descriptors that require both arguments.  Python’s own
+   "__getattribute__()" implementation always passes in both arguments
+   whether they are required or not.
+
+object.__set__(self, instance, value)
+
+   Called to set the attribute on an instance *instance* of the owner
+   class to a new value, *value*.
+
+   Note, adding "__set__()" or "__delete__()" changes the kind of
+   descriptor to a “data descriptor”.  See Invoking Descriptors for
+   more details.
+
+object.__delete__(self, instance)
+
+   Called to delete the attribute on an instance *instance* of the
+   owner class.
+
+Instances of descriptors may also have the "__objclass__" attribute
+present:
+
+object.__objclass__
+
+   The attribute "__objclass__" is interpreted by the "inspect" module
+   as specifying the class where this object was defined (setting this
+   appropriately can assist in runtime introspection of dynamic class
+   attributes). For callables, it may indicate that an instance of the
+   given type (or a subclass) is expected or required as the first
+   positional argument (for example, CPython sets this attribute for
+   unbound methods that are implemented in C).
+
+
+Invoking Descriptors
+====================
+
+In general, a descriptor is an object attribute with “binding
+behavior”, one whose attribute access has been overridden by methods
+in the descriptor protocol:  "__get__()", "__set__()", and
+"__delete__()". If any of those methods are defined for an object, it
+is said to be a descriptor.
+
+The default behavior for attribute access is to get, set, or delete
+the attribute from an object’s dictionary. For instance, "a.x" has a
+lookup chain starting with "a.__dict__['x']", then
+"type(a).__dict__['x']", and continuing through the base classes of
+"type(a)" excluding metaclasses.
+
+However, if the looked-up value is an object defining one of the
+descriptor methods, then Python may override the default behavior and
+invoke the descriptor method instead.  Where this occurs in the
+precedence chain depends on which descriptor methods were defined and
+how they were called.
+
+The starting point for descriptor invocation is a binding, "a.x". How
+the arguments are assembled depends on "a":
+
+Direct Call
+   The simplest and least common call is when user code directly
+   invokes a descriptor method:    "x.__get__(a)".
+
+Instance Binding
+   If binding to an object instance, "a.x" is transformed into the
+   call: "type(a).__dict__['x'].__get__(a, type(a))".
+
+Class Binding
+   If binding to a class, "A.x" is transformed into the call:
+   "A.__dict__['x'].__get__(None, A)".
+
+Super Binding
+   A dotted lookup such as "super(A, a).x" searches
+   "a.__class__.__mro__" for a base class "B" following "A" and then
+   returns "B.__dict__['x'].__get__(a, A)".  If not a descriptor, "x"
+   is returned unchanged.
+
+For instance bindings, the precedence of descriptor invocation depends
+on which descriptor methods are defined.  A descriptor can define any
+combination of "__get__()", "__set__()" and "__delete__()".  If it
+does not define "__get__()", then accessing the attribute will return
+the descriptor object itself unless there is a value in the object’s
+instance dictionary.  If the descriptor defines "__set__()" and/or
+"__delete__()", it is a data descriptor; if it defines neither, it is
+a non-data descriptor.  Normally, data descriptors define both
+"__get__()" and "__set__()", while non-data descriptors have just the
+"__get__()" method.  Data descriptors with "__get__()" and "__set__()"
+(and/or "__delete__()") defined always override a redefinition in an
+instance dictionary.  In contrast, non-data descriptors can be
+overridden by instances.
+
+Python methods (including those decorated with "@staticmethod" and
+"@classmethod") are implemented as non-data descriptors.  Accordingly,
+instances can redefine and override methods.  This allows individual
+instances to acquire behaviors that differ from other instances of the
+same class.
+
+The "property()" function is implemented as a data descriptor.
+Accordingly, instances cannot override the behavior of a property.
+
+
+__slots__
+=========
+
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of "__dict__" and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
+
+The space saved over using "__dict__" can be significant. Attribute
+lookup speed can be significantly improved as well.
+
+object.__slots__
+
+   This class variable can be assigned a string, iterable, or sequence
+   of strings with variable names used by instances.  *__slots__*
+   reserves space for the declared variables and prevents the
+   automatic creation of "__dict__" and *__weakref__* for each
+   instance.
+
+Notes on using *__slots__*:
+
+* When inheriting from a class without *__slots__*, the "__dict__" and
+  *__weakref__* attribute of the instances will always be accessible.
+
+* Without a "__dict__" variable, instances cannot be assigned new
+  variables not listed in the *__slots__* definition.  Attempts to
+  assign to an unlisted variable name raises "AttributeError". If
+  dynamic assignment of new variables is desired, then add
+  "'__dict__'" to the sequence of strings in the *__slots__*
+  declaration.
+
+* Without a *__weakref__* variable for each instance, classes defining
+  *__slots__* do not support "weak references" to its instances. If
+  weak reference support is needed, then add "'__weakref__'" to the
+  sequence of strings in the *__slots__* declaration.
+
+* *__slots__* are implemented at the class level by creating
+  descriptors for each variable name.  As a result, class attributes
+  cannot be used to set default values for instance variables defined
+  by *__slots__*; otherwise, the class attribute would overwrite the
+  descriptor assignment.
+
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available
+  in child classes. However, instances of a child subclass will get a
+  "__dict__" and *__weakref__* unless the subclass also defines
+  *__slots__* (which should only contain names of any *additional*
+  slots).
+
+* If a class defines a slot also defined in a base class, the instance
+  variable defined by the base class slot is inaccessible (except by
+  retrieving its descriptor directly from the base class). This
+  renders the meaning of the program undefined.  In the future, a
+  check may be added to prevent this.
+
+* "TypeError" will be raised if nonempty *__slots__* are defined for a
+  class derived from a ""variable-length" built-in type" such as
+  "int", "bytes", and "tuple".
+
+* Any non-string *iterable* may be assigned to *__slots__*.
+
+* If a "dictionary" is used to assign *__slots__*, the dictionary keys
+  will be used as the slot names. The values of the dictionary can be
+  used to provide per-attribute docstrings that will be recognised by
+  "inspect.getdoc()" and displayed in the output of "help()".
+
+* "__class__" assignment works only if both classes have the same
+  *__slots__*.
+
+* Multiple inheritance with multiple slotted parent classes can be
+  used, but only one parent is allowed to have attributes created by
+  slots (the other bases must have empty slot layouts) - violations
+  raise "TypeError".
+
+* If an *iterator* is used for *__slots__* then a *descriptor* is
+  created for each of the iterator’s values. However, the *__slots__*
+  attribute will be an empty iterator.
+''',
+    'attribute-references': r'''Attribute references
+********************
+
+An attribute reference is a primary followed by a period and a name:
+
+   attributeref ::= primary "." identifier
+
+The primary must evaluate to an object of a type that supports
+attribute references, which most objects do.  This object is then
+asked to produce the attribute whose name is the identifier. The type
+and value produced is determined by the object.  Multiple evaluations
+of the same attribute reference may yield different objects.
+
+This production can be customized by overriding the
+"__getattribute__()" method or the "__getattr__()" method.  The
+"__getattribute__()" method is called first and either returns a value
+or raises "AttributeError" if the attribute is not available.
+
+If an "AttributeError" is raised and the object has a "__getattr__()"
+method, that method is called as a fallback.
+''',
+    'augassign': r'''Augmented assignment statements
+*******************************
+
+Augmented assignment is the combination, in a single statement, of a
+binary operation and an assignment statement:
+
+   augmented_assignment_stmt ::= augtarget augop (expression_list | yield_expression)
+   augtarget                 ::= identifier | attributeref | subscription | slicing
+   augop                     ::= "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
+                                 | ">>=" | "<<=" | "&=" | "^=" | "|="
+
+(See section Primaries for the syntax definitions of the last three
+symbols.)
+
+An augmented assignment evaluates the target (which, unlike normal
+assignment statements, cannot be an unpacking) and the expression
+list, performs the binary operation specific to the type of assignment
+on the two operands, and assigns the result to the original target.
+The target is only evaluated once.
+
+An augmented assignment statement like "x += 1" can be rewritten as "x
+= x + 1" to achieve a similar, but not exactly equal effect. In the
+augmented version, "x" is only evaluated once. Also, when possible,
+the actual operation is performed *in-place*, meaning that rather than
+creating a new object and assigning that to the target, the old object
+is modified instead.
+
+Unlike normal assignments, augmented assignments evaluate the left-
+hand side *before* evaluating the right-hand side.  For example, "a[i]
++= f(x)" first looks-up "a[i]", then it evaluates "f(x)" and performs
+the addition, and lastly, it writes the result back to "a[i]".
+
+With the exception of assigning to tuples and multiple targets in a
+single statement, the assignment done by augmented assignment
+statements is handled the same way as normal assignments. Similarly,
+with the exception of the possible *in-place* behavior, the binary
+operation performed by augmented assignment is the same as the normal
+binary operations.
+
+For targets which are attribute references, the same caveat about
+class and instance attributes applies as for regular assignments.
+''',
+    'await': r'''Await expression
+****************
+
+Suspend the execution of *coroutine* on an *awaitable* object. Can
+only be used inside a *coroutine function*.
+
+   await_expr ::= "await" primary
+
+Added in version 3.5.
+''',
+    'binary': r'''Binary arithmetic operations
+****************************
+
+The binary arithmetic operations have the conventional priority
+levels.  Note that some of these operations also apply to certain non-
+numeric types.  Apart from the power operator, there are only two
+levels, one for multiplicative operators and one for additive
+operators:
+
+   m_expr ::= u_expr | m_expr "*" u_expr | m_expr "@" m_expr |
+              m_expr "//" u_expr | m_expr "/" u_expr |
+              m_expr "%" u_expr
+   a_expr ::= m_expr | a_expr "+" m_expr | a_expr "-" m_expr
+
+The "*" (multiplication) operator yields the product of its arguments.
+The arguments must either both be numbers, or one argument must be an
+integer and the other must be a sequence. In the former case, the
+numbers are converted to a common type and then multiplied together.
+In the latter case, sequence repetition is performed; a negative
+repetition factor yields an empty sequence.
+
+This operation can be customized using the special "__mul__()" and
+"__rmul__()" methods.
+
+The "@" (at) operator is intended to be used for matrix
+multiplication.  No builtin Python types implement this operator.
+
+This operation can be customized using the special "__matmul__()" and
+"__rmatmul__()" methods.
+
+Added in version 3.5.
+
+The "/" (division) and "//" (floor division) operators yield the
+quotient of their arguments.  The numeric arguments are first
+converted to a common type. Division of integers yields a float, while
+floor division of integers results in an integer; the result is that
+of mathematical division with the ‘floor’ function applied to the
+result.  Division by zero raises the "ZeroDivisionError" exception.
+
+The division operation can be customized using the special
+"__truediv__()" and "__rtruediv__()" methods. The floor division
+operation can be customized using the special "__floordiv__()" and
+"__rfloordiv__()" methods.
+
+The "%" (modulo) operator yields the remainder from the division of
+the first argument by the second.  The numeric arguments are first
+converted to a common type.  A zero right argument raises the
+"ZeroDivisionError" exception.  The arguments may be floating-point
+numbers, e.g., "3.14%0.7" equals "0.34" (since "3.14" equals "4*0.7 +
+0.34".)  The modulo operator always yields a result with the same sign
+as its second operand (or zero); the absolute value of the result is
+strictly smaller than the absolute value of the second operand [1].
+
+The floor division and modulo operators are connected by the following
+identity: "x == (x//y)*y + (x%y)".  Floor division and modulo are also
+connected with the built-in function "divmod()": "divmod(x, y) ==
+(x//y, x%y)". [2].
+
+In addition to performing the modulo operation on numbers, the "%"
+operator is also overloaded by string objects to perform old-style
+string formatting (also known as interpolation).  The syntax for
+string formatting is described in the Python Library Reference,
+section printf-style String Formatting.
+
+The *modulo* operation can be customized using the special "__mod__()"
+and "__rmod__()" methods.
+
+The floor division operator, the modulo operator, and the "divmod()"
+function are not defined for complex numbers.  Instead, convert to a
+floating-point number using the "abs()" function if appropriate.
+
+The "+" (addition) operator yields the sum of its arguments.  The
+arguments must either both be numbers or both be sequences of the same
+type.  In the former case, the numbers are converted to a common type
+and then added together. In the latter case, the sequences are
+concatenated.
+
+This operation can be customized using the special "__add__()" and
+"__radd__()" methods.
+
+The "-" (subtraction) operator yields the difference of its arguments.
+The numeric arguments are first converted to a common type.
+
+This operation can be customized using the special "__sub__()" and
+"__rsub__()" methods.
+''',
+    'bitwise': r'''Binary bitwise operations
+*************************
+
+Each of the three bitwise operations has a different priority level:
+
+   and_expr ::= shift_expr | and_expr "&" shift_expr
+   xor_expr ::= and_expr | xor_expr "^" and_expr
+   or_expr  ::= xor_expr | or_expr "|" xor_expr
+
+The "&" operator yields the bitwise AND of its arguments, which must
+be integers or one of them must be a custom object overriding
+"__and__()" or "__rand__()" special methods.
+
+The "^" operator yields the bitwise XOR (exclusive OR) of its
+arguments, which must be integers or one of them must be a custom
+object overriding "__xor__()" or "__rxor__()" special methods.
+
+The "|" operator yields the bitwise (inclusive) OR of its arguments,
+which must be integers or one of them must be a custom object
+overriding "__or__()" or "__ror__()" special methods.
+''',
+    'bltin-code-objects': r'''Code Objects
+************
+
+Code objects are used by the implementation to represent “pseudo-
+compiled” executable Python code such as a function body. They differ
+from function objects because they don’t contain a reference to their
+global execution environment.  Code objects are returned by the built-
+in "compile()" function and can be extracted from function objects
+through their "__code__" attribute. See also the "code" module.
+
+Accessing "__code__" raises an auditing event "object.__getattr__"
+with arguments "obj" and ""__code__"".
+
+A code object can be executed or evaluated by passing it (instead of a
+source string) to the "exec()" or "eval()"  built-in functions.
+
+See The standard type hierarchy for more information.
+''',
+    'bltin-ellipsis-object': r'''The Ellipsis Object
+*******************
+
+This object is commonly used by slicing (see Slicings).  It supports
+no special operations.  There is exactly one ellipsis object, named
+"Ellipsis" (a built-in name).  "type(Ellipsis)()" produces the
+"Ellipsis" singleton.
+
+It is written as "Ellipsis" or "...".
+''',
+    'bltin-null-object': r'''The Null Object
+***************
+
+This object is returned by functions that don’t explicitly return a
+value.  It supports no special operations.  There is exactly one null
+object, named "None" (a built-in name).  "type(None)()" produces the
+same singleton.
+
+It is written as "None".
+''',
+    'bltin-type-objects': r'''Type Objects
+************
+
+Type objects represent the various object types.  An object’s type is
+accessed by the built-in function "type()".  There are no special
+operations on types.  The standard module "types" defines names for
+all standard built-in types.
+
+Types are written like this: "<class 'int'>".
+''',
+    'booleans': r'''Boolean operations
+******************
+
+   or_test  ::= and_test | or_test "or" and_test
+   and_test ::= not_test | and_test "and" not_test
+   not_test ::= comparison | "not" not_test
+
+In the context of Boolean operations, and also when expressions are
+used by control flow statements, the following values are interpreted
+as false: "False", "None", numeric zero of all types, and empty
+strings and containers (including strings, tuples, lists,
+dictionaries, sets and frozensets).  All other values are interpreted
+as true.  User-defined objects can customize their truth value by
+providing a "__bool__()" method.
+
+The operator "not" yields "True" if its argument is false, "False"
+otherwise.
+
+The expression "x and y" first evaluates *x*; if *x* is false, its
+value is returned; otherwise, *y* is evaluated and the resulting value
+is returned.
+
+The expression "x or y" first evaluates *x*; if *x* is true, its value
+is returned; otherwise, *y* is evaluated and the resulting value is
+returned.
+
+Note that neither "and" nor "or" restrict the value and type they
+return to "False" and "True", but rather return the last evaluated
+argument.  This is sometimes useful, e.g., if "s" is a string that
+should be replaced by a default value if it is empty, the expression
+"s or 'foo'" yields the desired value.  Because "not" has to create a
+new value, it returns a boolean value regardless of the type of its
+argument (for example, "not 'foo'" produces "False" rather than "''".)
+''',
+    'break': r'''The "break" statement
+*********************
+
+   break_stmt ::= "break"
+
+"break" may only occur syntactically nested in a "for" or "while"
+loop, but not nested in a function or class definition within that
+loop.
+
+It terminates the nearest enclosing loop, skipping the optional "else"
+clause if the loop has one.
+
+If a "for" loop is terminated by "break", the loop control target
+keeps its current value.
+
+When "break" passes control out of a "try" statement with a "finally"
+clause, that "finally" clause is executed before really leaving the
+loop.
+''',
+    'callable-types': r'''Emulating callable objects
+**************************
+
+object.__call__(self[, args...])
+
+   Called when the instance is “called” as a function; if this method
+   is defined, "x(arg1, arg2, ...)" roughly translates to
+   "type(x).__call__(x, arg1, ...)". The "object" class itself does
+   not provide this method.
+''',
+    'calls': r'''Calls
+*****
+
+A call calls a callable object (e.g., a *function*) with a possibly
+empty series of *arguments*:
+
+   call                 ::= primary "(" [argument_list [","] | comprehension] ")"
+   argument_list        ::= positional_arguments ["," starred_and_keywords]
+                            ["," keywords_arguments]
+                            | starred_and_keywords ["," keywords_arguments]
+                            | keywords_arguments
+   positional_arguments ::= positional_item ("," positional_item)*
+   positional_item      ::= assignment_expression | "*" expression
+   starred_and_keywords ::= ("*" expression | keyword_item)
+                            ("," "*" expression | "," keyword_item)*
+   keywords_arguments   ::= (keyword_item | "**" expression)
+                            ("," keyword_item | "," "**" expression)*
+   keyword_item         ::= identifier "=" expression
+
+An optional trailing comma may be present after the positional and
+keyword arguments but does not affect the semantics.
+
+The primary must evaluate to a callable object (user-defined
+functions, built-in functions, methods of built-in objects, class
+objects, methods of class instances, and all objects having a
+"__call__()" method are callable).  All argument expressions are
+evaluated before the call is attempted.  Please refer to section
+Function definitions for the syntax of formal *parameter* lists.
+
+If keyword arguments are present, they are first converted to
+positional arguments, as follows.  First, a list of unfilled slots is
+created for the formal parameters.  If there are N positional
+arguments, they are placed in the first N slots.  Next, for each
+keyword argument, the identifier is used to determine the
+corresponding slot (if the identifier is the same as the first formal
+parameter name, the first slot is used, and so on).  If the slot is
+already filled, a "TypeError" exception is raised. Otherwise, the
+argument is placed in the slot, filling it (even if the expression is
+"None", it fills the slot).  When all arguments have been processed,
+the slots that are still unfilled are filled with the corresponding
+default value from the function definition.  (Default values are
+calculated, once, when the function is defined; thus, a mutable object
+such as a list or dictionary used as default value will be shared by
+all calls that don’t specify an argument value for the corresponding
+slot; this should usually be avoided.)  If there are any unfilled
+slots for which no default value is specified, a "TypeError" exception
+is raised.  Otherwise, the list of filled slots is used as the
+argument list for the call.
+
+**CPython implementation detail:** An implementation may provide
+built-in functions whose positional parameters do not have names, even
+if they are ‘named’ for the purpose of documentation, and which
+therefore cannot be supplied by keyword.  In CPython, this is the case
+for functions implemented in C that use "PyArg_ParseTuple()" to parse
+their arguments.
+
+If there are more positional arguments than there are formal parameter
+slots, a "TypeError" exception is raised, unless a formal parameter
+using the syntax "*identifier" is present; in this case, that formal
+parameter receives a tuple containing the excess positional arguments
+(or an empty tuple if there were no excess positional arguments).
+
+If any keyword argument does not correspond to a formal parameter
+name, a "TypeError" exception is raised, unless a formal parameter
+using the syntax "**identifier" is present; in this case, that formal
+parameter receives a dictionary containing the excess keyword
+arguments (using the keywords as keys and the argument values as
+corresponding values), or a (new) empty dictionary if there were no
+excess keyword arguments.
+
+If the syntax "*expression" appears in the function call, "expression"
+must evaluate to an *iterable*.  Elements from these iterables are
+treated as if they were additional positional arguments.  For the call
+"f(x1, x2, *y, x3, x4)", if *y* evaluates to a sequence *y1*, …, *yM*,
+this is equivalent to a call with M+4 positional arguments *x1*, *x2*,
+*y1*, …, *yM*, *x3*, *x4*.
+
+A consequence of this is that although the "*expression" syntax may
+appear *after* explicit keyword arguments, it is processed *before*
+the keyword arguments (and any "**expression" arguments – see below).
+So:
+
+   >>> def f(a, b):
+   ...     print(a, b)
+   ...
+   >>> f(b=1, *(2,))
+   2 1
+   >>> f(a=1, *(2,))
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: f() got multiple values for keyword argument 'a'
+   >>> f(1, *(2,))
+   1 2
+
+It is unusual for both keyword arguments and the "*expression" syntax
+to be used in the same call, so in practice this confusion does not
+often arise.
+
+If the syntax "**expression" appears in the function call,
+"expression" must evaluate to a *mapping*, the contents of which are
+treated as additional keyword arguments. If a parameter matching a key
+has already been given a value (by an explicit keyword argument, or
+from another unpacking), a "TypeError" exception is raised.
+
+When "**expression" is used, each key in this mapping must be a
+string. Each value from the mapping is assigned to the first formal
+parameter eligible for keyword assignment whose name is equal to the
+key. A key need not be a Python identifier (e.g. ""max-temp °F"" is
+acceptable, although it will not match any formal parameter that could
+be declared). If there is no match to a formal parameter the key-value
+pair is collected by the "**" parameter, if there is one, or if there
+is not, a "TypeError" exception is raised.
+
+Formal parameters using the syntax "*identifier" or "**identifier"
+cannot be used as positional argument slots or as keyword argument
+names.
+
+Changed in version 3.5: Function calls accept any number of "*" and
+"**" unpackings, positional arguments may follow iterable unpackings
+("*"), and keyword arguments may follow dictionary unpackings ("**").
+Originally proposed by **PEP 448**.
+
+A call always returns some value, possibly "None", unless it raises an
+exception.  How this value is computed depends on the type of the
+callable object.
+
+If it is—
+
+a user-defined function:
+   The code block for the function is executed, passing it the
+   argument list.  The first thing the code block will do is bind the
+   formal parameters to the arguments; this is described in section
+   Function definitions.  When the code block executes a "return"
+   statement, this specifies the return value of the function call.
+   If execution reaches the end of the code block without executing a
+   "return" statement, the return value is "None".
+
+a built-in function or method:
+   The result is up to the interpreter; see Built-in Functions for the
+   descriptions of built-in functions and methods.
+
+a class object:
+   A new instance of that class is returned.
+
+a class instance method:
+   The corresponding user-defined function is called, with an argument
+   list that is one longer than the argument list of the call: the
+   instance becomes the first argument.
+
+a class instance:
+   The class must define a "__call__()" method; the effect is then the
+   same as if that method was called.
+''',
+    'class': r'''Class definitions
+*****************
+
+A class definition defines a class object (see section The standard
+type hierarchy):
+
+   classdef    ::= [decorators] "class" classname [type_params] [inheritance] ":" suite
+   inheritance ::= "(" [argument_list] ")"
+   classname   ::= identifier
+
+A class definition is an executable statement.  The inheritance list
+usually gives a list of base classes (see Metaclasses for more
+advanced uses), so each item in the list should evaluate to a class
+object which allows subclassing.  Classes without an inheritance list
+inherit, by default, from the base class "object"; hence,
+
+   class Foo:
+       pass
+
+is equivalent to
+
+   class Foo(object):
+       pass
+
+The class’s suite is then executed in a new execution frame (see
+Naming and binding), using a newly created local namespace and the
+original global namespace. (Usually, the suite contains mostly
+function definitions.)  When the class’s suite finishes execution, its
+execution frame is discarded but its local namespace is saved. [5] A
+class object is then created using the inheritance list for the base
+classes and the saved local namespace for the attribute dictionary.
+The class name is bound to this class object in the original local
+namespace.
+
+The order in which attributes are defined in the class body is
+preserved in the new class’s "__dict__".  Note that this is reliable
+only right after the class is created and only for classes that were
+defined using the definition syntax.
+
+Class creation can be customized heavily using metaclasses.
+
+Classes can also be decorated: just like when decorating functions,
+
+   @f1(arg)
+   @f2
+   class Foo: pass
+
+is roughly equivalent to
+
+   class Foo: pass
+   Foo = f1(arg)(f2(Foo))
+
+The evaluation rules for the decorator expressions are the same as for
+function decorators.  The result is then bound to the class name.
+
+Changed in version 3.9: Classes may be decorated with any valid
+"assignment_expression". Previously, the grammar was much more
+restrictive; see **PEP 614** for details.
+
+A list of type parameters may be given in square brackets immediately
+after the class’s name. This indicates to static type checkers that
+the class is generic. At runtime, the type parameters can be retrieved
+from the class’s "__type_params__" attribute. See Generic classes for
+more.
+
+Changed in version 3.12: Type parameter lists are new in Python 3.12.
+
+**Programmer’s note:** Variables defined in the class definition are
+class attributes; they are shared by instances.  Instance attributes
+can be set in a method with "self.name = value".  Both class and
+instance attributes are accessible through the notation “"self.name"”,
+and an instance attribute hides a class attribute with the same name
+when accessed in this way.  Class attributes can be used as defaults
+for instance attributes, but using mutable values there can lead to
+unexpected results.  Descriptors can be used to create instance
+variables with different implementation details.
+
+See also:
+
+  **PEP 3115** - Metaclasses in Python 3000
+     The proposal that changed the declaration of metaclasses to the
+     current syntax, and the semantics for how classes with
+     metaclasses are constructed.
+
+  **PEP 3129** - Class Decorators
+     The proposal that added class decorators.  Function and method
+     decorators were introduced in **PEP 318**.
+''',
+    'comparisons': r'''Comparisons
+***********
+
+Unlike C, all comparison operations in Python have the same priority,
+which is lower than that of any arithmetic, shifting or bitwise
+operation.  Also unlike C, expressions like "a < b < c" have the
+interpretation that is conventional in mathematics:
+
+   comparison    ::= or_expr (comp_operator or_expr)*
+   comp_operator ::= "<" | ">" | "==" | ">=" | "<=" | "!="
+                     | "is" ["not"] | ["not"] "in"
+
+Comparisons yield boolean values: "True" or "False". Custom *rich
+comparison methods* may return non-boolean values. In this case Python
+will call "bool()" on such value in boolean contexts.
+
+Comparisons can be chained arbitrarily, e.g., "x < y <= z" is
+equivalent to "x < y and y <= z", except that "y" is evaluated only
+once (but in both cases "z" is not evaluated at all when "x < y" is
+found to be false).
+
+Formally, if *a*, *b*, *c*, …, *y*, *z* are expressions and *op1*,
+*op2*, …, *opN* are comparison operators, then "a op1 b op2 c ... y
+opN z" is equivalent to "a op1 b and b op2 c and ... y opN z", except
+that each expression is evaluated at most once.
+
+Note that "a op1 b op2 c" doesn’t imply any kind of comparison between
+*a* and *c*, so that, e.g., "x < y > z" is perfectly legal (though
+perhaps not pretty).
+
+
+Value comparisons
+=================
+
+The operators "<", ">", "==", ">=", "<=", and "!=" compare the values
+of two objects.  The objects do not need to have the same type.
+
+Chapter Objects, values and types states that objects have a value (in
+addition to type and identity).  The value of an object is a rather
+abstract notion in Python: For example, there is no canonical access
+method for an object’s value.  Also, there is no requirement that the
+value of an object should be constructed in a particular way, e.g.
+comprised of all its data attributes. Comparison operators implement a
+particular notion of what the value of an object is.  One can think of
+them as defining the value of an object indirectly, by means of their
+comparison implementation.
+
+Because all types are (direct or indirect) subtypes of "object", they
+inherit the default comparison behavior from "object".  Types can
+customize their comparison behavior by implementing *rich comparison
+methods* like "__lt__()", described in Basic customization.
+
+The default behavior for equality comparison ("==" and "!=") is based
+on the identity of the objects.  Hence, equality comparison of
+instances with the same identity results in equality, and equality
+comparison of instances with different identities results in
+inequality.  A motivation for this default behavior is the desire that
+all objects should be reflexive (i.e. "x is y" implies "x == y").
+
+A default order comparison ("<", ">", "<=", and ">=") is not provided;
+an attempt raises "TypeError".  A motivation for this default behavior
+is the lack of a similar invariant as for equality.
+
+The behavior of the default equality comparison, that instances with
+different identities are always unequal, may be in contrast to what
+types will need that have a sensible definition of object value and
+value-based equality.  Such types will need to customize their
+comparison behavior, and in fact, a number of built-in types have done
+that.
+
+The following list describes the comparison behavior of the most
+important built-in types.
+
+* Numbers of built-in numeric types (Numeric Types — int, float,
+  complex) and of the standard library types "fractions.Fraction" and
+  "decimal.Decimal" can be compared within and across their types,
+  with the restriction that complex numbers do not support order
+  comparison.  Within the limits of the types involved, they compare
+  mathematically (algorithmically) correct without loss of precision.
+
+  The not-a-number values "float('NaN')" and "decimal.Decimal('NaN')"
+  are special.  Any ordered comparison of a number to a not-a-number
+  value is false. A counter-intuitive implication is that not-a-number
+  values are not equal to themselves.  For example, if "x =
+  float('NaN')", "3 < x", "x < 3" and "x == x" are all false, while "x
+  != x" is true.  This behavior is compliant with IEEE 754.
+
+* "None" and "NotImplemented" are singletons.  **PEP 8** advises that
+  comparisons for singletons should always be done with "is" or "is
+  not", never the equality operators.
+
+* Binary sequences (instances of "bytes" or "bytearray") can be
+  compared within and across their types.  They compare
+  lexicographically using the numeric values of their elements.
+
+* Strings (instances of "str") compare lexicographically using the
+  numerical Unicode code points (the result of the built-in function
+  "ord()") of their characters. [3]
+
+  Strings and binary sequences cannot be directly compared.
+
+* Sequences (instances of "tuple", "list", or "range") can be compared
+  only within each of their types, with the restriction that ranges do
+  not support order comparison.  Equality comparison across these
+  types results in inequality, and ordering comparison across these
+  types raises "TypeError".
+
+  Sequences compare lexicographically using comparison of
+  corresponding elements.  The built-in containers typically assume
+  identical objects are equal to themselves.  That lets them bypass
+  equality tests"""The idlelib package implements the Idle application.
+
+Idle includes an interactive shell and editor.
+Starting with Python 3.6, IDLE requires tcl/tk 8.5 or later.
+Use the files named idle.* to start Idle.
+
+The other files are private implementations.  Their details are subject to
+change.  See PEP 434 for more.  Import them at your own risk.
+"""
+testing = False  # Set True by test.test_idle.
+"""
+IDLE main entry point
+
+Run IDLE as python -m idlelib
+"""
+import idlelib.pyshell
+idlelib.pyshell.main()
+"""Complete either attribute names or file names.
+
+Either on demand or after a user-selected delay after a key character,
+pop up a list of candidates.
+"""
+import __main__
+import keyword
+import os
+import string
+import sys
+
+# Modified keyword list is used in fetch_completions.
+completion_kwds = [s for s in keyword.kwlist
+                     if s not in {'True', 'False', 'None'}]  # In builtins.
+completion_kwds.extend(('match', 'case'))  # Context keywords.
+completion_kwds.sort()
+
+# Two types of completions; defined here for autocomplete_w import below.
+ATTRS, FILES = 0, 1
+from idlelib import autocomplete_w
+from idlelib.config import idleConf
+from idlelib.hyperparser import HyperParser
+
+# Tuples passed to open_completions.
+#       EvalFunc, Complete, WantWin, Mode
+FORCE = True,     False,    True,    None   # Control-Space.
+TAB   = False,    True,     True,    None   # Tab.
+TRY_A = False,    False,    False,   ATTRS  # '.' for attributes.
+TRY_F = False,    False,    False,   FILES  # '/' in quotes for file name.
+
+# This string includes all chars that may be in an identifier.
+# TODO Update this here and elsewhere.
+ID_CHARS = string.ascii_letters + string.digits + "_"
+
+SEPS = f"{os.sep}{os.altsep if os.altsep else ''}"
+TRIGGERS = f".{SEPS}"
+
+class AutoComplete:
+
+    def __init__(self, editwin=None, tags=None):
+        self.editwin = editwin
+        if editwin is not None:   # not in subprocess or no-gui test
+            self.text = editwin.text
+        self.tags = tags
+        self.autocompletewindow = None
+        # id of delayed call, and the index of the text insert when
+        # the delayed call was issued. If _delayed_completion_id is
+        # None, there is no delayed call.
+        self._delayed_completion_id = None
+        self._delayed_completion_index = None
+
+    @classmethod
+    def reload(cls):
+        cls.popupwait = idleConf.GetOption(
+            "extensions", "AutoComplete", "popupwait", type="int", default=0)
+
+    def _make_autocomplete_window(self):  # Makes mocking easier.
+        return autocomplete_w.AutoCompleteWindow(self.text, tags=self.tags)
+
+    def _remove_autocomplete_window(self, event=None):
+        if self.autocompletewindow:
+            self.autocompletewindow.hide_window()
+            self.autocompletewindow = None
+
+    def force_open_completions_event(self, event):
+        "(^space) Open completion list, even if a function call is needed."
+        self.open_completions(FORCE)
+        return "break"
+
+    def autocomplete_event(self, event):
+        "(tab) Complete word or open list if multiple options."
+        if hasattr(event, "mc_state") and event.mc_state or\
+                not self.text.get("insert linestart", "insert").strip():
+            # A modifier was pressed along with the tab or
+            # there is only previous whitespace on this line, so tab.
+            return None
+        if self.autocompletewindow and self.autocompletewindow.is_active():
+            self.autocompletewindow.complete()
+            return "break"
+        else:
+            opened = self.open_completions(TAB)
+            return "break" if opened else None
+
+    def try_open_completions_event(self, event=None):
+        "(./) Open completion list after pause with no movement."
+        lastchar = self.text.get("insert-1c")
+        if lastchar in TRIGGERS:
+            args = TRY_A if lastchar == "." else TRY_F
+            self._delayed_completion_index = self.text.index("insert")
+            if self._delayed_completion_id is not None:
+                self.text.after_cancel(self._delayed_completion_id)
+            self._delayed_completion_id = self.text.after(
+                self.popupwait, self._delayed_open_completions, args)
+
+    def _delayed_open_completions(self, args):
+        "Call open_completions if index unchanged."
+        self._delayed_completion_id = None
+        if self.text.index("insert") == self._delayed_completion_index:
+            self.open_completions(args)
+
+    def open_completions(self, args):
+        """Find the completions and create the AutoCompleteWindow.
+        Return True if successful (no syntax error or so found).
+        If complete is True, then if there's nothing to complete and no
+        start of completion, won't open completions and return False.
+        If mode is given, will open a completion list only in this mode.
+        """
+        evalfuncs, complete, wantwin, mode = args
+        # Cancel another delayed call, if it exists.
+        if self._delayed_completion_id is not None:
+            self.text.after_cancel(self._delayed_completion_id)
+            self._delayed_completion_id = None
+
+        hp = HyperParser(self.editwin, "insert")
+        curline = self.text.get("insert linestart", "insert")
+        i = j = len(curline)
+        if hp.is_in_string() and (not mode or mode==FILES):
+            # Find the beginning of the string.
+            # fetch_completions will look at the file system to determine
+            # whether the string value constitutes an actual file name
+            # XXX could consider raw strings here and unescape the string
+            # value if it's not raw.
+            self._remove_autocomplete_window()
+            mode = FILES
+            # Find last separator or string start
+            while i and curline[i-1] not in "'\"" + SEPS:
+                i -= 1
+            comp_start = curline[i:j]
+            j = i
+            # Find string start
+            while i and curline[i-1] not in "'\"":
+                i -= 1
+            comp_what = curline[i:j]
+        elif hp.is_in_code() and (not mode or mode==ATTRS):
+            self._remove_autocomplete_window()
+            mode = ATTRS
+            while i and (curline[i-1] in ID_CHARS or ord(curline[i-1]) > 127):
+                i -= 1
+            comp_start = curline[i:j]
+            if i and curline[i-1] == '.':  # Need object with attributes.
+                hp.set_index("insert-%dc" % (len(curline)-(i-1)))
+                comp_what = hp.get_expression()
+                if (not comp_what or
+                   (not evalfuncs and comp_what.find('(') != -1)):
+                    return None
+            else:
+                comp_what = ""
+        else:
+            return None
+
+        if complete and not comp_what and not comp_start:
+            return None
+        comp_lists = self.fetch_completions(comp_what, mode)
+        if not comp_lists[0]:
+            return None
+        self.autocompletewindow = self._make_autocomplete_window()
+        return not self.autocompletewindow.show_window(
+                comp_lists, "insert-%dc" % len(comp_start),
+                complete, mode, wantwin)
+
+    def fetch_completions(self, what, mode):
+        """Return a pair of lists of completions for something. The first list
+        is a sublist of the second. Both are sorted.
+
+        If there is a Python subprocess, get the comp. list there.  Otherwise,
+        either fetch_completions() is running in the subprocess itself or it
+        was called in an IDLE EditorWindow before any script had been run.
+
+        The subprocess environment is that of the most recently run script.  If
+        two unrelated modules are being edited some calltips in the current
+        module may be inoperative if the module was not the last to run.
+        """
+        try:
+            rpcclt = self.editwin.flist.pyshell.interp.rpcclt
+        except:
+            rpcclt = None
+        if rpcclt:
+            return rpcclt.remotecall("exec", "get_the_completion_list",
+                                     (what, mode), {})
+        else:
+            if mode == ATTRS:
+                if what == "":  # Main module names.
+                    namespace = {**__main__.__builtins__.__dict__,
+                                 **__main__.__dict__}
+                    bigl = eval("dir()", namespace)
+                    bigl.extend(completion_kwds)
+                    bigl.sort()
+                    if "__all__" in bigl:
+                        smalll = sorted(eval("__all__", namespace))
+                    else:
+                        smalll = [s for s in bigl if s[:1] != '_']
+                else:
+                    try:
+                        entity = self.get_entity(what)
+                        bigl = dir(entity)
+                        bigl.sort()
+                        if "__all__" in bigl:
+                            smalll = sorted(entity.__all__)
+                        else:
+                            smalll = [s for s in bigl if s[:1] != '_']
+                    except:
+                        return [], []
+
+            elif mode == FILES:
+                if what == "":
+                    what = "."
+                try:
+                    expandedpath = os.path.expanduser(what)
+                    bigl = os.listdir(expandedpath)
+                    bigl.sort()
+                    smalll = [s for s in bigl if s[:1] != '.']
+                except OSError:
+                    return [], []
+
+            if not smalll:
+                smalll = bigl
+            return smalll, bigl
+
+    def get_entity(self, name):
+        "Lookup name in a namespace spanning sys.modules and __main.dict__."
+        return eval(name, {**sys.modules, **__main__.__dict__})
+
+
+AutoComplete.reload()
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete', verbosity=2)
+"""
+An auto-completion window for IDLE, used by the autocomplete extension
+"""
+import platform
+
+from tkinter import *
+from tkinter.ttk import Scrollbar
+
+from idlelib.autocomplete import FILES, ATTRS
+from idlelib.multicall import MC_SHIFT
+
+HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
+HIDE_FOCUS_OUT_SEQUENCE = "<FocusOut>"
+HIDE_SEQUENCES = (HIDE_FOCUS_OUT_SEQUENCE, "<ButtonPress>")
+KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
+# We need to bind event beyond <Key> so that the function will be called
+# before the default specific IDLE function
+KEYPRESS_SEQUENCES = ("<Key>", "<Key-BackSpace>", "<Key-Return>", "<Key-Tab>",
+                      "<Key-Up>", "<Key-Down>", "<Key-Home>", "<Key-End>",
+                      "<Key-Prior>", "<Key-Next>", "<Key-Escape>")
+KEYRELEASE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keyrelease>>"
+KEYRELEASE_SEQUENCE = "<KeyRelease>"
+LISTUPDATE_SEQUENCE = "<B1-ButtonRelease>"
+WINCONFIG_SEQUENCE = "<Configure>"
+DOUBLECLICK_SEQUENCE = "<B1-Double-ButtonRelease>"
+
+class AutoCompleteWindow:
+
+    def __init__(self, widget, tags):
+        # The widget (Text) on which we place the AutoCompleteWindow
+        self.widget = widget
+        # Tags to mark inserted text with
+        self.tags = tags
+        # The widgets we create
+        self.autocompletewindow = self.listbox = self.scrollbar = None
+        # The default foreground and background of a selection. Saved because
+        # they are changed to the regular colors of list items when the
+        # completion start is not a prefix of the selected completion
+        self.origselforeground = self.origselbackground = None
+        # The list of completions
+        self.completions = None
+        # A list with more completions, or None
+        self.morecompletions = None
+        # The completion mode, either autocomplete.ATTRS or .FILES.
+        self.mode = None
+        # The current completion start, on the text box (a string)
+        self.start = None
+        # The index of the start of the completion
+        self.startindex = None
+        # The last typed start, used so that when the selection changes,
+        # the new start will be as close as possible to the last typed one.
+        self.lasttypedstart = None
+        # Do we have an indication that the user wants the completion window
+        # (for example, he clicked the list)
+        self.userwantswindow = None
+        # event ids
+        self.hideid = self.keypressid = self.listupdateid = \
+            self.winconfigid = self.keyreleaseid = self.doubleclickid = None
+        # Flag set if last keypress was a tab
+        self.lastkey_was_tab = False
+        # Flag set to avoid recursive <Configure> callback invocations.
+        self.is_configuring = False
+
+    def _change_start(self, newstart):
+        min_len = min(len(self.start), len(newstart))
+        i = 0
+        while i < min_len and self.start[i] == newstart[i]:
+            i += 1
+        if i < len(self.start):
+            self.widget.delete("%s+%dc" % (self.startindex, i),
+                               "%s+%dc" % (self.startindex, len(self.start)))
+        if i < len(newstart):
+            self.widget.insert("%s+%dc" % (self.startindex, i),
+                               newstart[i:],
+                               self.tags)
+        self.start = newstart
+
+    def _binary_search(self, s):
+        """Find the first index in self.completions where completions[i] is
+        greater or equal to s, or the last index if there is no such.
+        """
+        i = 0; j = len(self.completions)
+        while j > i:
+            m = (i + j) // 2
+            if self.completions[m] >= s:
+                j = m
+            else:
+                i = m + 1
+        return min(i, len(self.completions)-1)
+
+    def _complete_string(self, s):
+        """Assuming that s is the prefix of a string in self.completions,
+        return the longest string which is a prefix of all the strings which
+        s is a prefix of them. If s is not a prefix of a string, return s.
+        """
+        first = self._binary_search(s)
+        if self.completions[first][:len(s)] != s:
+            # There is not even one completion which s is a prefix of.
+            return s
+        # Find the end of the range of completions where s is a prefix of.
+        i = first + 1
+        j = len(self.completions)
+        while j > i:
+            m = (i + j) // 2
+            if self.completions[m][:len(s)] != s:
+                j = m
+            else:
+                i = m + 1
+        last = i-1
+
+        if first == last: # only one possible completion
+            return self.completions[first]
+
+        # We should return the maximum prefix of first and last
+        first_comp = self.completions[first]
+        last_comp = self.completions[last]
+        min_len = min(len(first_comp), len(last_comp))
+        i = len(s)
+        while i < min_len and first_comp[i] == last_comp[i]:
+            i += 1
+        return first_comp[:i]
+
+    def _selection_changed(self):
+        """Call when the selection of the Listbox has changed.
+
+        Updates the Listbox display and calls _change_start.
+        """
+        cursel = int(self.listbox.curselection()[0])
+
+        self.listbox.see(cursel)
+
+        lts = self.lasttypedstart
+        selstart = self.completions[cursel]
+        if self._binary_search(lts) == cursel:
+            newstart = lts
+        else:
+            min_len = min(len(lts), len(selstart))
+            i = 0
+            while i < min_len and lts[i] == selstart[i]:
+                i += 1
+            newstart = selstart[:i]
+        self._change_start(newstart)
+
+        if self.completions[cursel][:len(self.start)] == self.start:
+            # start is a prefix of the selected completion
+            self.listbox.configure(selectbackground=self.origselbackground,
+                                   selectforeground=self.origselforeground)
+        else:
+            self.listbox.configure(selectbackground=self.listbox.cget("bg"),
+                                   selectforeground=self.listbox.cget("fg"))
+            # If there are more completions, show them, and call me again.
+            if self.morecompletions:
+                self.completions = self.morecompletions
+                self.morecompletions = None
+                self.listbox.delete(0, END)
+                for item in self.completions:
+                    self.listbox.insert(END, item)
+                self.listbox.select_set(self._binary_search(self.start))
+                self._selection_changed()
+
+    def show_window(self, comp_lists, index, complete, mode, userWantsWin):
+        """Show the autocomplete list, bind events.
+
+        If complete is True, complete the text, and if there is exactly
+        one matching completion, don't open a list.
+        """
+        # Handle the start we already have
+        self.completions, self.morecompletions = comp_lists
+        self.mode = mode
+        self.startindex = self.widget.index(index)
+        self.start = self.widget.get(self.startindex, "insert")
+        if complete:
+            completed = self._complete_string(self.start)
+            start = self.start
+            self._change_start(completed)
+            i = self._binary_search(completed)
+            if self.completions[i] == completed and \
+               (i == len(self.completions)-1 or
+                self.completions[i+1][:len(completed)] != completed):
+                # There is exactly one matching completion
+                return completed == start
+        self.userwantswindow = userWantsWin
+        self.lasttypedstart = self.start
+
+        self.autocompletewindow = acw = Toplevel(self.widget)
+        acw.withdraw()
+        acw.wm_overrideredirect(1)
+        try:
+            # Prevent grabbing focus on macOS.
+            acw.tk.call("::tk::unsupported::MacWindowStyle", "style", acw._w,
+                        "help", "noActivates")
+        except TclError:
+            pass
+        self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
+        self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
+                                         exportselection=False)
+        for item in self.completions:
+            listbox.insert(END, item)
+        self.origselforeground = listbox.cget("selectforeground")
+        self.origselbackground = listbox.cget("selectbackground")
+        scrollbar.config(command=listbox.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        listbox.pack(side=LEFT, fill=BOTH, expand=True)
+        #acw.update_idletasks() # Need for tk8.6.8 on macOS: #40128.
+        acw.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
+
+        # Initialize the listbox selection
+        self.listbox.select_set(self._binary_search(self.start))
+        self._selection_changed()
+
+        # bind events
+        self.hideaid = acw.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        acw.event_add(HIDE_VIRTUAL_EVENT_NAME, HIDE_FOCUS_OUT_SEQUENCE)
+        for seq in HIDE_SEQUENCES:
+            self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+
+        self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
+                                           self.keypress_event)
+        for seq in KEYPRESS_SEQUENCES:
+            self.widget.event_add(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
+        self.keyreleaseid = self.widget.bind(KEYRELEASE_VIRTUAL_EVENT_NAME,
+                                             self.keyrelease_event)
+        self.widget.event_add(KEYRELEASE_VIRTUAL_EVENT_NAME,KEYRELEASE_SEQUENCE)
+        self.listupdateid = listbox.bind(LISTUPDATE_SEQUENCE,
+                                         self.listselect_event)
+        self.is_configuring = False
+        self.winconfigid = acw.bind(WINCONFIG_SEQUENCE, self.winconfig_event)
+        self.doubleclickid = listbox.bind(DOUBLECLICK_SEQUENCE,
+                                          self.doubleclick_event)
+        return None
+
+    def winconfig_event(self, event):
+        if self.is_configuring:
+            # Avoid running on recursive <Configure> callback invocations.
+            return
+
+        self.is_configuring = True
+        if not self.is_active():
+            return
+
+        # Since the <Configure> event may occur after the completion window is gone,
+        # catch potential TclError exceptions when accessing acw.  See: bpo-41611.
+        try:
+            # Position the completion list window
+            text = self.widget
+            text.see(self.startindex)
+            x, y, cx, cy = text.bbox(self.startindex)
+            acw = self.autocompletewindow
+            if platform.system().startswith('Windows'):
+                # On Windows an update() call is needed for the completion
+                # list window to be created, so that we can fetch its width
+                # and height.  However, this is not needed on other platforms
+                # (tested on Ubuntu and macOS) but at one point began
+                # causing freezes on macOS.  See issues 37849 and 41611.
+                acw.update()
+            acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
+            text_width, text_height = text.winfo_width(), text.winfo_height()
+            new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
+            new_y = text.winfo_rooty() + y
+            if (text_height - (y + cy) >= acw_height # enough height below
+                or y < acw_height): # not enough height above
+                # place acw below current line
+                new_y += cy
+            else:
+                # place acw above current line
+                new_y -= acw_height
+            acw.wm_geometry("+%d+%d" % (new_x, new_y))
+            acw.deiconify()
+            acw.update_idletasks()
+        except TclError:
+            pass
+
+        if platform.system().startswith('Windows'):
+            # See issue 15786.  When on Windows platform, Tk will misbehave
+            # to call winconfig_event multiple times, we need to prevent this,
+            # otherwise mouse button double click will not be able to used.
+            try:
+                acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            except TclError:
+                pass
+            self.winconfigid = None
+
+        self.is_configuring = False
+
+    def _hide_event_check(self):
+        if not self.autocompletewindow:
+            return
+
+        try:
+            if not self.autocompletewindow.focus_get():
+                self.hide_window()
+        except KeyError:
+            # See issue 734176, when user click on menu, acw.focus_get()
+            # will get KeyError.
+            self.hide_window()
+
+    def hide_event(self, event):
+        # Hide autocomplete list if it exists and does not have focus or
+        # mouse click on widget / text area.
+        if self.is_active():
+            if event.type == EventType.FocusOut:
+                # On Windows platform, it will need to delay the check for
+                # acw.focus_get() when click on acw, otherwise it will return
+                # None and close the window
+                self.widget.after(1, self._hide_event_check)
+            elif event.type == EventType.ButtonPress:
+                # ButtonPress event only bind to self.widget
+                self.hide_window()
+
+    def listselect_event(self, event):
+        if self.is_active():
+            self.userwantswindow = True
+            cursel = int(self.listbox.curselection()[0])
+            self._change_start(self.completions[cursel])
+
+    def doubleclick_event(self, event):
+        # Put the selected completion in the text, and close the list
+        cursel = int(self.listbox.curselection()[0])
+        self._change_start(self.completions[cursel])
+        self.hide_window()
+
+    def keypress_event(self, event):
+        if not self.is_active():
+            return None
+        keysym = event.keysym
+        if hasattr(event, "mc_state"):
+            state = event.mc_state
+        else:
+            state = 0
+        if keysym != "Tab":
+            self.lastkey_was_tab = False
+        if (len(keysym) == 1 or keysym in ("underscore", "BackSpace")
+            or (self.mode == FILES and keysym in
+                ("period", "minus"))) \
+           and not (state & ~MC_SHIFT):
+            # Normal editing of text
+            if len(keysym) == 1:
+                self._change_start(self.start + keysym)
+            elif keysym == "underscore":
+                self._change_start(self.start + '_')
+            elif keysym == "period":
+                self._change_start(self.start + '.')
+            elif keysym == "minus":
+                self._change_start(self.start + '-')
+            else:
+                # keysym == "BackSpace"
+                if len(self.start) == 0:
+                    self.hide_window()
+                    return None
+                self._change_start(self.start[:-1])
+            self.lasttypedstart = self.start
+            self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
+            self.listbox.select_set(self._binary_search(self.start))
+            self._selection_changed()
+            return "break"
+
+        elif keysym == "Return":
+            self.complete()
+            self.hide_window()
+            return 'break'
+
+        elif (self.mode == ATTRS and keysym in
+              ("period", "space", "parenleft", "parenright", "bracketleft",
+               "bracketright")) or \
+             (self.mode == FILES and keysym in
+              ("slash", "backslash", "quotedbl", "apostrophe")) \
+             and not (state & ~MC_SHIFT):
+            # If start is a prefix of the selection, but is not '' when
+            # completing file names, put the whole
+            # selected completion. Anyway, close the list.
+            cursel = int(self.listbox.curselection()[0])
+            if self.completions[cursel][:len(self.start)] == self.start \
+               and (self.mode == ATTRS or self.start):
+                self._change_start(self.completions[cursel])
+            self.hide_window()
+            return None
+
+        elif keysym in ("Home", "End", "Prior", "Next", "Up", "Down") and \
+             not state:
+            # Move the selection in the listbox
+            self.userwantswindow = True
+            cursel = int(self.listbox.curselection()[0])
+            if keysym == "Home":
+                newsel = 0
+            elif keysym == "End":
+                newsel = len(self.completions)-1
+            elif keysym in ("Prior", "Next"):
+                jump = self.listbox.nearest(self.listbox.winfo_height()) - \
+                       self.listbox.nearest(0)
+                if keysym == "Prior":
+                    newsel = max(0, cursel-jump)
+                else:
+                    assert keysym == "Next"
+                    newsel = min(len(self.completions)-1, cursel+jump)
+            elif keysym == "Up":
+                newsel = max(0, cursel-1)
+            else:
+                assert keysym == "Down"
+                newsel = min(len(self.completions)-1, cursel+1)
+            self.listbox.select_clear(cursel)
+            self.listbox.select_set(newsel)
+            self._selection_changed()
+            self._change_start(self.completions[newsel])
+            return "break"
+
+        elif (keysym == "Tab" and not state):
+            if self.lastkey_was_tab:
+                # two tabs in a row; insert current selection and close acw
+                cursel = int(self.listbox.curselection()[0])
+                self._change_start(self.completions[cursel])
+                self.hide_window()
+                return "break"
+            else:
+                # first tab; let AutoComplete handle the completion
+                self.userwantswindow = True
+                self.lastkey_was_tab = True
+                return None
+
+        elif any(s in keysym for s in ("Shift", "Control", "Alt",
+                                       "Meta", "Command", "Option")):
+            # A modifier key, so ignore
+            return None
+
+        elif event.char and event.char >= ' ':
+            # Regular character with a non-length-1 keycode
+            self._change_start(self.start + event.char)
+            self.lasttypedstart = self.start
+            self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
+            self.listbox.select_set(self._binary_search(self.start))
+            self._selection_changed()
+            return "break"
+
+        else:
+            # Unknown event, close the window and let it through.
+            self.hide_window()
+            return None
+
+    def keyrelease_event(self, event):
+        if not self.is_active():
+            return
+        if self.widget.index("insert") != \
+           self.widget.index("%s+%dc" % (self.startindex, len(self.start))):
+            # If we didn't catch an event which moved the insert, close window
+            self.hide_window()
+
+    def is_active(self):
+        return self.autocompletewindow is not None
+
+    def complete(self):
+        self._change_start(self._complete_string(self.start))
+        # The selection doesn't change.
+
+    def hide_window(self):
+        if not self.is_active():
+            return
+
+        # unbind events
+        self.autocompletewindow.event_delete(HIDE_VIRTUAL_EVENT_NAME,
+                                             HIDE_FOCUS_OUT_SEQUENCE)
+        for seq in HIDE_SEQUENCES:
+            self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
+
+        self.autocompletewindow.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideaid)
+        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hidewid)
+        self.hideaid = None
+        self.hidewid = None
+        for seq in KEYPRESS_SEQUENCES:
+            self.widget.event_delete(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
+        self.widget.unbind(KEYPRESS_VIRTUAL_EVENT_NAME, self.keypressid)
+        self.keypressid = None
+        self.widget.event_delete(KEYRELEASE_VIRTUAL_EVENT_NAME,
+                                 KEYRELEASE_SEQUENCE)
+        self.widget.unbind(KEYRELEASE_VIRTUAL_EVENT_NAME, self.keyreleaseid)
+        self.keyreleaseid = None
+        self.listbox.unbind(LISTUPDATE_SEQUENCE, self.listupdateid)
+        self.listupdateid = None
+        if self.winconfigid:
+            self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+        # Re-focusOn frame.text (See issue #15786)
+        self.widget.focus_set()
+
+        # destroy widgets
+        self.scrollbar.destroy()
+        self.scrollbar = None
+        self.listbox.destroy()
+        self.listbox = None
+        self.autocompletewindow.destroy()
+        self.autocompletewindow = None
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete_w', verbosity=2, exit=False)
+
+# TODO: autocomplete/w htest here
+'''Complete the current word before the cursor with words in the editor.
+
+Each menu selection or shortcut key selection replaces the word with a
+different word with the same prefix. The search for matches begins
+before the target and moves toward the top of the editor. It then starts
+after the cursor and moves down. It then returns to the original word and
+the cycle starts again.
+
+Changing the current text line or leaving the cursor in a different
+place before requesting the next selection causes AutoExpand to reset
+its state.
+
+There is only one instance of Autoexpand.
+'''
+import re
+import string
+
+
+class AutoExpand:
+    wordchars = string.ascii_letters + string.digits + "_"
+
+    def __init__(self, editwin):
+        self.text = editwin.text
+        self.bell = self.text.bell
+        self.state = None
+
+    def expand_word_event(self, event):
+        "Replace the current word with the next expansion."
+        curinsert = self.text.index("insert")
+        curline = self.text.get("insert linestart", "insert lineend")
+        if not self.state:
+            words = self.getwords()
+            index = 0
+        else:
+            words, index, insert, line = self.state
+            if insert != curinsert or line != curline:
+                words = self.getwords()
+                index = 0
+        if not words:
+            self.bell()
+            return "break"
+        word = self.getprevword()
+        self.text.delete("insert - %d chars" % len(word), "insert")
+        newword = words[index]
+        index = (index + 1) % len(words)
+        if index == 0:
+            self.bell()            # Warn we cycled around
+        self.text.insert("insert", newword)
+        curinsert = self.text.index("insert")
+        curline = self.text.get("insert linestart", "insert lineend")
+        self.state = words, index, curinsert, curline
+        return "break"
+
+    def getwords(self):
+        "Return a list of words that match the prefix before the cursor."
+        word = self.getprevword()
+        if not word:
+            return []
+        before = self.text.get("1.0", "insert wordstart")
+        wbefore = re.findall(r"\b" + word + r"\w+\b", before)
+        del before
+        after = self.text.get("insert wordend", "end")
+        wafter = re.findall(r"\b" + word + r"\w+\b", after)
+        del after
+        if not wbefore and not wafter:
+            return []
+        words = []
+        dict = {}
+        # search backwards through words before
+        wbefore.reverse()
+        for w in wbefore:
+            if dict.get(w):
+                continue
+            words.append(w)
+            dict[w] = w
+        # search onwards through words after
+        for w in wafter:
+            if dict.get(w):
+                continue
+            words.append(w)
+            dict[w] = w
+        words.append(word)
+        return words
+
+    def getprevword(self):
+        "Return the word prefix before the cursor."
+        line = self.text.get("insert linestart", "insert")
+        i = len(line)
+        while i > 0 and line[i-1] in self.wordchars:
+            i = i-1
+        return line[i:]
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autoexpand', verbosity=2)
+"""Module browser.
+
+XXX TO DO:
+
+- reparse when source changed (maybe just a button would be OK?)
+    (or recheck on window popup)
+- add popup menu with more options (e.g. doc strings, base classes, imports)
+- add base classes to class browser tree
+"""
+
+import os
+import pyclbr
+import sys
+
+from idlelib.config import idleConf
+from idlelib import pyshell
+from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.util import py_extensions
+from idlelib.window import ListedToplevel
+
+
+file_open = None  # Method...Item and Class...Item use this.
+# Normally pyshell.flist.open, but there is no pyshell.flist for htest.
+
+# The browser depends on pyclbr and importlib which do not support .pyi files.
+browseable_extension_blocklist = ('.pyi',)
+
+
+def is_browseable_extension(path):
+    _, ext = os.path.splitext(path)
+    ext = os.path.normcase(ext)
+    return ext in py_extensions and ext not in browseable_extension_blocklist
+
+
+def transform_children(child_dict, modname=None):
+    """Transform a child dictionary to an ordered sequence of objects.
+
+    The dictionary maps names to pyclbr information objects.
+    Filter out imported objects.
+    Augment class names with bases.
+    The insertion order of the dictionary is assumed to have been in line
+    number order, so sorting is not necessary.
+
+    The current tree only calls this once per child_dict as it saves
+    TreeItems once created.  A future tree and tests might violate this,
+    so a check prevents multiple in-place augmentations.
+    """
+    obs = []  # Use list since values should already be sorted.
+    for key, obj in child_dict.items():
+        if modname is None or obj.module == modname:
+            if hasattr(obj, 'super') and obj.super and obj.name == key:
+                # If obj.name != key, it has already been suffixed.
+                supers = []
+                for sup in obj.super:
+                    if isinstance(sup, str):
+                        sname = sup
+                    else:
+                        sname = sup.name
+                        if sup.module != obj.module:
+                            sname = f'{sup.module}.{sname}'
+                    supers.append(sname)
+                obj.name += '({})'.format(', '.join(supers))
+            obs.append(obj)
+    return obs
+
+
+class ModuleBrowser:
+    """Browse module classes and functions in IDLE.
+    """
+    # This class is also the base class for pathbrowser.PathBrowser.
+    # Init and close are inherited, other methods are overridden.
+    # PathBrowser.__init__ does not call __init__ below.
+
+    def __init__(self, master, path, *, _htest=False, _utest=False):
+        """Create a window for browsing a module's structure.
+
+        Args:
+            master: parent for widgets.
+            path: full path of file to browse.
+            _htest - bool; change box location when running htest.
+            -utest - bool; suppress contents when running unittest.
+
+        Global variables:
+            file_open: Function used for opening a file.
+
+        Instance variables:
+            name: Module name.
+            file: Full path and module with supported extension.
+                Used in creating ModuleBrowserTreeItem as the rootnode for
+                the tree and subsequently in the children.
+        """
+        self.master = master
+        self.path = path
+        self._htest = _htest
+        self._utest = _utest
+        self.init()
+
+    def close(self, event=None):
+        "Dismiss the window and the tree nodes."
+        self.top.destroy()
+        self.node.destroy()
+
+    def init(self):
+        "Create browser tkinter widgets, including the tree."
+        global file_open
+        root = self.master
+        flist = (pyshell.flist if not (self._htest or self._utest)
+                 else pyshell.PyShellFileList(root))
+        file_open = flist.open
+        pyclbr._modules.clear()
+
+        # create top
+        self.top = top = ListedToplevel(root)
+        top.protocol("WM_DELETE_WINDOW", self.close)
+        top.bind("<Escape>", self.close)
+        if self._htest: # place dialog below parent if running htest
+            top.geometry("+%d+%d" %
+                (root.winfo_rootx(), root.winfo_rooty() + 200))
+        self.settitle()
+        top.focus_set()
+
+        # create scrolled canvas
+        theme = idleConf.CurrentTheme()
+        background = idleConf.GetHighlight(theme, 'normal')['background']
+        sc = ScrolledCanvas(top, bg=background, highlightthickness=0,
+                            takefocus=1)
+        sc.frame.pack(expand=1, fill="both")
+        item = self.rootnode()
+        self.node = node = TreeNode(sc.canvas, None, item)
+        if not self._utest:
+            node.update()
+            node.expand()
+
+    def settitle(self):
+        "Set the window title."
+        self.top.wm_title("Module Browser - " + os.path.basename(self.path))
+        self.top.wm_iconname("Module Browser")
+
+    def rootnode(self):
+        "Return a ModuleBrowserTreeItem as the root of the tree."
+        return ModuleBrowserTreeItem(self.path)
+
+
+class ModuleBrowserTreeItem(TreeItem):
+    """Browser tree for Python module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    Used by both browsers.
+    """
+
+    def __init__(self, file):
+        """Create a TreeItem for the file.
+
+        Args:
+            file: Full path and module name.
+        """
+        self.file = file
+
+    def GetText(self):
+        "Return the module name as the text string to display."
+        return os.path.basename(self.file)
+
+    def GetIconName(self):
+        "Return the name of the icon to display."
+        return "python"
+
+    def GetSubList(self):
+        "Return ChildBrowserTreeItems for children."
+        return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
+
+    def OnDoubleClick(self):
+        "Open a module in an editor window when double clicked."
+        if not is_browseable_extension(self.file):
+            return
+        if not os.path.exists(self.file):
+            return
+        file_open(self.file)
+
+    def IsExpandable(self):
+        "Return True if Python file."
+        return is_browseable_extension(self.file)
+
+    def listchildren(self):
+        "Return sequenced classes and functions in the module."
+        if not is_browseable_extension(self.file):
+            return []
+        dir, base = os.path.split(self.file)
+        name, _ = os.path.splitext(base)
+        try:
+            tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
+        except ImportError:
+            return []
+        return transform_children(tree, name)
+
+
+class ChildBrowserTreeItem(TreeItem):
+    """Browser tree for child nodes within the module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
+
+    def __init__(self, obj):
+        "Create a TreeItem for a pyclbr class/function object."
+        self.obj = obj
+        self.name = obj.name
+        self.isfunction = isinstance(obj, pyclbr.Function)
+
+    def GetText(self):
+        "Return the name of the function/class to display."
+        name = self.name
+        if self.isfunction:
+            return "def " + name + "(...)"
+        else:
+            return "class " + name
+
+    def GetIconName(self):
+        "Return the name of the icon to display."
+        if self.isfunction:
+            return "python"
+        else:
+            return "folder"
+
+    def IsExpandable(self):
+        "Return True if self.obj has nested objects."
+        return self.obj.children != {}
+
+    def GetSubList(self):
+        "Return ChildBrowserTreeItems for children."
+        return [ChildBrowserTreeItem(obj)
+                for obj in transform_children(self.obj.children)]
+
+    def OnDoubleClick(self):
+        "Open module with file_open and position to lineno."
+        try:
+            edit = file_open(self.obj.file)
+            edit.gotoline(self.obj.lineno)
+        except (OSError, AttributeError):
+            pass
+
+
+def _module_browser(parent): # htest #
+    if len(sys.argv) > 1:  # If pass file on command line.
+        file = sys.argv[1]
+    else:
+        file = __file__
+        # Add nested objects for htest.
+        class Nested_in_func(TreeNode):
+            def nested_in_class(): pass
+        def closure():
+            class Nested_in_closure: pass
+    ModuleBrowser(parent, file, _htest=True)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:  # If pass file on command line, unittest fails.
+        from unittest import main
+        main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_module_browser)
+"""Pop up a reminder of how to call a function.
+
+Call Tips are floating windows which display function, class, and method
+parameter and docstring information when you type an opening parenthesis, and
+which disappear when you type a closing parenthesis.
+"""
+import __main__
+import inspect
+import re
+import sys
+import textwrap
+import types
+
+from idlelib import calltip_w
+from idlelib.hyperparser import HyperParser
+
+
+class Calltip:
+
+    def __init__(self, editwin=None):
+        if editwin is None:  # subprocess and test
+            self.editwin = None
+        else:
+            self.editwin = editwin
+            self.text = editwin.text
+            self.active_calltip = None
+            self._calltip_window = self._make_tk_calltip_window
+
+    def close(self):
+        self._calltip_window = None
+
+    def _make_tk_calltip_window(self):
+        # See __init__ for usage
+        return calltip_w.CalltipWindow(self.text)
+
+    def remove_calltip_window(self, event=None):
+        if self.active_calltip:
+            self.active_calltip.hidetip()
+            self.active_calltip = None
+
+    def force_open_calltip_event(self, event):
+        "The user selected the menu entry or hotkey, open the tip."
+        self.open_calltip(True)
+        return "break"
+
+    def try_open_calltip_event(self, event):
+        """Happens when it would be nice to open a calltip, but not really
+        necessary, for example after an opening bracket, so function calls
+        won't be made.
+        """
+        self.open_calltip(False)
+
+    def refresh_calltip_event(self, event):
+        if self.active_calltip and self.active_calltip.tipwindow:
+            self.open_calltip(False)
+
+    def open_calltip(self, evalfuncs):
+        """Maybe close an existing calltip and maybe open a new calltip.
+
+        Called from (force_open|try_open|refresh)_calltip_event functions.
+        """
+        hp = HyperParser(self.editwin, "insert")
+        sur_paren = hp.get_surrounding_brackets('(')
+
+        # If not inside parentheses, no calltip.
+        if not sur_paren:
+            self.remove_calltip_window()
+            return
+
+        # If a calltip is shown for the current parentheses, do
+        # nothing.
+        if self.active_calltip:
+            opener_line, opener_col = map(int, sur_paren[0].split('.'))
+            if (
+                (opener_line, opener_col) ==
+                (self.active_calltip.parenline, self.active_calltip.parencol)
+            ):
+                return
+
+        hp.set_index(sur_paren[0])
+        try:
+            expression = hp.get_expression()
+        except ValueError:
+            expression = None
+        if not expression:
+            # No expression before the opening parenthesis, e.g.
+            # because it's in a string or the opener for a tuple:
+            # Do nothing.
+            return
+
+        # At this point, the current index is after an opening
+        # parenthesis, in a section of code, preceded by a valid
+        # expression. If there is a calltip shown, it's not for the
+        # same index and should be closed.
+        self.remove_calltip_window()
+
+        # Simple, fast heuristic: If the preceding expression includes
+        # an opening parenthesis, it likely includes a function call.
+        if not evalfuncs and (expression.find('(') != -1):
+            return
+
+        argspec = self.fetch_tip(expression)
+        if not argspec:
+            return
+        self.active_calltip = self._calltip_window()
+        self.active_calltip.showtip(argspec, sur_paren[0], sur_paren[1])
+
+    def fetch_tip(self, expression):
+        """Return the argument list and docstring of a function or class.
+
+        If there is a Python subprocess, get the calltip there.  Otherwise,
+        either this fetch_tip() is running in the subprocess or it was
+        called in an IDLE running without the subprocess.
+
+        The subprocess environment is that of the most recently run script.  If
+        two unrelated modules are being edited some calltips in the current
+        module may be inoperative if the module was not the last to run.
+
+        To find methods, fetch_tip must be fed a fully qualified name.
+
+        """
+        try:
+            rpcclt = self.editwin.flist.pyshell.interp.rpcclt
+        except AttributeError:
+            rpcclt = None
+        if rpcclt:
+            return rpcclt.remotecall("exec", "get_the_calltip",
+                                     (expression,), {})
+        else:
+            return get_argspec(get_entity(expression))
+
+
+def get_entity(expression):
+    """Return the object corresponding to expression evaluated
+    in a namespace spanning sys.modules and __main.dict__.
+    """
+    if expression:
+        namespace = {**sys.modules, **__main__.__dict__}
+        try:
+            return eval(expression, namespace)  # Only protect user code.
+        except BaseException:
+            # An uncaught exception closes idle, and eval can raise any
+            # exception, especially if user classes are involved.
+            return None
+
+# The following are used in get_argspec and some in tests
+_MAX_COLS = 85
+_MAX_LINES = 5  # enough for bytes
+_INDENT = ' '*4  # for wrapped signatures
+_first_param = re.compile(r'(?<=\()\w*\,?\s*')
+_default_callable_argspec = "See source or doc"
+_invalid_method = "invalid method signature"
+
+def get_argspec(ob):
+    '''Return a string describing the signature of a callable object, or ''.
+
+    For Python-coded functions and methods, the first line is introspected.
+    Delete 'self' parameter for classes (.__init__) and bound methods.
+    The next lines are the first lines of the doc string up to the first
+    empty line or _MAX_LINES.    For builtins, this typically includes
+    the arguments in addition to the return value.
+    '''
+    # Determine function object fob to inspect.
+    try:
+        ob_call = ob.__call__
+    except BaseException:  # Buggy user object could raise anything.
+        return ''  # No popup for non-callables.
+    # For Get_argspecTest.test_buggy_getattr_class, CallA() & CallB().
+    fob = ob_call if isinstance(ob_call, types.MethodType) else ob
+
+    # Initialize argspec and wrap it to get lines.
+    try:
+        argspec = str(inspect.signature(fob))
+    except Exception as err:
+        msg = str(err)
+        if msg.startswith(_invalid_method):
+            return _invalid_method
+        else:
+            argspec = ''
+
+    if isinstance(fob, type) and argspec == '()':
+        # If fob has no argument, use default callable argspec.
+        argspec = _default_callable_argspec
+
+    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
+             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+
+    # Augment lines from docstring, if any, and join to get argspec.
+    doc = inspect.getdoc(ob)
+    if doc:
+        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
+            line = line.strip()
+            if not line:
+                break
+            if len(line) > _MAX_COLS:
+                line = line[: _MAX_COLS - 3] + '...'
+            lines.append(line)
+    argspec = '\n'.join(lines)
+
+    return argspec or _default_callable_argspec
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_calltip', verbosity=2)
+"""A call-tip window class for Tkinter/IDLE.
+
+After tooltip.py, which uses ideas gleaned from PySol.
+Used by calltip.py.
+"""
+from tkinter import Label, LEFT, SOLID, TclError
+
+from idlelib.tooltip import TooltipBase
+
+HIDE_EVENT = "<<calltipwindow-hide>>"
+HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
+CHECKHIDE_EVENT = "<<calltipwindow-checkhide>>"
+CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
+CHECKHIDE_TIME = 100  # milliseconds
+
+MARK_RIGHT = "calltipwindowregion_right"
+
+
+class CalltipWindow(TooltipBase):
+    """A call-tip widget for tkinter text widgets."""
+
+    def __init__(self, text_widget):
+        """Create a call-tip; shown by showtip().
+
+        text_widget: a Text widget with code for which call-tips are desired
+        """
+        # Note: The Text widget will be accessible as self.anchor_widget
+        super().__init__(text_widget)
+
+        self.label = self.text = None
+        self.parenline = self.parencol = self.lastline = None
+        self.hideid = self.checkhideid = None
+        self.checkhide_after_id = None
+
+    def get_position(self):
+        """Choose the position of the call-tip."""
+        curline = int(self.anchor_widget.index("insert").split('.')[0])
+        if curline == self.parenline:
+            anchor_index = (self.parenline, self.parencol)
+        else:
+            anchor_index = (curline, 0)
+        box = self.anchor_widget.bbox("%d.%d" % anchor_index)
+        if not box:
+            box = list(self.anchor_widget.bbox("insert"))
+            # align to left of window
+            box[0] = 0
+            box[2] = 0
+        return box[0] + 2, box[1] + box[3]
+
+    def position_window(self):
+        "Reposition the window if needed."
+        curline = int(self.anchor_widget.index("insert").split('.')[0])
+        if curline == self.lastline:
+            return
+        self.lastline = curline
+        self.anchor_widget.see("insert")
+        super().position_window()
+
+    def showtip(self, text, parenleft, parenright):
+        """Show the call-tip, bind events which will close it and reposition it.
+
+        text: the text to display in the call-tip
+        parenleft: index of the opening parenthesis in the text widget
+        parenright: index of the closing parenthesis in the text widget,
+                    or the end of the line if there is no closing parenthesis
+        """
+        # Only called in calltip.Calltip, where lines are truncated
+        self.text = text
+        if self.tipwindow or not self.text:
+            return
+
+        self.anchor_widget.mark_set(MARK_RIGHT, parenright)
+        self.parenline, self.parencol = map(
+            int, self.anchor_widget.index(parenleft).split("."))
+
+        super().showtip()
+
+        self._bind_events()
+
+    def showcontents(self):
+        """Create the call-tip widget."""
+        self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
+                           background="#ffffd0", foreground="black",
+                           relief=SOLID, borderwidth=1,
+                           font=self.anchor_widget['font'])
+        self.label.pack()
+
+    def checkhide_event(self, event=None):
+        """Handle CHECK_HIDE_EVENT: call hidetip or reschedule."""
+        if not self.tipwindow:
+            # If the event was triggered by the same event that unbound
+            # this function, the function will be called nevertheless,
+            # so do nothing in this case.
+            return None
+
+        # Hide the call-tip if the insertion cursor moves outside of the
+        # parenthesis.
+        curline, curcol = map(int, self.anchor_widget.index("insert").split('.'))
+        if curline < self.parenline or \
+           (curline == self.parenline and curcol <= self.parencol) or \
+           self.anchor_widget.compare("insert", ">", MARK_RIGHT):
+            self.hidetip()
+            return "break"
+
+        # Not hiding the call-tip.
+
+        self.position_window()
+        # Re-schedule this function to be called again in a short while.
+        if self.checkhide_after_id is not None:
+            self.anchor_widget.after_cancel(self.checkhide_after_id)
+        self.checkhide_after_id = \
+            self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+        return None
+
+    def hide_event(self, event):
+        """Handle HIDE_EVENT by calling hidetip."""
+        if not self.tipwindow:
+            # See the explanation in checkhide_event.
+            return None
+        self.hidetip()
+        return "break"
+
+    def hidetip(self):
+        """Hide the call-tip."""
+        if not self.tipwindow:
+            return
+
+        try:
+            self.label.destroy()
+        except TclError:
+            pass
+        self.label = None
+
+        self.parenline = self.parencol = self.lastline = None
+        try:
+            self.anchor_widget.mark_unset(MARK_RIGHT)
+        except TclError:
+            pass
+
+        try:
+            self._unbind_events()
+        except (TclError, ValueError):
+            # ValueError may be raised by MultiCall
+            pass
+
+        super().hidetip()
+
+    def _bind_events(self):
+        """Bind event handlers."""
+        self.checkhideid = self.anchor_widget.bind(CHECKHIDE_EVENT,
+                                                   self.checkhide_event)
+        for seq in CHECKHIDE_SEQUENCES:
+            self.anchor_widget.event_add(CHECKHIDE_EVENT, seq)
+        self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+        self.hideid = self.anchor_widget.bind(HIDE_EVENT,
+                                              self.hide_event)
+        for seq in HIDE_SEQUENCES:
+            self.anchor_widget.event_add(HIDE_EVENT, seq)
+
+    def _unbind_events(self):
+        """Unbind event handlers."""
+        for seq in CHECKHIDE_SEQUENCES:
+            self.anchor_widget.event_delete(CHECKHIDE_EVENT, seq)
+        self.anchor_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
+        self.checkhideid = None
+        for seq in HIDE_SEQUENCES:
+            self.anchor_widget.event_delete(HIDE_EVENT, seq)
+        self.anchor_widget.unbind(HIDE_EVENT, self.hideid)
+        self.hideid = None
+
+
+def _calltip_window(parent):  # htest #
+    from tkinter import Toplevel, Text, LEFT, BOTH
+
+    top = Toplevel(parent)
+    top.title("Test call-tips")
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("250x100+%d+%d" % (x + 175, y + 150))
+    text = Text(top)
+    text.pack(side=LEFT, fill=BOTH, expand=1)
+    text.insert("insert", "string.split")
+    top.update()
+
+    calltip = CalltipWindow(text)
+    def calltip_show(event):
+        calltip.showtip("(s='Hello world')", "insert", "end")
+    def calltip_hide(event):
+        calltip.hidetip()
+    text.event_add("<<calltip-show>>", "(")
+    text.event_add("<<calltip-hide>>", ")")
+    text.bind("<<calltip-show>>", calltip_show)
+    text.bind("<<calltip-hide>>", calltip_hide)
+
+    text.focus_set()
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_calltip_w', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_calltip_window)
+"""codecontext - display the block context above the edit window
+
+Once code has scrolled off the top of a window, it can be difficult to
+determine which block you are in.  This extension implements a pane at the top
+of each IDLE edit window which provides block structure hints.  These hints are
+the lines which contain the block opening keywords, e.g. 'if', for the
+enclosing block.  The number of hint lines is determined by the maxlines
+variable in the codecontext section of config-extensions.def. Lines which do
+not open blocks are not shown in the context hints pane.
+
+For EditorWindows, <<toggle-code-context>> is bound to CodeContext(self).
+toggle_code_context_event.
+"""
+import re
+from sys import maxsize as INFINITY
+
+from tkinter import Frame, Text, TclError
+from tkinter.constants import NSEW, SUNKEN
+
+from idlelib.config import idleConf
+
+BLOCKOPENERS = {'class', 'def', 'if', 'elif', 'else', 'while', 'for',
+                 'try', 'except', 'finally', 'with', 'async'}
+
+
+def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
+    "Extract the beginning whitespace and first word from codeline."
+    return c.match(codeline).groups()
+
+
+def get_line_info(codeline):
+    """Return tuple of (line indent value, codeline, block start keyword).
+
+    The indentation of empty lines (or comment lines) is INFINITY.
+    If the line does not start a block, the keyword value is False.
+    """
+    spaces, firstword = get_spaces_firstword(codeline)
+    indent = len(spaces)
+    if len(codeline) == indent or codeline[indent] == '#':
+        indent = INFINITY
+    opener = firstword in BLOCKOPENERS and firstword
+    return indent, codeline, opener
+
+
+class CodeContext:
+    "Display block context above the edit window."
+    UPDATEINTERVAL = 100  # millisec
+
+    def __init__(self, editwin):
+        """Initialize settings for context block.
+
+        editwin is the Editor window for the context block.
+        self.text is the editor window text widget.
+
+        self.context displays the code context text above the editor text.
+          Initially None, it is toggled via <<toggle-code-context>>.
+        self.topvisible is the number of the top text line displayed.
+        self.info is a list of (line number, indent level, line text,
+          block keyword) tuples for the block structure above topvisible.
+          self.info[0] is initialized with a 'dummy' line which
+          starts the toplevel 'block' of the module.
+
+        self.t1 and self.t2 are two timer events on the editor text widget to
+          monitor for changes to the context text or editor font.
+        """
+        self.editwin = editwin
+        self.text = editwin.text
+        self._reset()
+
+    def _reset(self):
+        self.context = None
+        self.cell00 = None
+        self.t1 = None
+        self.topvisible = 1
+        self.info = [(0, -1, "", False)]
+
+    @classmethod
+    def reload(cls):
+        "Load class variables from config."
+        cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
+                                               "maxlines", type="int",
+                                               default=15)
+
+    def __del__(self):
+        "Cancel scheduled events."
+        if self.t1 is not None:
+            try:
+                self.text.after_cancel(self.t1)
+            except TclError:  # pragma: no cover
+                pass
+            self.t1 = None
+
+    def toggle_code_context_event(self, event=None):
+        """Toggle code context display.
+
+        If self.context doesn't exist, create it to match the size of the editor
+        window text (toggle on).  If it does exist, destroy it (toggle off).
+        Return 'break' to complete the processing of the binding.
+        """
+        if self.context is None:
+            # Calculate the border width and horizontal padding required to
+            # align the context with the text in the main Text widget.
+            #
+            # All values are passed through getint(), since some
+            # values may be pixel objects, which can't simply be added to ints.
+            widgets = self.editwin.text, self.editwin.text_frame
+            # Calculate the required horizontal padding and border width.
+            padx = 0
+            border = 0
+            for widget in widgets:
+                info = (widget.grid_info()
+                        if widget is self.editwin.text
+                        else widget.pack_info())
+                padx += widget.tk.getint(info['padx'])
+                padx += widget.tk.getint(widget.cget('padx'))
+                
