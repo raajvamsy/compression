@@ -259,3 +259,14 @@ Take the fold waves of one fold as a new image and fold them again, and so on. S
 | mosaic (stack + 3 fold waves as one image), folded again | 316,451 vs 296,538 B (+6.7%) | 197,185 vs 190,699 B (+3.4%) |
 
 Every extra fold of the fold waves makes them bigger (the diagonal one by up to +15.6%). After the first fold, the fold waves are mostly edges and grain: there is no regular wave left for another fold to gather, and each fold pushes neighbours further apart. Wavelet packets help on strongly periodic textures (fingerprints, fabric), which these photos do not have.
+
+## 9. Brightness landscape: slicing it into flat layers (tested, `ffic/slices.py`)
+
+The photo as a 3D landscape (height = brightness; viewer: https://claude.ai/artifact/Hi84dNJgGecRRb2P2umkNt). Slice it into 8 flat yes/no layers (bit planes, top first); every layer sees the layers above it in all directions. Same-family pixel coder for reference, all 3 colours:
+
+| | pixel coder | 8 slices | 8 Gray-code slices | FFIC (real) |
+|---|---|---|---|---|
+| dog | 786,509 B | 978,092 B (+24.4%) | 927,817 B (+18.0%) | 470,090 B |
+| kodim03 | 510,869 B | 599,448 B (+17.3%) | 564,372 B (+10.5%) | 328,489 B |
+
+Green layers of the dog, top to bottom: 6.3 / 8.2 / 15 / 25 / 43 / 60 / 79 / 89 KB. The top slices are almost free; the bottom ones are camera grain at ~0.9 bit per pixel. Cutting a height into yes/no layers loses "close to my neighbour", and seeing the layers above on all sides does not pay that back.
