@@ -33,6 +33,19 @@ Decoding takes as long as encoding (the decoder runs the same model). That is th
 
 Smaller on the 12 modern photos (about −2.8%), still about 1.3% bigger on the 8 old Kodak film scans. All files decode bit-exact (`experiments/ROUNDTRIP.md`). Every experiment behind these numbers is logged in `experiments/LOG.md`; the ideas and their results are in `../docs/IDEAS_FUNNELBRAIN.md`.
 
+## Beyond the 20 test photos
+
+| test | best other tool | FFIC | details |
+|---|---|---|---|
+| 4K photos (4 x 3840x2160 crops of camera originals) | JPEG XL e9: 25,159,623 B | **23,922,822 B, −4.92%** (per photo −1.8% to −9.8%) | `experiments/BENCH4K.md` |
+| Lossless video, still camera (akiyo, 30 frames) | x265 lossless: 1,569,264 B | **1,085,865 B, −30.8%** | `experiments/BENCHVIDEO.md` |
+| Lossless video, handheld (foreman) | FFV1: 2,477,057 B | **2,236,692 B, −9.7%** | |
+| Lossless video, fast pan (mobile) | FFV1: 4,026,264 B | **3,724,511 B, −7.5%** | |
+
+The 4K crops come from camera JPEGs and keep their 8x8 JPEG structure, which may favour FFIC; JPEG XL's own JPEG-recompression mode does not apply to cropped pixels. FFIC is far slower than all of these tools (minutes per 4K photo, under one video frame per second), which is the main thing to fix before it is practical.
+
+Video: `ffic file.rgb W H*frames <options> frameh=H out=clip.ffic` (frames stacked vertically, rgb24).
+
 ## How it works (short)
 
 1. Green, then red, then blue. Each pixel is guessed by a team: simple guessers (same as left, same as above, keep the slope), learned funnels (nested by how busy, edge direction and brightness, a child funnel starts from its parent), material lines and material funnels (colour physics), and terrain balls (the decoded image as a landscape the balls roll over).
