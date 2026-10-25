@@ -237,3 +237,11 @@ EXPERIMENTS += [
     dict(id="wave_team_T8", cfg=MB + WT(8), mechanism="C. Current best coder + the T8 wave tree as an extra guesser and tap; tree bytes added.", hypothesis="Gain on guesses vs 200 KB of tree.", **_v),
     dict(id="wave_team_T4", cfg=MB + WT(4), mechanism="C. Current best coder + the deep T4 wave tree as an extra guesser and tap; tree bytes added.", hypothesis="Best guesses, but 772 KB of tree is likely too expensive.", **_v),
 ]
+
+_t = dict(group="terrain balls", funnelbrain="FunnelBrain ball physics (funnel/physics.py: damping 0.92, bounce, Magnus spin, settle) on the photo seen as a brightness landscape.")
+EXPERIMENTS += [
+    dict(id="terrain", cfg=MB + " terrain=1", mechanism="Four balls roll over the decoded landscape toward the pixel from W, N, NW, NE (3 steps of momentum, pulled onto the ground with coupling 0.5, bounce off steps > 24 levels, Magnus curve from the sideways slope, settle when slow); each landing = a guesser + tap.",
+         hypothesis="Mostly overlaps the existing linear taps; small or no gain with FunnelBrain's default constants.", **_t),
+    dict(id="terrain_tuned", cfg=MB + " terrain=1 tcoup=0.1 tmag=0.15 twall=10", mechanism="Terrain balls tuned on kodim03: loose pull onto the ground (0.1), bounce at 10-level cliffs, stronger spin (0.15).",
+         hypothesis="Momentum that keeps going and bounces at edges adds a nonlinear guess the linear taps lack: small gain (kodim03 -0.16%).", **_t),
+]

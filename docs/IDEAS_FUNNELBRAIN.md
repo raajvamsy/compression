@@ -270,3 +270,15 @@ The photo as a 3D landscape (height = brightness; viewer: https://claude.ai/arti
 | kodim03 | 510,869 B | 599,448 B (+17.3%) | 564,372 B (+10.5%) | 328,489 B |
 
 Green layers of the dog, top to bottom: 6.3 / 8.2 / 15 / 25 / 43 / 60 / 79 / 89 KB. The top slices are almost free; the bottom ones are camera grain at ~0.9 bit per pixel. Cutting a height into yes/no layers loses "close to my neighbour", and seeing the layers above on all sides does not pay that back.
+
+## 10. Terrain balls: FunnelBrain ball physics on the brightness landscape (tested, `terrain=1`)
+
+Four balls roll over the already-decoded landscape toward the unknown pixel, from W, N, NW and NE, with the ball physics of `funnel-brain/funnel/physics.py`: momentum with damping 0.92, a pull onto the ground, a bounce off cliffs (a step larger than `twall` levels reflects the ball), a Magnus-like curve from the sideways slope, and settling when slow. Each landing joins the team of guessers (ball + tap). The decoder rolls the same balls, so it is fully decodable (round trip exact on kodim01 and p933054).
+
+| run | total, 20 photos | vs best coder | vs JXL e9 |
+|---|---|---|---|
+| `best_now` | 10,327,702 B | — | −1.47% |
+| `terrain` (FunnelBrain constants: pull 0.5, cliff 24, spin 0.035) | 10,340,302 B | +0.12% | −1.34% |
+| `terrain_tuned` (pull 0.1, cliff 10, spin 0.15; tuned on kodim03) | **10,323,032 B** | **−0.05%** | **−1.51%** |
+
+Tuned, the balls help on 14 of 20 photos (best p933054 −0.33%, p2014422 −0.32%; worst kodim15 +0.20%). The gain is small because most of a rolling ball's path is linear and the funnels' 12 learned taps already cover it. What the balls add is the non-linear part: loose momentum that keeps going, and bouncing at edges. The settings were tuned on one of the 20 test photos, so part of the −0.05% may be tuning luck.

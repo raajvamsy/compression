@@ -44,6 +44,7 @@
  *   pipe=1            STAGGERED COLOUR PIPELINE: G, R and B run on three threads at once; R waits until G is lag rows ahead,
  *                     B until R is. Deterministic: a layer only reads finished rows; registers copy G's funnels frozen every snapk rows
  *   inter=1           PIXEL BY PIXEL order (G, R, B of each pixel before the next); G gets 4 colour taps from W and N
+ *   terrain=1         TERRAIN BALLS: 4 balls roll over the decoded landscape (FunnelBrain ball physics) toward the pixel; landings = guessers
  *   minf=1            with cmatch: the match question also hears how likely the G layer already finds a candidate's G
  *   mexcl=1           with cmatch: on "not a match", B excludes the B value of every candidate whose G and R equal this pixel's
  *   cmatch=1          WHOLE-COLOUR MATCH (needs inter=1): one joint question per pixel, "same colour as which neighbour?"
@@ -61,11 +62,11 @@
 #include <sched.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
-#define NSUBX (NSUB + 7)
+#define NSUBX (NSUB + 11)
 #define NNB 12                    /* neighbour taps (causal window) */
 #define CK 4                      /* neighbours used for cross-plane taps (W N NW NE) */
 #define NF 4                      /* non-causal neighbours of an already-decoded plane: E S SE SW */
-#define NX 13                     /* extra feature taps (hippocampal recall, material lines, material funnel, gravity, 3 'below' taps, 4 colour taps for G, wave tree) */
+#define NX 17                     /* extra feature taps (hippocampal recall, material lines, material funnel, gravity, 3 'below' taps, 4 colour taps for G, wave tree, 4 terrain balls) */
 #define NT (NNB + 2 * (CK + 1 + NF) + NX)
 #define NA 8                      /* activity levels */
 #define NTH 9                     /* spin states: 8 orientations + flat */
@@ -370,6 +371,23 @@ static size_t N; static int *pl[3]; static float *pfin[3]; static float *pixcost
    wmodel=path loads the model the tree produces (float32 R,G,B); its value is an extra ball + tap (wonly=1: it is the ONLY guess).
    The tree's own size (path.side, bytes) is added to the reported size. */
 static float *WMODEL = NULL; static const char *WPATH = NULL; static int WONLY = 0; static double WSIDE = 0;
+/* TERRAIN BALLS (terrain=1): the decoded layer is a landscape (height = value). Four balls roll toward the unknown pixel along
+   the terrain from W, N, NW and NE, with FunnelBrain's ball physics (funnel/physics.py): momentum with DAMPING 0.92, a bounce
+   off cliffs (a step bigger than twall levels reflects the ball), a Magnus-like curve from the sideways slope, settling when slow.
+   Where each ball lands is one more guesser (ball + tap). Deterministic: the decoder rolls the same balls over the same terrain. */
+static int TERRAIN = 0; static float TWALL = 24.f, TDAMP = 0.92f, TCOUP = 0.5f, TMAG = 0.035f, TSETTLE = 0.3f;
+static inline float terrain_roll(float h3, float h2, float h1, float lat) {
+    float z = h3, v = h2 - h3, hs[2] = {h2, h1};
+    for (int k = 0; k < 2; k++) {
+        float d = hs[k] - (z + v);
+        if (fabsf(d) > TWALL) v = -v * TDAMP + d * TCOUP;                /* hit a cliff: bounce */
+        else v = v * TDAMP + d * TCOUP;                                  /* roll along, pulled onto the ground */
+        z = hs[k];
+    }
+    v += TMAG * lat * (v >= 0 ? 1.f : -1.f);                             /* spin from the sideways slope curves the path */
+    if (fabsf(v) < TSETTLE) v = 0;                                       /* settles */
+    return clampf(z + v * TDAMP, 0, 255);
+}
 static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
 static const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
 static double bits[3]; static int nsub, icurve;
@@ -420,11 +438,11 @@ static void code_plane(int oi) {
         int c = order[oi]; int *P = pl[c];
         const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
         const int hasmat = MATF && oi >= 1, imat = iml + nml;
-        const int hasw = WMODEL != NULL, iwv = nsub + nml + hasmat;
-        const int nsubp = nsub + nml + hasmat + hasw;
+        const int hasw = WMODEL != NULL, iwv = nsub + nml + hasmat, nter = TERRAIN ? 4 : 0, iter = iwv + hasw;
+        const int nsubp = nsub + nml + hasmat + hasw + nter;
         Mat *mats = hasmat ? calloc(MMAXC, sizeof(Mat)) : NULL; int nmat = 0;
         float *gmt = GMASS ? calloc(256 * 256, sizeof(float)) : NULL, *gtot = GMASS ? calloc(256, sizeof(float)) : NULL; int gkey = 0;
-        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + hasw + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
+        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + hasw + nter + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
         Mouth *mouth = malloc(2 * NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < 2 * NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
@@ -523,6 +541,14 @@ static void code_plane(int oi) {
                 sp[imat] = clampf((float)pr, 0, 255);
             }
             if (hasw) sp[iwv] = WMODEL[(size_t)c * N + idx];
+            if (nter) {                                                   /* four balls roll in over the decoded terrain */
+                #define TP(yy, xx) ((float)P[(size_t)clampi((yy), 0, y) * W + clampi((xx), 0, W - 1)])
+                #define TQ(yy, xx) (((yy) < y || ((yy) == y && (xx) < x)) && (yy) >= 0 && (xx) >= 0 && (xx) < W ? TP(yy, xx) : (float)Wv)
+                sp[iter + 0] = terrain_roll(TQ(y, x - 3), TQ(y, x - 2), TQ(y, x - 1), TQ(y - 1, x - 1) - TQ(y, x - 1));
+                sp[iter + 1] = terrain_roll(TQ(y - 3, x), TQ(y - 2, x), TQ(y - 1, x), TQ(y - 1, x - 1) - TQ(y - 1, x));
+                sp[iter + 2] = terrain_roll(TQ(y - 3, x - 3), TQ(y - 2, x - 2), TQ(y - 1, x - 1), TQ(y - 1, x) - TQ(y - 1, x - 1));
+                sp[iter + 3] = terrain_roll(TQ(y - 3, x + 3), TQ(y - 2, x + 2), TQ(y - 1, x + 1), TQ(y - 1, x) - TQ(y - 1, x + 1));
+            }
             float base;
             if (opt_w) {
                 float sw = 0, sv = 0;
@@ -624,6 +650,7 @@ static void code_plane(int oi) {
             for (int q = 0; q < nml; q++) u[nu++] = sp[iml + q] - base;
             if (hasmat) u[nu++] = sp[imat] - base;
             if (hasw) u[nu++] = sp[iwv] - base;
+            for (int q = 0; q < nter; q++) u[nu++] = sp[iter + q] - base;
             if (GMASS) {                                                          /* gravity: pull toward heavy values near the prediction */
                 gkey = (FIELD && land >= 0 ? land : A) & 255; const float *M = gmt + gkey * 256;
                 int v0 = (int)lrintf(base); float sw = 0, sv = 0;
@@ -810,7 +837,7 @@ static int parse_opts(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("terrain")) TERRAIN = (int)v; else if (K_("twall")) TWALL = v; else if (K_("tdamp")) TDAMP = v; else if (K_("tcoup")) TCOUP = v; else if (K_("tmag")) TMAG = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 0; }
             continue;
