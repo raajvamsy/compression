@@ -51,6 +51,7 @@
  *   FFIC_PIXCOST=path  write each pixel's code length (float32, planes R,G,B) for the parallel-worlds analysis
  *   curve=1           SPIN AS CURVATURE: an extra ball that continues the local edge with its curvature (helical, not straight)
  *
+ * file: FFIC2 = magic, W, H, option string, 3 stream lengths, 3 arithmetic-coded streams (G, R, B), CRC-32 of the pixels.
  * usage: ffic file.rgb W H [flags] [key=value...]   letters: l learn t spin v level p nesting c cross e energy w blend r RLS b CM f future
  *        "none" = bare MED + activity context. */
 #include <stdio.h>
@@ -825,6 +826,11 @@ static void code_plane(int oi) {
 }
 static void *plane_thread(void *a) { code_plane((int)(long)a); return NULL; }
 
+static unsigned crc32_of(const unsigned char *p, size_t n) {       /* CRC-32 (IEEE) of the pixels: the decoder proves it rebuilt them */
+    unsigned c = 0xFFFFFFFFu;
+    for (size_t i = 0; i < n; i++) { c ^= p[i]; for (int k = 0; k < 8; k++) c = (c >> 1) ^ (0xEDB88320u & (0u - (c & 1))); }
+    return ~c;
+}
 /* options: letters and key=value (the same list is stored in the file header so the decoder rebuilds the identical model) */
 static int parse_opts(int argc, char **argv) {
     for (int i = 0; i < argc; i++) {
@@ -837,7 +843,7 @@ static int parse_opts(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("terrain")) TERRAIN = (int)v; else if (K_("twall")) TWALL = v; else if (K_("tdamp")) TDAMP = v; else if (K_("tcoup")) TCOUP = v; else if (K_("tmag")) TMAG = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("src")) { /* source note kept in the header for the tool (src=1 grey) */ } else if (K_("terrain")) TERRAIN = (int)v; else if (K_("twall")) TWALL = v; else if (K_("tdamp")) TDAMP = v; else if (K_("tcoup")) TCOUP = v; else if (K_("tmag")) TMAG = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 0; }
             continue;
@@ -854,14 +860,15 @@ int main(int argc, char **argv) {
     const char *outp = NULL, *decp = NULL; char opts[4096] = ""; char *ov[256]; int oc = 0;
     if (argc >= 4 && !strcmp(argv[1], "-d")) { decp = argv[2]; outp = argv[3]; MODE = 2; }
     else if (argc < 4) { fprintf(stderr, "usage: ffic file.rgb W H [flags] [key=value...] [out=file.ffic]\n       ffic -d file.ffic out.rgb\n"); return 1; }
-    unsigned char *raw;
+    unsigned char *raw; unsigned want_crc = 0; int has_crc = 0;
     if (MODE == 2) {                                                          /* header: magic, W, H, options, three stream lengths, streams */
         FILE *fi = fopen(decp, "rb"); if (!fi) { perror("open"); return 1; }
         char mg[6]; unsigned hw[2], ol, sl[3];
-        if (fread(mg, 1, 6, fi) != 6 || memcmp(mg, "FFIC1", 6) || fread(hw, 4, 2, fi) != 2 || fread(&ol, 4, 1, fi) != 1 || ol >= sizeof opts) { fprintf(stderr, "not an FFIC file\n"); return 1; }
+        if (fread(mg, 1, 6, fi) != 6 || (memcmp(mg, "FFIC1", 6) && memcmp(mg, "FFIC2", 6)) || fread(hw, 4, 2, fi) != 2 || fread(&ol, 4, 1, fi) != 1 || ol >= sizeof opts) { fprintf(stderr, "not an FFIC file\n"); return 1; }
         W = (int)hw[0]; H = (int)hw[1];
         if (fread(opts, 1, ol, fi) != ol || fread(sl, 4, 3, fi) != 3) { fprintf(stderr, "truncated header\n"); return 1; } opts[ol] = 0;
         for (int i = 0; i < 3; i++) { acs[i].n = acs[i].cap = sl[i]; acs[i].buf = malloc(sl[i] + 1); if (fread(acs[i].buf, 1, sl[i], fi) != sl[i]) { fprintf(stderr, "truncated stream\n"); return 1; } }
+        if (!memcmp(mg, "FFIC2", 6)) { if (fread(&want_crc, 4, 1, fi) != 1) { fprintf(stderr, "truncated checksum\n"); return 1; } has_crc = 1; }
         fclose(fi);
         for (char *t = strtok(opts, " "); t && oc < 256; t = strtok(NULL, " ")) ov[oc++] = t;
         if (!parse_opts(oc, ov)) return 1;
@@ -878,6 +885,7 @@ int main(int argc, char **argv) {
         if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
     }
     if (MODE && !opt_b) { fprintf(stderr, "a real bitstream needs the context-mixing coder (flag b)\n"); return 1; }
+    if (MODE && WPATH) { fprintf(stderr, "wmodel= is a measurement aid; its model is not stored in the file\n"); return 1; }
     if (MODE && INTER && opt_f) { fprintf(stderr, "future taps (f) are not causal with inter=1\n"); return 1; }
     pl[0] = pl[1] = pl[2] = NULL;
     for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
@@ -900,12 +908,15 @@ int main(int argc, char **argv) {
     if (MODE == 1) {
         FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; }
         unsigned hw[2] = {(unsigned)W, (unsigned)H}, ol = (unsigned)strlen(opts), sl[3] = {(unsigned)acs[0].n, (unsigned)acs[1].n, (unsigned)acs[2].n};
-        fwrite("FFIC1", 1, 6, fo); fwrite(hw, 4, 2, fo); fwrite(&ol, 4, 1, fo); fwrite(opts, 1, ol, fo); fwrite(sl, 4, 3, fo);
+        unsigned crc = crc32_of(raw, N * 3);                                       /* FFIC2 = FFIC1 + CRC-32 of the pixels at the end */
+        fwrite("FFIC2", 1, 6, fo); fwrite(hw, 4, 2, fo); fwrite(&ol, 4, 1, fo); fwrite(opts, 1, ol, fo); fwrite(sl, 4, 3, fo);
         for (int i = 0; i < 3; i++) fwrite(acs[i].buf, 1, acs[i].n, fo);
+        fwrite(&crc, 4, 1, fo);
         fbytes = ftell(fo); fclose(fo);
     }
     if (MODE == 2) {
         for (int c = 0; c < 3; c++) for (size_t i = 0; i < N; i++) raw[i * 3 + c] = (unsigned char)pl[c][i];
+        if (has_crc && crc32_of(raw, N * 3) != want_crc) { fprintf(stderr, "checksum mismatch: the file is damaged or was written by a different ffic build\n"); return 3; }
         FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; } fwrite(raw, 1, N * 3, fo); fclose(fo);
     }
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }

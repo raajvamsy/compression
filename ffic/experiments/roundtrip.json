@@ -463,5 +463,160 @@
   "overhead_pct": 0.046,
   "enc_s": 267.1,
   "dec_s": 272.9
+ },
+ "max": {
+  "cfg": "ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1 terrain=1 tcoup=0.1 tmag=0.15 twall=10",
+  "desc": "ffic.py preset max: best coder + terrain balls",
+  "code_sha1": "b6fffaddb1",
+  "date": "2026-10-25 08:08:27",
+  "per_image": {
+   "pex_p1054218": {
+    "file": 301510,
+    "ideal": 301265,
+    "enc_s": 12.88,
+    "dec_s": 11.82,
+    "exact": true
+   },
+   "pex_p1287145": {
+    "file": 512482,
+    "ideal": 512235,
+    "enc_s": 13.04,
+    "dec_s": 12.54,
+    "exact": true
+   },
+   "pex_p1366919": {
+    "file": 619245,
+    "ideal": 618999,
+    "enc_s": 13.24,
+    "dec_s": 12.87,
+    "exact": true
+   },
+   "pex_p1612351": {
+    "file": 586545,
+    "ideal": 586298,
+    "enc_s": 12.89,
+    "dec_s": 12.5,
+    "exact": true
+   },
+   "pex_p1770809": {
+    "file": 1227283,
+    "ideal": 1227037,
+    "enc_s": 14.82,
+    "dec_s": 14.36,
+    "exact": true
+   },
+   "pex_p2014422": {
+    "file": 152594,
+    "ideal": 152348,
+    "enc_s": 11.83,
+    "dec_s": 10.89,
+    "exact": true
+   },
+   "pex_p2166711": {
+    "file": 377490,
+    "ideal": 377245,
+    "enc_s": 12.68,
+    "dec_s": 12.57,
+    "exact": true
+   },
+   "pex_p2253275": {
+    "file": 470427,
+    "ideal": 470181,
+    "enc_s": 13.74,
+    "dec_s": 12.97,
+    "exact": true
+   },
+   "pex_p3225517": {
+    "file": 848304,
+    "ideal": 848058,
+    "enc_s": 13.95,
+    "dec_s": 13.44,
+    "exact": true
+   },
+   "pex_p417074": {
+    "file": 670492,
+    "ideal": 670246,
+    "enc_s": 12.47,
+    "dec_s": 12.3,
+    "exact": true
+   },
+   "pex_p462162": {
+    "file": 761408,
+    "ideal": 761161,
+    "enc_s": 12.99,
+    "dec_s": 12.79,
+    "exact": true
+   },
+   "pex_p933054": {
+    "file": 260069,
+    "ideal": 259823,
+    "enc_s": 12.09,
+    "dec_s": 12.55,
+    "exact": true
+   },
+   "kod_kodim01": {
+    "file": 471046,
+    "ideal": 470799,
+    "enc_s": 6.56,
+    "dec_s": 6.36,
+    "exact": true
+   },
+   "kod_kodim03": {
+    "file": 328223,
+    "ideal": 327976,
+    "enc_s": 6.55,
+    "dec_s": 6.5,
+    "exact": true
+   },
+   "kod_kodim05": {
+    "file": 495883,
+    "ideal": 495638,
+    "enc_s": 6.89,
+    "dec_s": 7.4,
+    "exact": true
+   },
+   "kod_kodim08": {
+    "file": 512534,
+    "ideal": 512288,
+    "enc_s": 6.48,
+    "dec_s": 6.77,
+    "exact": true
+   },
+   "kod_kodim13": {
+    "file": 553435,
+    "ideal": 553189,
+    "enc_s": 6.65,
+    "dec_s": 7.07,
+    "exact": true
+   },
+   "kod_kodim15": {
+    "file": 384539,
+    "ideal": 384293,
+    "enc_s": 6.51,
+    "dec_s": 6.3,
+    "exact": true
+   },
+   "kod_kodim20": {
+    "file": 320935,
+    "ideal": 320689,
+    "enc_s": 5.88,
+    "dec_s": 5.38,
+    "exact": true
+   },
+   "kod_kodim22": {
+    "file": 473510,
+    "ideal": 473264,
+    "enc_s": 6.55,
+    "dec_s": 6.31,
+    "exact": true
+   }
+  },
+  "file": 10327954,
+  "ideal": 10323032,
+  "all_exact": true,
+  "vs_jxl9_pct": -1.463,
+  "overhead_pct": 0.048,
+  "enc_s": 208.7,
+  "dec_s": 203.7
  }
 }

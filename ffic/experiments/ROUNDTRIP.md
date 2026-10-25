@@ -9,30 +9,31 @@ Sizes include the header. Times are wall seconds summed over the 20 images.
 | `best_now` | best single coder, layers one after another | 10,331,759 | 10,327,702 | +0.039% | -1.43% | 136 | 138 | yes, 20/20 |
 | `pipe` | staggered colour pipeline (3 threads) | 10,337,138 | 10,332,754 | +0.042% | -1.38% | 78 | 76 | yes, 20/20 |
 | `inter_cmatch_excl_inf` | pixel by pixel + whole-colour match + exclusion | 10,541,110 | 10,536,228 | +0.046% | +0.57% | 267 | 273 | yes, 20/20 |
+| `max` | ffic.py preset max: best coder + terrain balls | 10,327,954 | 10,323,032 | +0.048% | -1.46% | 209 | 204 | yes, 20/20 |
 
-Smallest real file per photo (the decoder reads the options from the header, so no extra signal): **10,273,344 B = -1.98% vs JXL e9**. Picks: `best_now` x7, `pipe` x5, `inter_cmatch_excl_inf` x8
+Smallest real file per photo (the decoder reads the options from the header, so no extra signal): **10,268,571 B = -2.03% vs JXL e9**. Picks: `best_now` x2, `pipe` x1, `inter_cmatch_excl_inf` x8, `max` x9
 
 ## Per image
 
-| image | JXL e9 | `best_now` file | exact | `pipe` file | exact | `inter_cmatch_excl_inf` file | exact |
-|---|---|---|---|---|---|---|---|
-| pex_p1054218 | 339,169 | 301,924 | yes | 301,983 | yes | 341,861 | yes |
-| pex_p1287145 | 515,313 | 513,295 | yes | 513,223 | yes | 540,083 | yes |
-| pex_p1366919 | 641,269 | 620,143 | yes | 620,116 | yes | 638,481 | yes |
-| pex_p1612351 | 593,762 | 586,582 | yes | 586,977 | yes | 612,192 | yes |
-| pex_p1770809 | 1,293,328 | 1,227,355 | yes | 1,227,840 | yes | 1,227,936 | yes |
-| pex_p2014422 | 173,891 | 153,035 | yes | 152,915 | yes | 186,954 | yes |
-| pex_p2166711 | 387,622 | 377,430 | yes | 377,725 | yes | 410,979 | yes |
-| pex_p2253275 | 471,135 | 470,292 | yes | 470,382 | yes | 491,485 | yes |
-| pex_p3225517 | 852,919 | 847,829 | yes | 847,672 | yes | 853,811 | yes |
-| pex_p417074 | 675,571 | 671,633 | yes | 671,976 | yes | 685,494 | yes |
-| pex_p462162 | 773,254 | 761,890 | yes | 762,328 | yes | 772,442 | yes |
-| pex_p933054 | 269,185 | 260,897 | yes | 260,763 | yes | 297,843 | yes |
-| kod_kodim01 | 454,757 | 471,229 | yes | 471,775 | yes | 465,465 | yes |
-| kod_kodim03 | 328,115 | 328,693 | yes | 328,884 | yes | 317,682 | yes |
-| kod_kodim05 | 485,059 | 496,257 | yes | 496,401 | yes | 488,189 | yes |
-| kod_kodim08 | 501,647 | 512,962 | yes | 514,463 | yes | 506,606 | yes |
-| kod_kodim13 | 548,906 | 552,548 | yes | 552,938 | yes | 548,932 | yes |
-| kod_kodim15 | 382,924 | 383,730 | yes | 384,578 | yes | 374,605 | yes |
-| kod_kodim20 | 325,163 | 320,562 | yes | 320,485 | yes | 315,260 | yes |
-| kod_kodim22 | 468,333 | 473,473 | yes | 473,714 | yes | 464,810 | yes |
+| image | JXL e9 | `best_now` file | exact | `pipe` file | exact | `inter_cmatch_excl_inf` file | exact | `max` file | exact |
+|---|---|---|---|---|---|---|---|---|---|
+| pex_p1054218 | 339,169 | 301,924 | yes | 301,983 | yes | 341,861 | yes | 301,510 | yes |
+| pex_p1287145 | 515,313 | 513,295 | yes | 513,223 | yes | 540,083 | yes | 512,482 | yes |
+| pex_p1366919 | 641,269 | 620,143 | yes | 620,116 | yes | 638,481 | yes | 619,245 | yes |
+| pex_p1612351 | 593,762 | 586,582 | yes | 586,977 | yes | 612,192 | yes | 586,545 | yes |
+| pex_p1770809 | 1,293,328 | 1,227,355 | yes | 1,227,840 | yes | 1,227,936 | yes | 1,227,283 | yes |
+| pex_p2014422 | 173,891 | 153,035 | yes | 152,915 | yes | 186,954 | yes | 152,594 | yes |
+| pex_p2166711 | 387,622 | 377,430 | yes | 377,725 | yes | 410,979 | yes | 377,490 | yes |
+| pex_p2253275 | 471,135 | 470,292 | yes | 470,382 | yes | 491,485 | yes | 470,427 | yes |
+| pex_p3225517 | 852,919 | 847,829 | yes | 847,672 | yes | 853,811 | yes | 848,304 | yes |
+| pex_p417074 | 675,571 | 671,633 | yes | 671,976 | yes | 685,494 | yes | 670,492 | yes |
+| pex_p462162 | 773,254 | 761,890 | yes | 762,328 | yes | 772,442 | yes | 761,408 | yes |
+| pex_p933054 | 269,185 | 260,897 | yes | 260,763 | yes | 297,843 | yes | 260,069 | yes |
+| kod_kodim01 | 454,757 | 471,229 | yes | 471,775 | yes | 465,465 | yes | 471,046 | yes |
+| kod_kodim03 | 328,115 | 328,693 | yes | 328,884 | yes | 317,682 | yes | 328,223 | yes |
+| kod_kodim05 | 485,059 | 496,257 | yes | 496,401 | yes | 488,189 | yes | 495,883 | yes |
+| kod_kodim08 | 501,647 | 512,962 | yes | 514,463 | yes | 506,606 | yes | 512,534 | yes |
+| kod_kodim13 | 548,906 | 552,548 | yes | 552,938 | yes | 548,932 | yes | 553,435 | yes |
+| kod_kodim15 | 382,924 | 383,730 | yes | 384,578 | yes | 374,605 | yes | 384,539 | yes |
+| kod_kodim20 | 325,163 | 320,562 | yes | 320,485 | yes | 315,260 | yes | 320,935 | yes |
+| kod_kodim22 | 468,333 | 473,473 | yes | 473,714 | yes | 464,810 | yes | 473,510 | yes |

@@ -12,6 +12,7 @@ from experiments import MB
 HERE = os.path.dirname(os.path.abspath(__file__)); EXE = os.path.join(HERE, "ffic")
 OUT = os.path.join(HERE, "experiments")
 CONFIGS = {
+    "max": (MB + " terrain=1 tcoup=0.1 tmag=0.15 twall=10", 4, "ffic.py preset max: best coder + terrain balls"),
     "best_now": (MB, 4, "best single coder, layers one after another"),
     "pipe": (MB + " pipe=1 snapk=32", 2, "staggered colour pipeline (3 threads)"),
     "inter_cmatch_excl_inf": (MB + " inter=1 cmatch=1 mexcl=1 minf=1 snapk=32", 2, "pixel by pixel + whole-colour match + exclusion"),
