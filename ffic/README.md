@@ -90,6 +90,21 @@ Images keep every pixel and their metadata (colour profile, EXIF, DPI, PNG text)
 | video in native YUV 4:2:0, foreman | x264 lossless: 1,556,770 B | **1,503,346 B, −3.4%** | |
 | video in native YUV 4:2:0, mobile (fast pan) | x265 lossless: 1,972,752 B | 2,109,880 B, **+7.0% (worse)** | needs motion search |
 
+## Any file as an image
+
+Every file's bytes laid out as a grey image (or read as 16-bit numbers), at several widths, coded with `max`; best layout decoded and compared byte for byte (`benchbytes.py`, `experiments/BENCHBYTES.md`):
+
+| file | best other tool | FFIC as an image | |
+|---|---|---|---|
+| fixed-size sensor records (12 bytes each) | xz -9e: 153,464 B | **118,910 B, −22.5%** (width 12: one record per row) | wins |
+| elevation grid, raw big-endian .hgt | bzip2: 538,832 B | **323,666 B, −39.9%** (16-bit, width 1200) | wins |
+| speech WAV | FLAC: 1,501,431 B | 1,941,124 B, +29.3% | loses: sound is 1-D, a 2-D layout gives no "above" neighbour |
+| JPEG photo | bzip2: 256,481 B | 266,747 B, +4.0% | already compressed |
+| program binary | xz: 38,464 B | 84,215 B, +119% | loses |
+| C source / JSON text | bzip2 / xz | +188% / +805% | loses: text is repeated words, not smooth brightness |
+
+FFIC wins where the bytes are numbers that change smoothly, laid out in a grid or fixed records. It loses badly where the bytes are symbols (text, code), where the data is already compressed, and on audio.
+
 ## How it works (short)
 
 1. Green, then red, then blue. Each pixel is guessed by a team: simple guessers (same as left, same as above, keep the slope), learned funnels (nested by how busy, edge direction and brightness, a child funnel starts from its parent), material lines and material funnels (colour physics), and terrain balls (the decoded image as a landscape the balls roll over).
