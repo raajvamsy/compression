@@ -220,3 +220,16 @@ Round trip on all 20 photos (`ffic/roundtrip.py`, `ffic/experiments/ROUNDTRIP.md
 | smallest per photo | **10,273,344 B** | | | **−1.98%** | | |
 
 Decoding takes as long as encoding (symmetric, as in all context-mixing coders): about 7 s per photo for `best_now`, about 4 s with `pipe`.
+
+## 7. Waves instead of pixels (wave tree, tested)
+
+Idea: describe each colour layer with one horizontal and one vertical wave per region; split a region in four where its two waves do not fit, like a funnel splitting where it needs detail. 20 photos, sizes include the tree:
+
+| test | what the file holds | total | vs best coder | vs JXL e9 |
+|---|---|---|---|---|
+| best coder (`best_now`) | surprises of the funnel guesser | 10,327,702 B | — | −1.47% |
+| C. coarse wave tree as an extra guesser | surprises + 70 KB of tree | 10,385,926 B | +0.6% | −0.9% |
+| A. waves first, then corrections (moderate / deep tree) | tree + per-pixel corrections | 20.15 / 19.90 MB | +95% / +93% | +92% / +90% |
+| D. waves only, split until exact (`wave_exact.py`) | tree only, no corrections | 25,761,284 B | +149% | +146% |
+
+D decodes exactly from the stream alone on 20/20 photos. Two waves almost never match a region exactly, so most of the image ends up as 1-pixel regions (e.g. the dog: 1.83 M of 2.36 M values). Waves describe large smooth shape well, but lossless coding is dominated by texture and sensor noise, which the funnel guesser handles far more cheaply.

@@ -1,0 +1,142 @@
+{
+ "pex_p1054218": {
+  "bytes": 1161464,
+  "wave_regions": 210737,
+  "single_pixels": 1628512,
+  "exact": true,
+  "s": 101.7
+ },
+ "pex_p1287145": {
+  "bytes": 1566852,
+  "wave_regions": 119039,
+  "single_pixels": 1993072,
+  "exact": true,
+  "s": 109.2
+ },
+ "pex_p1366919": {
+  "bytes": 1976532,
+  "wave_regions": 48329,
+  "single_pixels": 2193858,
+  "exact": true,
+  "s": 111.9
+ },
+ "pex_p1612351": {
+  "bytes": 1692828,
+  "wave_regions": 55145,
+  "single_pixels": 2226278,
+  "exact": true,
+  "s": 111.3
+ },
+ "pex_p1770809": {
+  "bytes": 2202076,
+  "wave_regions": 14156,
+  "single_pixels": 2328470,
+  "exact": true,
+  "s": 116.7
+ },
+ "pex_p2014422": {
+  "bytes": 742660,
+  "wave_regions": 232027,
+  "single_pixels": 1050418,
+  "exact": true,
+  "s": 79.1
+ },
+ "pex_p2166711": {
+  "bytes": 1366268,
+  "wave_regions": 187211,
+  "single_pixels": 1729046,
+  "exact": true,
+  "s": 105.8
+ },
+ "pex_p2253275": {
+  "bytes": 1408508,
+  "wave_regions": 115766,
+  "single_pixels": 1827448,
+  "exact": true,
+  "s": 102.4
+ },
+ "pex_p3225517": {
+  "bytes": 1755552,
+  "wave_regions": 47620,
+  "single_pixels": 2131678,
+  "exact": true,
+  "s": 108.4
+ },
+ "pex_p417074": {
+  "bytes": 1715096,
+  "wave_regions": 76390,
+  "single_pixels": 2165354,
+  "exact": true,
+  "s": 111.6
+ },
+ "pex_p462162": {
+  "bytes": 1824936,
+  "wave_regions": 59469,
+  "single_pixels": 2204294,
+  "exact": true,
+  "s": 113.0
+ },
+ "pex_p933054": {
+  "bytes": 1058580,
+  "wave_regions": 197690,
+  "single_pixels": 1514982,
+  "exact": true,
+  "s": 96.4
+ },
+ "kod_kodim01": {
+  "bytes": 1010800,
+  "wave_regions": 33684,
+  "single_pixels": 1106308,
+  "exact": true,
+  "s": 67.4
+ },
+ "kod_kodim03": {
+  "bytes": 797228,
+  "wave_regions": 96345,
+  "single_pixels": 970096,
+  "exact": true,
+  "s": 66.7
+ },
+ "kod_kodim05": {
+  "bytes": 1039356,
+  "wave_regions": 35420,
+  "single_pixels": 1099846,
+  "exact": true,
+  "s": 68.8
+ },
+ "kod_kodim08": {
+  "bytes": 1040452,
+  "wave_regions": 30867,
+  "single_pixels": 1109180,
+  "exact": true,
+  "s": 68.0
+ },
+ "kod_kodim13": {
+  "bytes": 1040680,
+  "wave_regions": 22845,
+  "single_pixels": 1122394,
+  "exact": true,
+  "s": 67.4
+ },
+ "kod_kodim15": {
+  "bytes": 816276,
+  "wave_regions": 62541,
+  "single_pixels": 1000766,
+  "exact": true,
+  "s": 64.9
+ },
+ "kod_kodim20": {
+  "bytes": 620776,
+  "wave_regions": 39907,
+  "single_pixels": 730190,
+  "exact": true,
+  "s": 46.7
+ },
+ "kod_kodim22": {
+  "bytes": 924364,
+  "wave_regions": 35853,
+  "single_pixels": 1096428,
+  "exact": true,
+  "s": 65.0
+ }
+}
