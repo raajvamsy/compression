@@ -293,3 +293,17 @@ Slice the landscape into n height bands; each band is a new image holding the or
 | kodim03 | 523,424 B | 549,449 (+5.0%) | 549,601 (+5.0%) | 553,301 (+5.7%) = map 54,681 + pixels 498,621 |
 
 The band images do get cheaper as the slabs get thinner (kodim03 pixels 523 → 499 KB), but the map grows faster (0 → 55 KB). The map holds the same information as the top bits of each pixel, so it is moved out of the pixels, not removed. And the first slabs are coded with holes where their neighbours belong to later slabs, so they guess worse than the whole photo does.
+
+### 7b. Waves in any direction (oblique 2-D waves over the landscape, quick test)
+
+Instead of one horizontal + one vertical wave per region, each region keeps its K strongest 2-D waves in any direction (ripples running diagonally across the landscape), splitting where they misfit. Dog, green layer, simple estimate (leftover entropy + 10 bits per wave number), best split setting for each:
+
+| waves per region | bits per pixel |
+|---|---|
+| 1 horizontal + 1 vertical | 4.92 |
+| 2 in any direction | 4.89 |
+| 4 in any direction | 4.91 |
+| 8 in any direction | 4.90 |
+| FFIC real coder (reference) | 2.38 |
+
+Freer waves fit better (leftover 4.61 → 4.29 bits), but each wave costs more numbers, and the total does not move. Waves through the full 3-D volume (x, y, height) cannot do better: the landscape is one height per (x, y), so 2-D waves already describe every surface it can have, and a 3-D grid of 1024 × 768 × 256 cells is 256 times larger before any compression.
