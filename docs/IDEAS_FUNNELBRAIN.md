@@ -233,3 +233,17 @@ Idea: describe each colour layer with one horizontal and one vertical wave per r
 | D. waves only, split until exact (`wave_exact.py`) | tree only, no corrections | 25,761,284 B | +149% | +146% |
 
 D decodes exactly from the stream alone on 20/20 photos. Two waves almost never match a region exactly, so most of the image ends up as 1-pixel regions (e.g. the dog: 1.83 M of 2.36 M values). Waves describe large smooth shape well, but lossless coding is dominated by texture and sensor noise, which the funnel guesser handles far more cheaply.
+
+## 8. Folding waves (tested: `ffic/fold.py`, `ffic/fold2.py`)
+
+Fold the image in half again and again (reversible integer folds: no loss). What stays is a small stack of coarse waves; every fold leaves a fold wave that says exactly how to unfold. When the decoder unfolds, the stack is known in every direction (left, right, above, below), so the fold waves can be guessed from all sides. Measured with the same learning guesser and coder for raster and fold (ideal bits, all 3 colours; dog + kodim03):
+
+| shape | dog | kodim03 | both |
+|---|---|---|---|
+| raster (left/above only) | 786,509 B | 510,869 B | — |
+| averaging fold x1 / x2 / x3 / x5 | +4.4 / +5.5 / +6.0 / +6.8% | +3.6 / +5.4 / +6.4 / +7.6% | +4.1 / +5.5 / +6.2 / +7.1% |
+| sharp fold (keep every other value) x1 / x5 | +2.1 / +4.4% | +2.8 / +6.4% | +2.4 / +5.2% |
+| fold columns only (1 direction) | +3.6% | +0.5% | +2.4% |
+| checkerboard fold | +5.9% | +0.2% | +3.7% |
+
+Where the bits go (dog, green, sharp fold once): the fold waves cost **2.44 bits/value, 8% less than raster pixels (2.65)**, because they are guessed from all sides. But the stack costs **3.48 bits/value, 32% more**, because its own neighbours are now 2 px apart. The two cancel, and every extra fold makes the stack worse. The all-directions information is real, but in these tests it never pays for the extra cost of the stack. That matches the general rule: changing the order cannot add information, it only changes how easy each part is to guess.
