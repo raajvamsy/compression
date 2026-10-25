@@ -282,3 +282,14 @@ Four balls roll over the already-decoded landscape toward the unknown pixel, fro
 | `terrain_tuned` (pull 0.1, cliff 10, spin 0.15; tuned on kodim03) | **10,323,032 B** | **−0.05%** | **−1.51%** |
 
 Tuned, the balls help on 14 of 20 photos (best p933054 −0.33%, p2014422 −0.32%; worst kodim15 +0.20%). The gain is small because most of a rolling ball's path is linear and the funnels' 12 learned taps already cover it. What the balls add is the non-linear part: loose momentum that keeps going, and bouncing at edges. The settings were tuned on one of the 20 test photos, so part of the −0.05% may be tuning luck.
+
+### 9b. Thick slabs as new images (tested, `ffic/slabs.py`)
+
+Slice the landscape into n height bands; each band is a new image holding the original pixels in that band (holes elsewhere). Store the band map, then each band image. When a band is decoded, the earlier bands are known in every direction, and every unknown neighbour's range is known from the map; values are coded inside their band's range. Same guesser and coder for every n, all 3 colours:
+
+| | 1 slab (whole photo) | 2 slabs | 4 slabs | 8 slabs |
+|---|---|---|---|---|
+| dog | 855,737 B | 895,643 (+4.7%) = map 14,939 + pixels 880,703 | 911,565 (+6.5%) = map 41,150 + pixels 870,415 | 935,612 (+9.3%) = map 88,543 + pixels 847,070 |
+| kodim03 | 523,424 B | 549,449 (+5.0%) | 549,601 (+5.0%) | 553,301 (+5.7%) = map 54,681 + pixels 498,621 |
+
+The band images do get cheaper as the slabs get thinner (kodim03 pixels 523 → 499 KB), but the map grows faster (0 → 55 KB). The map holds the same information as the top bits of each pixel, so it is moved out of the pixels, not removed. And the first slabs are coded with holes where their neighbours belong to later slabs, so they guess worse than the whole photo does.
