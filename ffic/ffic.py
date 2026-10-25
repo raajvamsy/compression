@@ -22,6 +22,8 @@ Files: a plain RGB or grey image is one FFIC2 stream. Anything with several laye
 of its pixels and decoding fails loudly if anything differs.
 Presets:  max   smallest files (best coder + terrain balls), layers coded one after another
           fast  same model, colour layers on three threads (about 2x faster, ~0.05% bigger)
+          archive  smallest of all: per image, 7 reversible tricks (inverted, other colour orders, mirrored, flipped) with the
+                main brain, then the best two also with the whole-colour brain; ~9x slower to encode, decoding as fast as max
 """
 import argparse, json, os, struct, subprocess, sys, tempfile, time
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +33,37 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EXE = os.path.join(HERE, "ffic")
 BEST = "ltpcrewb sal=-1 salp=3 salmax=8 salbias=2 register=1 grav=0.5 field=1 merge=0.08 kres=1 sleep=16 fmax=128 ms=1 bounce=1 salall=2 apm=1 mix2=1 mline=2 matf=1 mctx=1"
 PRESETS = {"max": BEST + " terrain=1 tcoup=0.1 tmag=0.15 twall=10", "fast": BEST + " pipe=1 snapk=32"}
+WHOLE = PRESETS["max"] + " inter=1 cmatch=1 mexcl=1 minf=1 snapk=32"     # second brain for archive: pixel by pixel + whole-colour match
+# archive: reversible tricks tried per image (the coder sees the picture differently; decoding undoes the trick exactly)
+TRICKS = [{}, {"inv": 1}, {"perm": [1, 0, 2]}, {"perm": [0, 2, 1]}, {"flip": "h"}, {"flip": "v"}, {"flip": "hv"}]
+
+
+def apply_trick(a, tf, undo=False):
+    def flip(x):
+        f = tf.get("flip", "")
+        if "h" in f: x = x[:, ::-1]
+        if "v" in f: x = x[::-1]
+        return x
+    if not undo:
+        if tf.get("inv"): a = 255 - a
+        if "perm" in tf: a = a[..., tf["perm"]]
+        return np.ascontiguousarray(flip(a))
+    a = flip(a)
+    if "perm" in tf: a = a[..., np.argsort(tf["perm"])]
+    if tf.get("inv"): a = 255 - a
+    return np.ascontiguousarray(a)
+
+
+def code_colour(a, preset):
+    """-> (FFIC2 bytes, trick). archive: try every trick with the main brain, then the best two with the whole-colour brain too,
+    keep the smallest. Decoding runs only the chosen brain once."""
+    if preset != "archive": return code_layer(a, PRESETS[preset]), {}
+    tricks = [t for t in TRICKS if a.ndim == 3 or "perm" not in t]
+    with ThreadPoolExecutor(2) as ex:
+        tried = list(ex.map(lambda t: (code_layer(apply_trick(a, t), PRESETS["max"]), t), tricks))
+        tried.sort(key=lambda x: len(x[0]))
+        if a.ndim == 3: tried += list(ex.map(lambda x: (code_layer(apply_trick(a, x[1]), WHOLE), x[1]), tried[:2]))
+    return min(tried, key=lambda x: len(x[0]))
 GREY = " src=1 planes=1"
 
 
@@ -133,7 +166,7 @@ def save_kwargs(meta, ext):
 
 def encode_image(src, dst, preset):
     from PIL import Image
-    cfg = PRESETS[preset]; raw = Image.open(src); raw.load()
+    cfg = PRESETS["max" if preset == "archive" else preset]; raw = Image.open(src); raw.load()
     if getattr(raw, "n_frames", 1) > 1: sys.exit(f"{src}: animated / multi-page images are not supported yet")
     extras = image_extras(raw)
     if raw.mode == "P" and raw.getpalette() is not None:                 # palette image: keep it a palette image, exactly
@@ -148,7 +181,7 @@ def encode_image(src, dst, preset):
         if a.min() < 0 or a.max() > 65535: sys.exit(f"{src}: values outside 0..65535 are not supported")
         write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}, [("grey16", code_layer(a.astype(np.uint16), cfg))]); return
     if im.mode in ("RGB", "L"):
-        best = code_layer(a, cfg)
+        best, tf = code_colour(a, preset)
         if im.mode == "RGB":                                                # few colours (graphics, screenshots): try a palette too
             flat = a.reshape(-1, 3); key = (flat[:, 0].astype(np.int64) << 16) | (flat[:, 1].astype(np.int64) << 8) | flat[:, 2]
             cols, inv = np.unique(key, return_inverse=True)
@@ -156,14 +189,16 @@ def encode_image(src, dst, preset):
                 pal = np.stack([cols >> 16, (cols >> 8) & 255, cols & 255], 1).ravel().tolist(); pal += [0] * (768 - len(pal))
                 blob, order = palette_parts(inv.reshape(a.shape[:2]), pal, cfg)
                 if len(blob) + 2 * len(cols) * 3 < len(best):
+                    extras = dict(extras)
                     write_container(dst, {"kind": "image", "mode": "RGB", "as": "palette", "width": im.width, "height": im.height,
                                           "palette": pal, "order": order, "extras": extras}, [("index", blob)]); return
-        if extras: write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}, [("image", best)])
+        if extras or tf: write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras, "trick": tf}, [("image", best)])
         else: open(dst, "wb").write(best)
         return
     colour, alpha = a[..., :-1], a[..., -1]
     if colour.shape[2] == 1: colour = colour[..., 0]
-    parts, meta = [("colour", code_layer(colour, cfg))], {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}
+    cb, tf = code_colour(colour, preset)
+    parts, meta = [("colour", cb)], {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras, "trick": tf}
     if (alpha == alpha.flat[0]).all(): meta["alpha_const"] = int(alpha.flat[0])     # constant transparency: one number
     else: parts.append(("alpha", code_layer(alpha, cfg)))
     write_container(dst, meta, parts)
@@ -172,7 +207,7 @@ def encode_image(src, dst, preset):
 def decode_image(meta, parts):
     from PIL import Image
     if meta["kind"] == "plain" or "image" in parts:
-        a = decode_layer(parts["image"]); return Image.fromarray(a, "L" if a.ndim == 2 else "RGB")
+        a = apply_trick(decode_layer(parts["image"]), meta.get("trick", {}), undo=True); return Image.fromarray(a, "L" if a.ndim == 2 else "RGB")
     if "grey16" in parts:
         a = decode_layer(parts["grey16"]); from PIL import Image as I
         return I.fromarray(a.astype(np.uint16)) if meta["mode"] != "I" else I.fromarray(a.astype(np.int32))
@@ -186,7 +221,7 @@ def decode_image(meta, parts):
             return im
         pal = list(meta["palette"]) + [0] * (768 - len(meta["palette"]))
         return I.fromarray(np.asarray(pal, np.uint8).reshape(-1, 3)[idx], "RGB")
-    c = decode_layer(parts["colour"])
+    c = apply_trick(decode_layer(parts["colour"]), meta.get("trick", {}), undo=True)
     al = decode_layer(parts["alpha"]) if "alpha" in parts else np.full(c.shape[:2], meta["alpha_const"], np.uint8)
     a = np.dstack([c, al]) if c.ndim == 3 else np.dstack([c, al])
     return Image.fromarray(a, meta["mode"])
@@ -213,7 +248,7 @@ def read_y4m(path):
 
 
 def encode_video(src, dst, preset):
-    head, fl, w, h, cw, ch, Y, U, V = read_y4m(src); cfg = PRESETS[preset]
+    head, fl, w, h, cw, ch, Y, U, V = read_y4m(src); cfg = PRESETS["max" if preset == "archive" else preset]
     jobs = [("Y", np.concatenate(Y), h)] + ([("U", np.concatenate(U), ch), ("V", np.concatenate(V), ch)] if cw else [])
     with ThreadPoolExecutor(3) as ex:                                  # the three layers are independent files: code them at once
         parts = list(zip([j[0] for j in jobs], ex.map(lambda j: code_layer(j[1], cfg, j[2]), jobs)))
@@ -320,10 +355,10 @@ def unpack(src, folder, jobs=4):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    e = sub.add_parser("encode"); e.add_argument("src"); e.add_argument("dst"); e.add_argument("--preset", choices=PRESETS, default="max")
+    e = sub.add_parser("encode"); e.add_argument("src"); e.add_argument("dst"); e.add_argument("--preset", choices=list(PRESETS) + ["archive"], default="max")
     d = sub.add_parser("decode"); d.add_argument("src"); d.add_argument("dst")
     i = sub.add_parser("info"); i.add_argument("src")
-    pk = sub.add_parser("pack"); pk.add_argument("folder"); pk.add_argument("dst"); pk.add_argument("--preset", choices=PRESETS, default="max"); pk.add_argument("--jobs", type=int, default=4)
+    pk = sub.add_parser("pack"); pk.add_argument("folder"); pk.add_argument("dst"); pk.add_argument("--preset", choices=list(PRESETS) + ["archive"], default="max"); pk.add_argument("--jobs", type=int, default=4)
     up = sub.add_parser("unpack"); up.add_argument("src"); up.add_argument("folder"); up.add_argument("--jobs", type=int, default=4)
     tt = sub.add_parser("test"); tt.add_argument("src", nargs="+"); tt.add_argument("--preset", choices=list(PRESETS) + ["all"], default="all")
     a = ap.parse_args()
