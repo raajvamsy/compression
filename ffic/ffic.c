@@ -43,6 +43,7 @@
  *                     which also see the decoded row BELOW (3 extra taps + a vertical-interpolation ball)
  *   pipe=1            STAGGERED COLOUR PIPELINE: G, R and B run on three threads at once; R waits until G is lag rows ahead,
  *                     B until R is. Deterministic: a layer only reads finished rows; registers copy G's funnels frozen every snapk rows
+ *   bits=9..16        DEEPER SAMPLES: raw input/output is 16-bit little-endian; every value-scale constant is scaled by 2^(bits-8)
  *   inter=1           PIXEL BY PIXEL order (G, R, B of each pixel before the next); G gets 4 colour taps from W and N
  *   terrain=1         TERRAIN BALLS: 4 balls roll over the decoded landscape (FunnelBrain ball physics) toward the pixel; landings = guessers
  *   minf=1            with cmatch: the match question also hears how likely the G layer already finds a candidate's G
@@ -87,6 +88,8 @@ typedef struct {
 typedef struct { float scale; int n; } Mouth;
 
 static int W, H;
+/* sample depth (bits=8..16): every value-scale constant is multiplied by VS = 2^(bits-8), so 8-bit coding is unchanged */
+static int BITS = 8, VSI = 1, MAXV = 255; static float VS = 1.f, MAXF = 255.f;
 static int opt_l = 1, opt_t = 1, opt_v = 1, opt_p = 1, opt_c = 1, opt_e = 1, opt_w = 1, opt_r = 1, opt_b = 1, opt_f = 0;
 static float MU = 0.01f, LAM = 0.998f, P0 = 50.f, GATE = 0.f; static int RLMASK = 15;
 static int FIELD = 0, SLEEP = 0, BOUNCE = 0, HIPPO = 0, LAMPE = 0, REPLAY = 0, MS = 0, KRES = 3, FMAX = 192;
@@ -103,7 +106,7 @@ static int GMASS = 0, GMR = 8; static float GSIG = 2.f, GLIM = 4096.f;
 static void mat_solve(const Mat *m, int k, const double *w0, double *w) {
     double A[3][4];
     for (int i = 0; i < k; i++) { for (int j = 0; j < k; j++) A[i][j] = m->S[i * 3 + j]; A[i][k] = m->St[i]; }
-    for (int i = 0; i < k; i++) { double l = i == 0 ? 1e-3 : MATLAM; A[i][i] += l; A[i][k] += l * w0[i]; }
+    for (int i = 0; i < k; i++) { double l = i == 0 ? 1e-3 : MATLAM * VS * VS; A[i][i] += l; A[i][k] += l * w0[i]; }
     for (int i = 0; i < k; i++) {                                              /* Gaussian elimination with partial pivoting */
         int p = i; for (int r = i + 1; r < k; r++) if (fabs(A[r][i]) > fabs(A[p][i])) p = r;
         if (p != i) for (int c = 0; c <= k; c++) { double t = A[i][c]; A[i][c] = A[p][c]; A[p][c] = t; }
@@ -247,9 +250,9 @@ static inline int rw_bit(const RW *w, int e) {                     /* which way 
 }
 static inline void rw_step(RW *w, const RP *p, int bit) {
     switch (w->phase) {
-    case 0: if (bit) { w->phase = 4; w->e = 0; } else if (p->r > 0 && p->r < 255) w->phase = 1; else { w->neg = p->r >= 255; w->phase = 2; w->j = 0; } break;
+    case 0: if (bit) { w->phase = 4; w->e = 0; } else if (p->r > 0 && p->r < MAXV) w->phase = 1; else { w->neg = p->r >= MAXV; w->phase = 2; w->j = 0; } break;
     case 1: w->neg = bit; w->phase = 2; w->j = 0; break;
-    case 2: if (bit && w->j < 7) { w->j++; break; }
+    case 2: if (bit && w->j < BITS - 1) { w->j++; break; }
         if (bit) w->j++;                                                  /* (cannot happen for 8-bit samples) */
         w->k = w->j; w->lo = 1 << w->k; w->hi2 = (2 << w->k) - 1; w->bi = w->k - 1;
         if (w->bi < 0) { w->phase = 4; w->e = w->neg ? -1 : 1; } else w->phase = 3; break;
@@ -297,7 +300,7 @@ static inline void cm_residual(CM *m, const int *cx, int sel, int e, int r, doub
 static void funnel_init(Funnel *f, const Funnel *parent) {
     if (parent) { *f = *parent; f->n = 0; f->perf = parent->perf * 1.25f + 0.05f; }      /* inherit weights + covariance; start a bit less trusted */
     else {
-        memset(f, 0, sizeof *f); f->perf = 8.f;
+        memset(f, 0, sizeof *f); f->perf = 8.f * VS;
         for (int i = 0; i < NT; i++) f->P[i * NT + i] = P0;
     }
     f->nsl = 0; f->idle = 0; memset(f->s1, 0, sizeof f->s1); memset(f->s2, 0, sizeof f->s2);
@@ -380,18 +383,19 @@ static float *WMODEL = NULL; static const char *WPATH = NULL; static int WONLY =
    the previous frame, which is fully decoded in EVERY direction: the same spot and its W, E, N, S neighbours (5 taps), plus two
    balls: the previous frame's value, and that value moved by how this frame differs from it nearby (temporal gradient). */
 static int FRAMEH = 0;
+static int PLANES = 3;                               /* planes=1: grey data, only one layer is coded (the other two are copies) */
 static int TERRAIN = 0; static float TWALL = 24.f, TDAMP = 0.92f, TCOUP = 0.5f, TMAG = 0.035f, TSETTLE = 0.3f;
 static inline float terrain_roll(float h3, float h2, float h1, float lat) {
     float z = h3, v = h2 - h3, hs[2] = {h2, h1};
     for (int k = 0; k < 2; k++) {
         float d = hs[k] - (z + v);
-        if (fabsf(d) > TWALL) v = -v * TDAMP + d * TCOUP;                /* hit a cliff: bounce */
+        if (fabsf(d) > TWALL * VS) v = -v * TDAMP + d * TCOUP;                /* hit a cliff: bounce */
         else v = v * TDAMP + d * TCOUP;                                  /* roll along, pulled onto the ground */
         z = hs[k];
     }
     v += TMAG * lat * (v >= 0 ? 1.f : -1.f);                             /* spin from the sideways slope curves the path */
-    if (fabsf(v) < TSETTLE) v = 0;                                       /* settles */
-    return clampf(z + v * TDAMP, 0, 255);
+    if (fabsf(v) < TSETTLE * VS) v = 0;                                       /* settles */
+    return clampf(z + v * TDAMP, 0, MAXF);
 }
 static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
 static const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
@@ -451,7 +455,7 @@ static void code_plane(int oi) {
         const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + hasw + nter + (FRAMEH ? 5 : 0) + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
-        Mouth *mouth = malloc(2 * NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < 2 * NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
+        Mouth *mouth = malloc(2 * NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < 2 * NA * NEN * NCE; i++) { mouth[i].scale = 6.f * VS; mouth[i].n = 0; }
         float *esub[NSUBX]; for (int k = 0; k < NSUBX; k++) esub[k] = calloc(N, sizeof(float));
         float *efin = calloc(N, sizeof(float)), *actm = calloc(N, sizeof(float));
         short *fid = calloc(N, sizeof(short));
@@ -488,7 +492,7 @@ static void code_plane(int oi) {
                 const int ftop = FRAMEH ? y / FRAMEH * FRAMEH : 0;         /* rows above this frame belong to the previous frame */
                 if (yy < ftop) ii = x > 0 ? idx - 1 : (y - ftop >= RS ? idx - (size_t)RS * W : idx);
                 else { xx = clampi(xx, 0, W - 1); ii = (yy == y && xx >= x) ? (x > 0 ? idx - 1 : (y >= RS ? idx - (size_t)RS * W : idx)) : (size_t)yy * W + xx; }
-                nbi[k] = ii; nbv[k] = (ii == idx) ? 128 : P[ii];
+                nbi[k] = ii; nbv[k] = (ii == idx) ? (MAXV + 1) / 2 : P[ii];
             }
             int Wv = nbv[0], Nv = nbv[1], NWv = nbv[2], NEv = nbv[3], WWv = nbv[4], NNv = nbv[5], NNEv = nbv[6];
             int m = med(Wv, Nv, NWv);
@@ -496,33 +500,33 @@ static void code_plane(int oi) {
             /* ---- fixed parallel balls ---- */
             float sp[NSUBX];
             sp[0] = (float)m;
-            sp[1] = clampf((float)(Wv + Nv - NWv), 0, 255);
-            sp[2] = clampf((Wv + Nv) * 0.5f + (NEv - NWv) * 0.25f, 0, 255);
-            sp[3] = clampf((float)(Wv + NEv - Nv), 0, 255);
-            sp[4] = clampf(Nv + (Nv - NNv) * 0.5f + (Wv - NWv) * 0.5f, 0, 255);
+            sp[1] = clampf((float)(Wv + Nv - NWv), 0, MAXF);
+            sp[2] = clampf((Wv + Nv) * 0.5f + (NEv - NWv) * 0.25f, 0, MAXF);
+            sp[3] = clampf((float)(Wv + NEv - Nv), 0, MAXF);
+            sp[4] = clampf(Nv + (Nv - NNv) * 0.5f + (Wv - NWv) * 0.5f, 0, MAXF);
             /* ---- hippocampus: recall what followed this neighbourhood shape before ---- */
             unsigned hkey = 0; int hhit = 0;
             if (HIPPO) {
                 float ref = (Wv + Nv) * 0.5f;
-                #define HQ(v) ((unsigned)(clampi((int)lrintf(((v) - ref) / 3.f), -3, 3) + 3))
+                #define HQ(v) ((unsigned)(clampi((int)lrintf(((v) - ref) / (3.f * VS)), -3, 3) + 3))
                 hkey = ((((((HQ(Wv) * 7 + HQ(Nv)) * 7 + HQ(NWv)) * 7 + HQ(NEv)) * 7 + HQ(WWv)) * 7 + HQ(NNv)) * 7 + HQ(NNEv));
-                if (opt_c && oi > 0) { int gr = clampi((int)lrintf(pl[1][idx] - pfin[1][idx]), -3, 3) + 3; hkey = hkey * 7 + gr; }
+                if (opt_c && oi > 0) { int gr = clampi((int)lrintf((pl[1][idx] - pfin[1][idx]) / VS), -3, 3) + 3; hkey = hkey * 7 + gr; }
                 hkey = (hkey * 2654435761u) >> (32 - HBITS);
                 hhit = hcnt[hkey] > 0; st_hippo_q++; st_hippo_hit += hhit;
-                sp[NSUB] = clampf(ref + (hhit ? hmem[hkey] : 0.f), 0, 255);
+                sp[NSUB] = clampf(ref + (hhit ? hmem[hkey] : 0.f), 0, MAXF);
             }
             if (CURVE) {                                                          /* follow the edge: N-row trend, bent by the row above's change of trend */
                 int NWWv = (y > 0 && x > 1) ? P[idx - W - 2] : NWv, NNWv = (y > 1 && x > 0) ? P[idx - 2 * W - 1] : NNv;
                 float tw = (float)(Wv - NWv), tw2 = (float)(NWv - NNWv), tn = (float)(Nv - NWv), tn2 = (float)(NWv - NWWv);
-                sp[icurve] = clampf(0.5f * (Nv + tw + (tw - tw2) * 0.5f) + 0.5f * (Wv + tn + (tn - tn2) * 0.5f), 0, 255);
+                sp[icurve] = clampf(0.5f * (Nv + tw + (tw - tw2) * 0.5f) + 0.5f * (Wv + tn + (tn - tn2) * 0.5f), 0, MAXF);
             }
             for (int q = 0; q < nml; q++) {                                       /* material line: fit this plane against an earlier one on the neighbours */
                 int *Q = pl[q == 0 ? 1 : 0]; float gm = 0, rm = 0, gv = 0, cv_ = 0;
                 for (int k = 0; k < MWIN; k++) { gm += Q[nbi[k]]; rm += nbv[k]; }
                 gm /= MWIN; rm /= MWIN;
                 for (int k = 0; k < MWIN; k++) { float dg = Q[nbi[k]] - gm; gv += dg * dg; cv_ += dg * (nbv[k] - rm); }
-                float slope = (cv_ + MLAM) / (gv + MLAM);
-                sp[iml + q] = clampf(rm + slope * (Q[idx] - gm), 0, 255);
+                float slope = (cv_ + MLAM * VS * VS) / (gv + MLAM * VS * VS);
+                sp[iml + q] = clampf(rm + slope * (Q[idx] - gm), 0, MAXF);
             }
             int Sv = 0, SWv = 0, SEv = 0;
             if (pass) {                                                           /* the row below is already decoded (coarse past) */
@@ -536,7 +540,7 @@ static void code_plane(int oi) {
                 for (int k = 0; k < CK; k++) { rs += oi == 1 ? nbv[k] : Rp[nbi[k]]; gs += Gp[nbi[k]]; if (oi == 2) bs += nbv[k]; }
                 if (oi == 1) md[0] = (rs + 4.f) / (rs + gs + 8.f);
                 else { md[0] = (bs + 4.f) / (bs + rs + gs + 12.f); md[1] = (Rp[idx] + 2.f) / (Rp[idx] + Gp[idx] + 4.f); }
-                md[2] = MBW * gs / (4.f * 255.f);
+                md[2] = MBW * gs / (4.f * MAXF);
                 float bd = 1e30f; for (int i = 0; i < nmat; i++) { float d = 0; for (int k = 0; k < 3; k++) { float t = md[k] - mats[i].c[k]; d += t * t; } if (d < bd) { bd = d; mland = i; } }
                 if ((mland < 0 || sqrtf(bd) > MRAD) && nmat < MMAX) {            /* a new material: born as a copy of the nearest */
                     int ni = nmat++; if (mland >= 0) mats[ni] = mats[mland]; else memset(&mats[ni], 0, sizeof(Mat));
@@ -545,7 +549,7 @@ static void code_plane(int oi) {
                 int kk = oi == 1 ? 2 : 3; double z[3] = {1.0, (double)Gp[idx], (double)Rp[idx]}, w0[3] = {0.0, 1.0, 0.0}, w[3];
                 mat_solve(&mats[mland], kk, w0, w);
                 double pr = 0; for (int k = 0; k < kk; k++) pr += w[k] * z[k];
-                sp[imat] = clampf((float)pr, 0, 255);
+                sp[imat] = clampf((float)pr, 0, MAXF);
             }
             if (hasw) sp[iwv] = WMODEL[(size_t)c * N + idx];
             float tv[5] = {0, 0, 0, 0, 0}; int hasprev = FRAMEH && y >= FRAMEH;
@@ -555,7 +559,7 @@ static void code_plane(int oi) {
                     tv[0] = P[pi]; tv[1] = P[x > 0 ? pi - 1 : pi]; tv[2] = P[x < W - 1 ? pi + 1 : pi];
                     tv[3] = P[py > f0 ? pi - W : pi]; tv[4] = P[py < f0 + FRAMEH - 1 ? pi + W : pi];
                     float dW = x > 0 ? (float)(Wv - tv[1]) : 0.f, dN = (y % FRAMEH) > 0 ? (float)(Nv - tv[3]) : dW;
-                    sp[itb] = clampf(tv[0], 0, 255); sp[itb + 1] = clampf(tv[0] + 0.5f * (dW + dN), 0, 255);
+                    sp[itb] = clampf(tv[0], 0, MAXF); sp[itb + 1] = clampf(tv[0] + 0.5f * (dW + dN), 0, MAXF);
                 } else { sp[itb] = (float)Wv; sp[itb + 1] = (float)Wv; }
             }
             if (nter) {                                                   /* four balls roll in over the decoded terrain */
@@ -580,27 +584,27 @@ static void code_plane(int oi) {
             /* ---- transduction: activity, level, spin, error energy, cross-plane surprise, wide activity ---- */
             int dh = abs(Wv - WWv) + abs(Nv - NWv) + abs(Nv - NEv), dv = abs(Wv - NWv) + abs(Nv - NNv) + abs(NEv - NNEv), act = dh + dv;
             actm[idx] = (float)act;
-            int A = 0; while (A < NA - 1 && act > ATH[A]) A++;
-            int L = opt_v ? clampi((int)base >> 6, 0, NL - 1) : 0, TH = 0;
+            int A = 0; while (A < NA - 1 && act > ATH[A] * VSI) A++;
+            int L = opt_v ? clampi((int)base >> (6 + BITS - 8), 0, NL - 1) : 0, TH = 0;
             float gx = (float)((Nv - NWv) + (NEv - Nv) + (Wv - WWv)), gy = (float)((Wv - NWv) + (Nv - NNv) + (NEv - NNEv)), gm = fabsf(gx) + fabsf(gy);
-            if (opt_t) { if (gm < 9.f) TH = 8; else { float a = atan2f(gy, gx); TH = ((int)floorf((a + 3.14159265f) / 0.78539816f)) & 7; } }
+            if (opt_t) { if (gm < 9.f * VS) TH = 8; else { float a = atan2f(gy, gx); TH = ((int)floorf((a + 3.14159265f) / 0.78539816f)) & 7; } }
             float en = 0.f; int EN = 0;
             if (opt_e) {
                 en = emap(efin, x - 1, y) + emap(efin, x, y - RS) + 0.5f * (emap(efin, x - 1, y - RS) + emap(efin, x + 1, y - RS)) + 0.5f * (emap(efin, x - 2, y) + emap(efin, x, y - 2 * RS));
                 static const float ETH[NEN - 1] = {0.6f, 1.2f, 2.f, 3.2f, 5.f, 8.f, 13.f, 22.f, 40.f};
-                while (EN < NEN - 1 && en > ETH[EN]) EN++;
+                while (EN < NEN - 1 && en > ETH[EN] * VS) EN++;
             }
             float ce = 0.f; int CE = 0;
             if (opt_e && opt_c && oi > 0) {
                 ce = fabsf((float)pl[1][idx] - pfin[1][idx]); if (oi == 2) ce += fabsf((float)pl[0][idx] - pfin[0][idx]);
                 static const float CTH[NCE - 1] = {0.5f, 1.5f, 3.f, 6.f, 12.f};
-                while (CE < NCE - 1 && ce > CTH[CE]) CE++;
+                while (CE < NCE - 1 && ce > CTH[CE] * VS) CE++;
             }
             float wide = 0.f; int AW = 0;
             if (MS || FIELD) {
                 int cnt = 0; for (int k = 0; k < 8; k++) { int xx = x + WOFX[k], yy = y + WOFY[k] * RS; if (xx >= 0 && xx < W && yy >= 0 && (yy < y || xx < x)) { wide += actm[(size_t)yy * W + xx]; cnt++; } }
                 wide = cnt ? wide / cnt : (float)act;
-                while (AW < 7 && wide > ATH[AW]) AW++;
+                while (AW < 7 && wide > ATH[AW] * VSI) AW++;
             }
 
             /* ---- nested funnels (+ optional continuous field) ---- */
@@ -622,9 +626,9 @@ static void code_plane(int oi) {
             }
             int nlearn = nlv, nset = nlv, land = -1; float D[DIM];
             if (FIELD) {                                                          /* launch: descriptor, find resonant funnels, land or create */
-                float s = fminf(1.f, gm / 30.f), ang = atan2f(gy, gx);
-                D[0] = log2f(1.f + act) / 9.f; D[1] = log2f(1.f + 4.f * en) / 8.f; D[2] = log2f(1.f + wide) / 9.f;
-                D[3] = 0.5f + 0.5f * s * cosf(ang); D[4] = 0.5f + 0.5f * s * sinf(ang); D[5] = base / 255.f + 2.f * pass; D[6] = log2f(1.f + 4.f * ce) / 8.f;
+                float s = fminf(1.f, gm / (30.f * VS)), ang = atan2f(gy, gx);
+                D[0] = log2f(1.f + act / VS) / 9.f; D[1] = log2f(1.f + 4.f * en / VS) / 8.f; D[2] = log2f(1.f + wide / VS) / 9.f;
+                D[3] = 0.5f + 0.5f * s * cosf(ang); D[4] = 0.5f + 0.5f * s * sinf(ang); D[5] = base / MAXF + 2.f * pass; D[6] = log2f(1.f + 4.f * ce / VS) / 8.f;
                 int best[KMAX]; float bd[KMAX]; for (int k = 0; k < KRES; k++) { best[k] = -1; bd[k] = 1e30f; }
                 for (int i = 0; i < nfld; i++) {
                     if (fld[i].n < 0) continue;
@@ -695,7 +699,7 @@ static void code_plane(int oi) {
             float pfv;
             if (WST <= 0.f) { int bj = 0; for (int j = 1; j < nset; j++) if (path[j]->perf < path[bj]->perf) bj = j; pfv = pj[bj]; }   /* winner takes all */
             else pfv = sv2 / sw2;
-            float pc = clampf(pfv, 0, 255);
+            float pc = clampf(pfv, 0, MAXF);
             pfin[c][idx] = pc;
 
             Mouth *mo = &mouth[((pass * NA + A) * NEN + EN) * NCE + CE];
@@ -704,11 +708,11 @@ static void code_plane(int oi) {
             /* ---- ideal code length ---- */
             int xv = MODE == 2 ? 0 : P[idx];                                      /* decoder: not known yet, decoded below */
             if (!opt_b) {
-                double t = xv - pc, mass = lapF(t + 0.5, sb) - lapF(t - 0.5, sb), Z = lapF(255.5 - pc, sb) - lapF(-0.5 - pc, sb);
+                double t = xv - pc, mass = lapF(t + 0.5, sb) - lapF(t - 0.5, sb), Z = lapF(MAXF + 0.5 - pc, sb) - lapF(-0.5 - pc, sb);
                 double pr = mass / Z; if (pr < 1e-9) pr = 1e-9; bits[c] += -log2(pr);
             } else {
                 int r = (int)lrintf(pc), e = xv - r; int ex[4], nex = 0;
-                #define CL2(v) (clampi((v), -2, 2) + 2)
+                #define CL2(v) (clampi((v) / VSI, -2, 2) + 2)
                 int cx[NCX];
                 int fr = (int)floorf((pc - r + 0.5f) * 3.999f);
                 int cfl = (opt_c && oi > 0) ? (CE >= 3 ? 2 : CE >= 1 ? 1 : 0) : 0;
@@ -716,10 +720,10 @@ static void code_plane(int oi) {
                 cx[1] = (int)((path[nlv - 1] - lv[lvidx[nlv - 1]]) % (NA * NTH * NL));
                 cx[2] = (((CL2(Wv - r) * 5 + CL2(Nv - r)) * 5 + CL2(NWv - r)) * 5 + CL2(NEv - r)) * 3 + cfl;
                 cx[3] = ((fr * NEN + EN) * NL + L) * 3 + cfl;
-                cx[4] = (clampi((Wv - Nv) / 4, -4, 4) + 4) * 9 * 5 + (clampi((Nv - NWv) / 4, -4, 4) + 4) * 5 + (fr > 3 ? 3 : fr);
+                cx[4] = (clampi((Wv - Nv) / (4 * VSI), -4, 4) + 4) * 9 * 5 + (clampi((Nv - NWv) / (4 * VSI), -4, 4) + 4) * 5 + (fr > 3 ? 3 : fr);
                 float sd = 0;
                 for (int k = 0; k < NSUB; k++) { float dd = sp[k] - pc; sd += dd * dd; }
-                sd = sqrtf(sd / NSUB); int SQ = sd < 0.4f ? 0 : sd < 0.9f ? 1 : sd < 1.8f ? 2 : sd < 3.5f ? 3 : sd < 7.f ? 4 : 5;
+                sd = sqrtf(sd / NSUB) / VS; int SQ = sd < 0.4f ? 0 : sd < 0.9f ? 1 : sd < 1.8f ? 2 : sd < 3.5f ? 3 : sd < 7.f ? 4 : 5;
                 cx[5] = ((SQ * NEN + EN) * 3 + cfl) * 3 + (TH == 8 ? 0 : (TH & 1) + 1);
                 int ci = 6;
                 if (BOUNCE) {                                                     /* where did the neighbours' balls land? */
@@ -743,7 +747,7 @@ static void code_plane(int oi) {
                         int m = -1;                                               /* encoder only: the true answer */
                         if (MODE != 2) for (int t = 0; t < k; t++) if (pl[0][cand[t]] == pl[0][idx] && pl[1][cand[t]] == pl[1][idx] && pl[2][cand[t]] == pl[2][idx]) { m = t; break; }
                         int mW = x > 0 ? matched[idx - 1] : 0, mN = y > 0 ? matched[idx - W] : 0; float dg = 99;
-                        for (int t = 0; t < k; t++) { float d = fabsf(pl[1][cand[t]] - pc); if (d < dg) dg = d; }
+                        for (int t = 0; t < k; t++) { float d = fabsf(pl[1][cand[t]] - pc) / VS; if (d < dg) dg = d; }
                         int dq = dg < 0.5f ? 0 : dg < 1.5f ? 1 : dg < 4.f ? 2 : 3, c0 = (k - 1) * 4 + mW * 2 + mN;
                         float pg = 0;                                               /* minf=1: how sure the G layer already is of a candidate's G */
                         if (MINF) { int sv[4], ns = 0; for (int t = 0; t < k; t++) { int v = pl[1][cand[t]], dup = 0; for (int u2 = 0; u2 < ns; u2++) dup |= sv[u2] == v; if (dup) continue; sv[ns++] = v;
@@ -860,7 +864,7 @@ static int parse_opts(int argc, char **argv) {
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("src")) { /* source note kept in the header for the tool (src=1 grey) */ } else if (K_("terrain")) TERRAIN = (int)v; else if (K_("frameh")) FRAMEH = (int)v; else if (K_("twall")) TWALL = v; else if (K_("tdamp")) TDAMP = v; else if (K_("tcoup")) TCOUP = v; else if (K_("tmag")) TMAG = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("src")) { /* source note kept in the header for the tool (src=1 grey) */ } else if (K_("terrain")) TERRAIN = (int)v; else if (K_("frameh")) FRAMEH = (int)v; else if (K_("bits")) BITS = clampi((int)v, 8, 16); else if (K_("planes")) PLANES = (int)v == 1 ? 1 : 3; else if (K_("twall")) TWALL = v; else if (K_("tdamp")) TDAMP = v; else if (K_("tcoup")) TCOUP = v; else if (K_("tmag")) TMAG = v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 0; }
             continue;
@@ -889,7 +893,7 @@ int main(int argc, char **argv) {
         fclose(fi);
         for (char *t = strtok(opts, " "); t && oc < 256; t = strtok(NULL, " ")) ov[oc++] = t;
         if (!parse_opts(oc, ov)) return 1;
-        N = (size_t)W * H; raw = calloc(N * 3, 1);
+        N = (size_t)W * H; raw = NULL;
     } else {
         W = atoi(argv[2]); H = atoi(argv[3]);
         for (int i = 4; i < argc; i++) {
@@ -897,15 +901,23 @@ int main(int argc, char **argv) {
             ov[oc++] = argv[i]; if (strlen(opts) + strlen(argv[i]) + 2 < sizeof opts) { if (*opts) strcat(opts, " "); strcat(opts, argv[i]); }
         }
         if (!parse_opts(oc, ov)) return 1;
-        FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
-        N = (size_t)W * H; raw = malloc(N * 3);
-        if (fread(raw, 1, N * 3, fp) != N * 3) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
+        N = (size_t)W * H; raw = NULL;
     }
+    VSI = 1 << (BITS - 8); VS = (float)VSI; MAXV = (1 << BITS) - 1; MAXF = (float)MAXV;
+    const size_t BPS = BITS > 8 ? 2 : 1;                                   /* bytes per sample in the raw file (16-bit: little-endian) */
+    if (BITS > 8 && (GMASS || CMATCH || INTER)) { fprintf(stderr, "bits>8 does not support gmass / inter / cmatch\n"); return 1; }
     if (MODE && !opt_b) { fprintf(stderr, "a real bitstream needs the context-mixing coder (flag b)\n"); return 1; }
     if (MODE && WPATH) { fprintf(stderr, "wmodel= is a measurement aid; its model is not stored in the file\n"); return 1; }
     if (MODE && INTER && opt_f) { fprintf(stderr, "future taps (f) are not causal with inter=1\n"); return 1; }
+    if (MODE == 2) raw = calloc(N * 3 * BPS, 1);
+    else {
+        FILE *fp = fopen(argv[1], "rb"); if (!fp) { perror("open"); return 1; }
+        raw = malloc(N * 3 * BPS);
+        if (fread(raw, 1, N * 3 * BPS, fp) != N * 3 * BPS) { fprintf(stderr, "short read\n"); return 1; } fclose(fp);
+    }
     pl[0] = pl[1] = pl[2] = NULL;
-    for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
+    for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = BPS == 2 ? raw[(i * 3 + c) * 2] | raw[(i * 3 + c) * 2 + 1] << 8 : raw[i * 3 + c];
+        if (BPS == 2) for (size_t i = 0; i < N; i++) if (pl[c][i] > MAXV) { fprintf(stderr, "sample %d is larger than bits=%d allows\n", pl[c][i], BITS); return 1; } }
     if (WPATH) {
         FILE *fw = fopen(WPATH, "rb"); if (!fw) { perror("wmodel"); return 1; }
         WMODEL = malloc(3 * N * sizeof(float)); if (fread(WMODEL, sizeof(float), 3 * N, fw) != 3 * N) { fprintf(stderr, "short wave model\n"); return 1; } fclose(fw);
@@ -916,7 +928,11 @@ int main(int argc, char **argv) {
     nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); icurve = NSUB + (HIPPO ? 1 : 0);
     if (INTER) { PIPE = 1; ILACE = 0; if (CMATCH) { matched = calloc(N, 1); freed = calloc(N, 1); asked = calloc(N, 1); mcand = calloc(N, sizeof(int)); midx = calloc(N, 1); for (int i = 0; i < 16; i++) for (int q = 0; q < 6; q++) mc_w[i][q] = q < 4 ? 0.3f : 0; for (int a = 0; a < 4; a++) for (int i = 0; i < 128; i++) mc_flag[a][i].p = 0.3f; for (int i = 0; i < 256; i++) mc_idx[i].p = 0.5f; } }
     else CMATCH = 0;                                                      /* whole-colour match needs pixel-by-pixel order */
-    if (PIPE) {                                                             /* staggered colour pipeline: one thread per layer */
+    if (PLANES == 1) {                                                      /* grey: code the one layer, copy it into the other two */
+        if (MODE != 2) for (size_t i = 0; i < N; i++) if (pl[0][i] != pl[1][i] || pl[2][i] != pl[1][i]) { fprintf(stderr, "planes=1 needs a grey image (R = G = B)\n"); return 1; }
+        PIPE = 0; INTER = 0; CMATCH = 0; code_plane(0);
+        if (MODE == 2) for (size_t i = 0; i < N; i++) pl[0][i] = pl[2][i] = pl[1][i];
+    } else if (PIPE) {                                                      /* staggered colour pipeline: one thread per layer */
         pthread_t th[3]; for (int oi = 0; oi < 3; oi++) pthread_create(&th[oi], NULL, plane_thread, (void *)(long)oi);
         for (int oi = 0; oi < 3; oi++) pthread_join(th[oi], NULL);
     } else for (int oi = 0; oi < 3; oi++) code_plane(oi);
@@ -925,16 +941,19 @@ int main(int argc, char **argv) {
     if (MODE == 1) {
         FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; }
         unsigned hw[2] = {(unsigned)W, (unsigned)H}, ol = (unsigned)strlen(opts), sl[3] = {(unsigned)acs[0].n, (unsigned)acs[1].n, (unsigned)acs[2].n};
-        unsigned crc = crc32_of(raw, N * 3);                                       /* FFIC2 = FFIC1 + CRC-32 of the pixels at the end */
+        unsigned crc = crc32_of(raw, N * 3 * BPS);                                       /* FFIC2 = FFIC1 + CRC-32 of the pixels at the end */
         fwrite("FFIC2", 1, 6, fo); fwrite(hw, 4, 2, fo); fwrite(&ol, 4, 1, fo); fwrite(opts, 1, ol, fo); fwrite(sl, 4, 3, fo);
         for (int i = 0; i < 3; i++) fwrite(acs[i].buf, 1, acs[i].n, fo);
         fwrite(&crc, 4, 1, fo);
         fbytes = ftell(fo); fclose(fo);
     }
     if (MODE == 2) {
-        for (int c = 0; c < 3; c++) for (size_t i = 0; i < N; i++) raw[i * 3 + c] = (unsigned char)pl[c][i];
-        if (has_crc && crc32_of(raw, N * 3) != want_crc) { fprintf(stderr, "checksum mismatch: the file is damaged or was written by a different ffic build\n"); return 3; }
-        FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; } fwrite(raw, 1, N * 3, fo); fclose(fo);
+        for (int c = 0; c < 3; c++) for (size_t i = 0; i < N; i++) {
+            if (BPS == 2) { raw[(i * 3 + c) * 2] = (unsigned char)(pl[c][i] & 255); raw[(i * 3 + c) * 2 + 1] = (unsigned char)(pl[c][i] >> 8); }
+            else raw[i * 3 + c] = (unsigned char)pl[c][i];
+        }
+        if (has_crc && crc32_of(raw, N * 3 * BPS) != want_crc) { fprintf(stderr, "checksum mismatch: the file is damaged or was written by a different ffic build\n"); return 3; }
+        FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; } fwrite(raw, 1, N * 3 * BPS, fo); fclose(fo);
     }
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
     double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2] + WSIDE * 8;

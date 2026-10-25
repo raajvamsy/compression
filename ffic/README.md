@@ -14,7 +14,18 @@ python ffic.py test   photo.png                       # encode + decode + compar
 python selftest.py                                    # awkward shapes x 3 modes + damaged-file check
 ```
 
-The C coder (`ffic.c`) is built automatically on first use (`cc -O2 -march=native -pthread`). Input: any 8-bit RGB or grey image Pillow can read. Grey images come back grey (the copied colour layers cost about 250 bytes). Images with transparency and 16-bit images are refused rather than silently changed.
+The C coder (`ffic.c`) is built automatically on first use (`cc -O2 -march=native -pthread`).
+
+| input | how it is stored | comes back as |
+|---|---|---|
+| 8-bit RGB (PNG, TIFF, BMP, PPM, WebP lossless, ...) | one FFIC2 stream; if it has 256 colours or fewer, also tried as palette + colour-number map, smaller kept | the same RGB pixels |
+| 8-bit grey | one layer (`planes=1`, 3-4x faster than coding copies) | grey |
+| RGB or grey + transparency (RGBA, LA) | colour + alpha as two layers in an FFX1 container (constant alpha: one number) | the same mode, same pixels and transparency |
+| palette (P), with or without transparency | palette sorted by brightness + the map of colour numbers as a grey layer | the same palette image: same numbers, palette, transparency |
+| 16-bit grey (depth, elevation, scientific) | one layer coded with exactly the bits it uses (`bits=9..16`) | 16-bit grey |
+| video `.y4m` (8-bit, 4:2:0 / 4:2:2 / 4:4:4 / mono) | Y, U, V layers in their native sizes, each with its frames stacked (`frameh=`), coded in parallel | a byte-identical `.y4m` |
+
+Refused rather than silently changed: 16-bit colour, float, CMYK and other modes.
 
 | preset | what it runs | speed (768x512 photo, one core per layer) |
 |---|---|---|
@@ -45,6 +56,20 @@ Smaller on the 12 modern photos (about −2.8%), still about 1.3% bigger on the 
 The 4K crops come from camera JPEGs and keep their 8x8 JPEG structure, which may favour FFIC; JPEG XL's own JPEG-recompression mode does not apply to cropped pixels. FFIC is far slower than all of these tools (minutes per 4K photo, under one video frame per second), which is the main thing to fix before it is practical.
 
 Video: `ffic file.rgb W H*frames <options> frameh=H out=clip.ffic` (frames stacked vertically, rgb24).
+
+## Formats benchmarks
+
+| test | best other tool | FFIC | details |
+|---|---|---|---|
+| 16-bit elevation, Grand Canyon (3601x3601) | JPEG XL e9: 3,929,750 B | **3,732,532 B, −5.0%** | `experiments/BENCHDEM.md` |
+| 16-bit elevation, French Alps | JPEG XL e9: 5,246,884 B | **4,895,779 B, −6.7%** | |
+| 16-bit elevation, Swiss Alps | JPEG XL e9: 5,090,414 B | **4,775,794 B, −6.2%** | |
+| RGBA with soft transparency (768x512) | JPEG XL e9: 332,446 B | **325,917 B, −2.0%** | `experiments/BENCHFORMATS.md` |
+| palette image, 32 colours | JPEG XL e9: 81,290 B (PNG 109,623 B) | **78,409 B, −3.5%** | |
+| palette + transparency | JPEG XL e9: 118,907 B | **115,300 B, −3.0%** | |
+| video in native YUV 4:2:0, akiyo | x265 lossless: 588,367 B | **518,041 B, −12.0%** | |
+| video in native YUV 4:2:0, foreman | x264 lossless: 1,556,770 B | **1,503,346 B, −3.4%** | |
+| video in native YUV 4:2:0, mobile (fast pan) | x265 lossless: 1,972,752 B | 2,109,880 B, **+7.0% (worse)** | needs motion search |
 
 ## How it works (short)
 

@@ -40,9 +40,36 @@ def main():
         blob = bytearray(open(f"{t}/x.ffic", "rb").read()); blob[len(blob) // 2] ^= 0x10; open(f"{t}/bad.ffic", "wb").write(blob)
         refused = subprocess.run([EXE, "-d", f"{t}/bad.ffic", f"{t}/bad.rgb"], capture_output=True).returncode != 0
         bad += not refused
+    fb = formats()
     n = len(images(None)) * len(MODES)
     print(f"{n - (bad - (not refused))}/{n} round trips exact; damaged file {'refused' if refused else 'NOT refused'}")
-    sys.exit(1 if bad else 0)
+    sys.exit(1 if bad or fb else 0)
+
+
+def formats():
+    """every file format the tool accepts, checked against the ORIGINAL file (a converted copy once hid a 16-bit bug)"""
+    from PIL import Image
+    import ffic
+    r = np.random.default_rng(2); y, x = np.mgrid[0:37, 0:53]
+    rgb = np.stack([(x * 5) % 256, (y * 7) % 256, (x + y) % 256], -1).astype(np.uint8); al = ((x * y) % 256).astype(np.uint8)
+    cases = {"rgba.png": Image.fromarray(np.dstack([rgb, al]), "RGBA"), "la.png": Image.fromarray(np.dstack([rgb[..., 0], al]), "LA"),
+             "grey.png": Image.fromarray(rgb[..., 1]), "palette.png": Image.fromarray(rgb).quantize(20),
+             "grey16.png": Image.fromarray((x * 977 + y * 53 + r.integers(0, 40, x.shape)).astype(np.uint16)),
+             "rgb.tiff": Image.fromarray(rgb)}
+    bad = 0
+    with tempfile.TemporaryDirectory() as t:
+        for name, im in cases.items():
+            p = f"{t}/{name}"; im.save(p); ext = ".tiff" if name.endswith(".tiff") else ".png"
+            ffic.encode(p, f"{t}/x.ffic", "fast"); ffic.decode(f"{t}/x.ffic", f"{t}/back{ext}")
+            ok = ffic.same(p, f"{t}/back{ext}") and np.array_equal(np.asarray(Image.open(p)), np.asarray(Image.open(f"{t}/back{ext}")))
+            bad += not ok; print(f"format {name}: {'exact' if ok else 'MISMATCH'}")
+        yuv = f"{t}/v.y4m"                                                    # 3 frames of 4:2:0 video, odd size
+        with open(yuv, "wb") as f:
+            f.write(b"YUV4MPEG2 W33 H17 F25:1 Ip A1:1 C420jpeg\n")
+            for k in range(3): f.write(b"FRAME\n" + r.integers(0, 256, 33 * 17 + 2 * 17 * 9, dtype=np.uint8).tobytes())
+        ffic.encode(yuv, f"{t}/v.ffic", "fast"); ffic.decode(f"{t}/v.ffic", f"{t}/vb.y4m")
+        ok = open(yuv, "rb").read() == open(f"{t}/vb.y4m", "rb").read(); bad += not ok; print(f"format video .y4m 4:2:0 33x17: {'exact' if ok else 'MISMATCH'}")
+    return bad
 
 
 if __name__ == "__main__":
