@@ -42,6 +42,7 @@ def funnelzip_sizes(D):
 
 def run_one(D, ref, name, cfg):
     r = ref[name]
+    cfg = cfg.replace("{name}", name).replace("{data}", os.path.dirname(D.rstrip("/")))
     out = subprocess.check_output([EXE, f"{D}/{name}.rgb", str(r["w"]), str(r["h"])] + cfg.split(), text=True)
     vals = {k: float(v) for k, v in re.findall(r"(\w+)=([-\d.eE+naif]+)", out)}
     return vals

@@ -61,11 +61,11 @@
 #include <sched.h>
 
 #define NSUB 5                    /* fixed parallel predictors (balls); +1 when hippo is on */
-#define NSUBX (NSUB + 6)
+#define NSUBX (NSUB + 7)
 #define NNB 12                    /* neighbour taps (causal window) */
 #define CK 4                      /* neighbours used for cross-plane taps (W N NW NE) */
 #define NF 4                      /* non-causal neighbours of an already-decoded plane: E S SE SW */
-#define NX 12                     /* extra feature taps (hippocampal recall, material lines, material funnel, gravity, 3 'below' taps, 4 colour taps for G) */
+#define NX 13                     /* extra feature taps (hippocampal recall, material lines, material funnel, gravity, 3 'below' taps, 4 colour taps for G, wave tree) */
 #define NT (NNB + 2 * (CK + 1 + NF) + NX)
 #define NA 8                      /* activity levels */
 #define NTH 9                     /* spin states: 8 orientations + flat */
@@ -366,6 +366,10 @@ static void field_sleep(Funnel *fl, int *nf) {                              /* f
 
 /* ---- shared state (read by all plane threads) and the staggered colour pipeline ---- */
 static size_t N; static int *pl[3]; static float *pfin[3]; static float *pixcost;
+/* WAVE TREE (wavetree.py): each layer described by one horizontal + one vertical wave per region, regions split where needed.
+   wmodel=path loads the model the tree produces (float32 R,G,B); its value is an extra ball + tap (wonly=1: it is the ONLY guess).
+   The tree's own size (path.side, bytes) is added to the reported size. */
+static float *WMODEL = NULL; static const char *WPATH = NULL; static int WONLY = 0; static double WSIDE = 0;
 static const int order[3] = {1, 0, 2};              /* G first, then R, then B */
 static const int lsize[MAXLV] = {1, NA, NA * NTH, NA * NTH * NL};
 static double bits[3]; static int nsub, icurve;
@@ -416,10 +420,11 @@ static void code_plane(int oi) {
         int c = order[oi]; int *P = pl[c];
         const int nml = (MLINE && oi >= 1) ? ((MLINE == 2 && oi == 2) ? 2 : 1) : 0, iml = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0);
         const int hasmat = MATF && oi >= 1, imat = iml + nml;
-        const int nsubp = nsub + nml + hasmat;
+        const int hasw = WMODEL != NULL, iwv = nsub + nml + hasmat;
+        const int nsubp = nsub + nml + hasmat + hasw;
         Mat *mats = hasmat ? calloc(MMAXC, sizeof(Mat)) : NULL; int nmat = 0;
         float *gmt = GMASS ? calloc(256 * 256, sizeof(float)) : NULL, *gtot = GMASS ? calloc(256, sizeof(float)) : NULL; int gkey = 0;
-        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
+        const int nact = NNB + (opt_c ? (oi >= 1 ? CK + 1 + (opt_f ? NF : 0) : 0) + (oi >= 2 ? CK + 1 + (opt_f ? NF : 0) : 0) : 0) + (HIPPO ? 1 : 0) + nml + hasmat + hasw + (GMASS ? 1 : 0);   /* + 3 'below' taps on odd rows when ilace */
         Funnel *lv[MAXLV]; for (int j = 0; j < MAXLV; j++) { lv[j] = malloc(lsize[j] * sizeof(Funnel)); for (int i = 0; i < lsize[j]; i++) lv[j][i].n = -1; }
         Funnel *fld = FIELD ? malloc(FMAXC * sizeof(Funnel)) : NULL; int nfld = 0;
         Mouth *mouth = malloc(2 * NA * NEN * NCE * sizeof(Mouth)); for (int i = 0; i < 2 * NA * NEN * NCE; i++) { mouth[i].scale = 6.f; mouth[i].n = 0; }
@@ -517,6 +522,7 @@ static void code_plane(int oi) {
                 double pr = 0; for (int k = 0; k < kk; k++) pr += w[k] * z[k];
                 sp[imat] = clampf((float)pr, 0, 255);
             }
+            if (hasw) sp[iwv] = WMODEL[(size_t)c * N + idx];
             float base;
             if (opt_w) {
                 float sw = 0, sv = 0;
@@ -526,6 +532,7 @@ static void code_plane(int oi) {
                 }
                 base = sv / sw;
             } else base = sp[0];
+            if (WONLY && hasw) base = sp[iwv];
 
             /* ---- transduction: activity, level, spin, error energy, cross-plane surprise, wide activity ---- */
             int dh = abs(Wv - WWv) + abs(Nv - NWv) + abs(Nv - NEv), dv = abs(Wv - NWv) + abs(Nv - NNv) + abs(NEv - NNEv), act = dh + dv;
@@ -616,6 +623,7 @@ static void code_plane(int oi) {
             if (HIPPO) u[nu++] = sp[NSUB] - base;
             for (int q = 0; q < nml; q++) u[nu++] = sp[iml + q] - base;
             if (hasmat) u[nu++] = sp[imat] - base;
+            if (hasw) u[nu++] = sp[iwv] - base;
             if (GMASS) {                                                          /* gravity: pull toward heavy values near the prediction */
                 gkey = (FIELD && land >= 0 ? land : A) & 255; const float *M = gmt + gkey * 256;
                 int v0 = (int)lrintf(base); float sw = 0, sv = 0;
@@ -797,11 +805,12 @@ static int parse_opts(int argc, char **argv) {
         if (eq) {
             float v = atof(eq + 1); int n = (int)(eq - a);
             #define K_(s) (n == (int)strlen(s) && !strncmp(a, s, n))
+            if (!strncmp(a, "wmodel=", 7)) { WPATH = eq + 1; continue; }
             if (K_("mu")) MU = v; else if (K_("lam")) LAM = v; else if (K_("P0")) P0 = v; else if (K_("lrm")) LRM = v; else if (K_("gate")) GATE = v;
             else if (K_("rl")) RLMASK = (int)v; else if (K_("clim")) CLIM = (int)v; else if (K_("field")) FIELD = (int)v; else if (K_("sleep")) SLEEP = (int)v;
             else if (K_("bounce")) BOUNCE = (int)v; else if (K_("hippo")) HIPPO = (int)v; else if (K_("lampe")) LAMPE = (int)v; else if (K_("sal")) SAL = v;
             else if (K_("ws")) WST = v; else if (K_("replay")) REPLAY = (int)v; else if (K_("ms")) MS = (int)v; else if (K_("merge")) MERGE = v;
-            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
+            else if (K_("grav")) GRAV = v; else if (K_("mline")) MLINE = (int)v; else if (K_("matf")) MATF = (int)v; else if (K_("gmass")) GMASS = (int)v; else if (K_("ilace")) ILACE = (int)v; else if (K_("pipe")) PIPE = (int)v; else if (K_("inter")) INTER = (int)v; else if (K_("cmatch")) CMATCH = (int)v; else if (K_("mthr")) MTHR = v; else if (K_("mexcl")) MEXCL = (int)v; else if (K_("minf")) MINF = (int)v; else if (K_("wonly")) WONLY = (int)v; else if (K_("lag")) LAG = clampi((int)v, 2, 1 << 20); else if (K_("snapk")) SNAPK = clampi((int)v, 1, 1 << 20); else if (K_("gmr")) GMR = clampi((int)v, 1, 64); else if (K_("gsig")) GSIG = v; else if (K_("glim")) GLIM = v; else if (K_("mmax")) MMAX = clampi((int)v, 1, MMAXC); else if (K_("mctx")) MCTX = (int)v; else if (K_("mrad")) MRAD = v; else if (K_("mdec")) MDEC = v; else if (K_("matlam")) MATLAM = v; else if (K_("mbw")) MBW = v; else if (K_("mlam")) MLAM = v; else if (K_("mwin")) MWIN = clampi((int)v, 3, NNB); else if (K_("salp")) SALP = v; else if (K_("salmax")) SALMAX = v; else if (K_("salbias")) SALBIAS = v; else if (K_("salall")) SALALL = v; else if (K_("apm")) APM = (int)v; else if (K_("mix2")) MIX2 = (int)v; else if (K_("apmw")) APMW = v; else if (K_("apmr")) APMR = v; else if (K_("register")) REGISTER = (int)v; else if (K_("curve")) CURVE = (int)v;
             else if (K_("kres")) KRES = clampi((int)v, 1, KMAX); else if (K_("fmax")) FMAX = clampi((int)v, 8, FMAXC);
             else { fprintf(stderr, "unknown option %s\n", a); return 0; }
             continue;
@@ -845,6 +854,11 @@ int main(int argc, char **argv) {
     if (MODE && INTER && opt_f) { fprintf(stderr, "future taps (f) are not causal with inter=1\n"); return 1; }
     pl[0] = pl[1] = pl[2] = NULL;
     for (int c = 0; c < 3; c++) { pl[c] = malloc(N * sizeof(int)); pfin[c] = calloc(N, sizeof(float)); for (size_t i = 0; i < N; i++) pl[c][i] = raw[i * 3 + c]; }
+    if (WPATH) {
+        FILE *fw = fopen(WPATH, "rb"); if (!fw) { perror("wmodel"); return 1; }
+        WMODEL = malloc(3 * N * sizeof(float)); if (fread(WMODEL, sizeof(float), 3 * N, fw) != 3 * N) { fprintf(stderr, "short wave model\n"); return 1; } fclose(fw);
+        char sp_[1024]; snprintf(sp_, sizeof sp_, "%s.side", WPATH); FILE *fs = fopen(sp_, "r"); if (fs) { if (fscanf(fs, "%lf", &WSIDE) != 1) WSIDE = 0; fclose(fs); }
+    }
     clock_t t0 = clock(); struct timespec w0, w1; clock_gettime(CLOCK_MONOTONIC, &w0);
     pixcost = getenv("FFIC_PIXCOST") ? calloc(3 * N, sizeof(float)) : NULL;
     nsub = NSUB + (HIPPO ? 1 : 0) + (CURVE ? 1 : 0); icurve = NSUB + (HIPPO ? 1 : 0);
@@ -868,9 +882,9 @@ int main(int argc, char **argv) {
         FILE *fo = fopen(outp, "wb"); if (!fo) { perror("out"); return 1; } fwrite(raw, 1, N * 3, fo); fclose(fo);
     }
     if (pixcost) { FILE *fo = fopen(getenv("FFIC_PIXCOST"), "wb"); fwrite(pixcost, sizeof(float), 3 * N, fo); fclose(fo); }
-    double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2];
-    printf("file=%lld bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f excl=%.4f\n",
+    double ms = 1000.0 * (clock() - t0) / CLOCKS_PER_SEC, tot = bits[0] + bits[1] + bits[2] + WSIDE * 8;
+    printf("file=%lld bytes=%.0f bpp=%.4f ms=%.0f wall=%.0f funnels=%lld R=%.0f G=%.0f B=%.0f field_born=%lld field_max=%d fission=%lld prune=%lld hippo_hit=%.4f replay=%lld materials=%lld matched=%.4f excl=%.4f wside=%.0f\n",
            fbytes, tot / 8, tot / N, ms, wall, tot_born, bits[0] / 8, bits[1] / 8, bits[2] / 8, tot_field_born, tot_field_max, tot_fission, tot_prune,
-           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N, (double)st_excl_all / N);
+           tot_hq ? (double)tot_hh / tot_hq : 0.0, tot_replay, tot_mat, (double)tot_matched / N, (double)st_excl_all / N, WSIDE);
     return 0;
 }

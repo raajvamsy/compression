@@ -225,3 +225,15 @@ EXPERIMENTS += [
     dict(id="inter_cmatch_excl_inf", cfg=MB + " inter=1 cmatch=1 mexcl=1 minf=1 snapk=32", jobs=1, mechanism="As inter_cmatch_excl, and the match question also hears the G layer's own probability for the candidates' G values (extra counter context + mixer input).",
          hypothesis="The flag knows when the layered coder is already sure, so it wastes fewer bits on smooth photos.", **_w),
 ]
+
+_v = dict(group="wave tree", funnelbrain="Waves that split like funnels: one horizontal + one vertical wave per region, a region splits in four where its two waves do not fit.")
+WT = lambda t: f" wmodel={{data}}/wave_T{t}/{{name}}.wave"
+EXPERIMENTS += [
+    dict(id="wave_only_T8", cfg="evb wonly=1" + WT(8), mechanism="A. Waves as the default: the wave tree (split where misfit RMS > 8, regions >= 16 px) is the ONLY guess; the coder stores the tree plus the leftover (context-mixing coder, no funnels).",
+         hypothesis="Much worse than guessing from neighbours: the tree cannot follow texture and noise, and fine trees cost a lot to store.", **_v),
+    dict(id="wave_only_T4", cfg="evb wonly=1" + WT(4), mechanism="A. As wave_only_T8 with a deeper tree (misfit > 4, regions >= 8 px).", hypothesis="Better leftover, but the tree costs ~4x more.", **_v),
+    dict(id="wave_team_T16", cfg=MB + WT(16), mechanism="C. Current best coder + the coarse wave tree (misfit > 16, regions >= 32 px) as an extra guesser and tap for every colour layer; tree bytes added.",
+         hypothesis="Large-scale shape is already cheap for the funnels; small gain at best, tree is cheap.", **_v),
+    dict(id="wave_team_T8", cfg=MB + WT(8), mechanism="C. Current best coder + the T8 wave tree as an extra guesser and tap; tree bytes added.", hypothesis="Gain on guesses vs 200 KB of tree.", **_v),
+    dict(id="wave_team_T4", cfg=MB + WT(4), mechanism="C. Current best coder + the deep T4 wave tree as an extra guesser and tap; tree bytes added.", hypothesis="Best guesses, but 772 KB of tree is likely too expensive.", **_v),
+]
