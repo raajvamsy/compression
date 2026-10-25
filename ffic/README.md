@@ -31,6 +31,7 @@ Refused rather than silently changed: 16-bit colour, float, CMYK and other modes
 |---|---|---|
 | `max` | best coder + terrain balls; colour layers one after another | ~5.7 s to encode, ~5.8 s to decode |
 | `fast` | the same model with the three colour layers on three threads | ~2.1 s / ~2.5 s, files ~0.05% bigger |
+| `archive` | per image: 7 reversible tricks (inverted, other colour orders, mirrored, flipped) with the main brain, the best two also with the whole-colour brain; smallest kept | ~9x slower to encode; decoding as fast as max (or ~2.5x when the whole-colour brain wins) |
 
 Decoding takes as long as encoding (the decoder runs the same model). That is the main weakness today.
 
@@ -72,7 +73,8 @@ Images keep every pixel and their metadata (colour profile, EXIF, DPI, PNG text)
 | zip -9 | 18,015,523 B | −0.2% |
 | 7z LZMA2 ultra | 17,747,598 B | −1.7% |
 | every photo converted to JPEG XL e9 | 10,481,322 B | −41.9% |
-| **`ffic.py pack`** | **10,329,410 B** | **−42.8%** (47 s to pack, 50 s to unpack) |
+| `ffic.py pack` (max) | 10,329,410 B | −42.8% (47 s to pack, 50 s to unpack) |
+| **`ffic.py pack --preset archive`** | **10,254,187 B** | **−43.2%**, 2.17% smaller than JPEG XL (610 s to pack, 72 s to unpack) |
 
 ## Formats benchmarks
 
