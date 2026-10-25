@@ -247,3 +247,15 @@ Fold the image in half again and again (reversible integer folds: no loss). What
 | checkerboard fold | +5.9% | +0.2% | +3.7% |
 
 Where the bits go (dog, green, sharp fold once): the fold waves cost **2.44 bits/value, 8% less than raster pixels (2.65)**, because they are guessed from all sides. But the stack costs **3.48 bits/value, 32% more**, because its own neighbours are now 2 px apart. The two cancel, and every extra fold makes the stack worse. The all-directions information is real, but in these tests it never pays for the extra cost of the stack. That matches the general rule: changing the order cannot add information, it only changes how easy each part is to guess.
+
+### 8b. Folding the fold waves again (wavelet packets, tested)
+
+Take the fold waves of one fold as a new image and fold them again, and so on. Same guesser and coder, green layer, sizes of the fold waves only:
+
+| | dog | kodim03 |
+|---|---|---|
+| fold waves coded as an image | 201,464 B | 136,669 B |
+| folded once more / twice | +9.2% / +11.1% | +5.5% / +8.3% |
+| mosaic (stack + 3 fold waves as one image), folded again | 316,451 vs 296,538 B (+6.7%) | 197,185 vs 190,699 B (+3.4%) |
+
+Every extra fold of the fold waves makes them bigger (the diagonal one by up to +15.6%). After the first fold, the fold waves are mostly edges and grain: there is no regular wave left for another fold to gather, and each fold pushes neighbours further apart. Wavelet packets help on strongly periodic textures (fingerprints, fabric), which these photos do not have.
