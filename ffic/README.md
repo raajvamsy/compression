@@ -57,6 +57,23 @@ The 4K crops come from camera JPEGs and keep their 8x8 JPEG structure, which may
 
 Video: `ffic file.rgb W H*frames <options> frameh=H out=clip.ffic` (frames stacked vertically, rgb24).
 
+## Whole folders (like zip)
+
+```
+python ffic.py pack   photos/ photos.ffa        # every image by FFIC (4 at a time), every other file by xz
+python ffic.py unpack photos.ffa restored/
+```
+
+Images keep every pixel and their metadata (colour profile, EXIF, DPI, PNG text); other files (JPEGs, documents, animated GIFs, anything FFIC cannot store exactly) keep their exact bytes. Folder of the 20 test photos as ordinary PNGs (`experiments/BENCHFOLDER.md`):
+
+| method | archive | vs the PNG folder |
+|---|---|---|
+| folder of 20 PNGs | 18,053,552 B | — |
+| zip -9 | 18,015,523 B | −0.2% |
+| 7z LZMA2 ultra | 17,747,598 B | −1.7% |
+| every photo converted to JPEG XL e9 | 10,481,322 B | −41.9% |
+| **`ffic.py pack`** | **10,329,410 B** | **−42.8%** (47 s to pack, 50 s to unpack) |
+
 ## Formats benchmarks
 
 | test | best other tool | FFIC | details |

@@ -6,6 +6,8 @@
     python ffic.py decode in.ffic  out.png | out.y4m
     python ffic.py info   in.ffic
     python ffic.py test   in.png|in.y4m [...]                      encode + decode + compare, every preset
+    python ffic.py pack   folder/ archive.ffa [--preset max|fast]   a whole folder, like zip (images by FFIC, other files by xz)
+    python ffic.py unpack archive.ffa folder/
 
 Images: anything Pillow reads (PNG, PPM, BMP, TIFF, WebP, ...): 8-bit RGB, grey, 16-bit grey (depth, elevation, scientific), RGB + transparency, grey +
 transparency, palette (+ transparency). Pixels and transparency come back exactly; a palette image comes back as the same
@@ -91,6 +93,7 @@ def read_any(path):
 def load_image(path):
     from PIL import Image
     im = Image.open(path); im.load()
+    if getattr(im, "n_frames", 1) > 1: sys.exit(f"{path}: animated / multi-page images are not supported yet")
     if im.mode in ("F", "RGB;16", "RGBA;16"): sys.exit(f"{path}: float and 16-bit colour images are not supported yet")
     if im.mode == "P": im = im.convert("RGBA" if "transparency" in im.info else "RGB")
     if im.mode == "PA": im = im.convert("RGBA")
@@ -107,20 +110,43 @@ def palette_parts(idx, pal, cfg):
     return code_layer(rank[idx].astype(np.uint8), cfg), order.tolist()
 
 
+def image_extras(im):
+    """what an image file carries besides pixels: colour profile, camera EXIF, DPI, PNG text notes (kept and re-attached)"""
+    import base64
+    x = {k: base64.b64encode(im.info[k]).decode() for k in ("icc_profile", "exif") if isinstance(im.info.get(k), bytes) and im.info[k]}
+    if "dpi" in im.info: x["dpi"] = [float(v) for v in im.info["dpi"]]
+    if getattr(im, "text", None): x["text"] = dict(im.text)
+    return x
+
+
+def save_kwargs(meta, ext):
+    import base64
+    from PIL import PngImagePlugin
+    x = meta.get("extras", {}); kw = {k: base64.b64decode(x[k]) for k in ("icc_profile", "exif") if k in x}
+    if "dpi" in x: kw["dpi"] = tuple(x["dpi"])
+    if "text" in x and ext == ".png":
+        p = PngImagePlugin.PngInfo()
+        for k, v in x["text"].items(): p.add_text(k, v)
+        kw["pnginfo"] = p
+    return kw
+
+
 def encode_image(src, dst, preset):
     from PIL import Image
     cfg = PRESETS[preset]; raw = Image.open(src); raw.load()
+    if getattr(raw, "n_frames", 1) > 1: sys.exit(f"{src}: animated / multi-page images are not supported yet")
+    extras = image_extras(raw)
     if raw.mode == "P" and raw.getpalette() is not None:                 # palette image: keep it a palette image, exactly
         pal = raw.getpalette()[:3 * 256]; plen = len(pal); pal += [0] * (768 - len(pal)); idx = np.asarray(raw)
         blob, order = palette_parts(idx, pal, cfg); tr = raw.info.get("transparency")
-        meta = {"kind": "image", "mode": "P", "width": raw.width, "height": raw.height, "palette": pal[:plen], "order": order,
+        meta = {"kind": "image", "mode": "P", "width": raw.width, "height": raw.height, "palette": pal[:plen], "order": order, "extras": extras,
                 "transparency": (list(tr) if isinstance(tr, bytes) else tr)}
         write_container(dst, meta, [("index", blob)]); return
     im = load_image(src); a = np.asarray(im)
     if im.mode in ("I;16", "I;16B", "I;16L", "I"):                       # 16-bit grey (depth, elevation, scientific)
         a = np.asarray(im).astype(np.int64)
         if a.min() < 0 or a.max() > 65535: sys.exit(f"{src}: values outside 0..65535 are not supported")
-        write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height}, [("grey16", code_layer(a.astype(np.uint16), cfg))]); return
+        write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}, [("grey16", code_layer(a.astype(np.uint16), cfg))]); return
     if im.mode in ("RGB", "L"):
         best = code_layer(a, cfg)
         if im.mode == "RGB":                                                # few colours (graphics, screenshots): try a palette too
@@ -131,11 +157,13 @@ def encode_image(src, dst, preset):
                 blob, order = palette_parts(inv.reshape(a.shape[:2]), pal, cfg)
                 if len(blob) + 2 * len(cols) * 3 < len(best):
                     write_container(dst, {"kind": "image", "mode": "RGB", "as": "palette", "width": im.width, "height": im.height,
-                                          "palette": pal, "order": order}, [("index", blob)]); return
-        open(dst, "wb").write(best); return
+                                          "palette": pal, "order": order, "extras": extras}, [("index", blob)]); return
+        if extras: write_container(dst, {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}, [("image", best)])
+        else: open(dst, "wb").write(best)
+        return
     colour, alpha = a[..., :-1], a[..., -1]
     if colour.shape[2] == 1: colour = colour[..., 0]
-    parts, meta = [("colour", code_layer(colour, cfg))], {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height}
+    parts, meta = [("colour", code_layer(colour, cfg))], {"kind": "image", "mode": im.mode, "width": im.width, "height": im.height, "extras": extras}
     if (alpha == alpha.flat[0]).all(): meta["alpha_const"] = int(alpha.flat[0])     # constant transparency: one number
     else: parts.append(("alpha", code_layer(alpha, cfg)))
     write_container(dst, meta, parts)
@@ -143,7 +171,7 @@ def encode_image(src, dst, preset):
 
 def decode_image(meta, parts):
     from PIL import Image
-    if meta["kind"] == "plain":
+    if meta["kind"] == "plain" or "image" in parts:
         a = decode_layer(parts["image"]); return Image.fromarray(a, "L" if a.ndim == 2 else "RGB")
     if "grey16" in parts:
         a = decode_layer(parts["grey16"]); from PIL import Image as I
@@ -216,7 +244,10 @@ def decode(src, dst):
     if meta["kind"] == "y4m":
         if not dst.lower().endswith(".y4m"): sys.exit("this file holds video: decode to a .y4m file")
         decode_video(meta, parts, dst)
-    else: decode_image(meta, parts).save(dst)
+    else:
+        im = decode_image(meta, parts); ext = os.path.splitext(dst)[1].lower()
+        if ext in (".jpg", ".jpeg"): sys.exit("JPEG output would lose pixels: decode to .png (or another lossless format)")
+        im.save(dst, **save_kwargs(meta, ext), **({"lossless": True, "quality": 100, "method": 4} if ext == ".webp" else {}))
     return time.time() - t0
 
 
@@ -231,14 +262,79 @@ def same(src, out):
     return a.mode == B.mode and np.array_equal(np.asarray(a), np.asarray(B))
 
 
+# ---------------------------------------------------------------- folders (like zip)
+IMG_EXT = {".png", ".tif", ".tiff", ".bmp", ".ppm", ".pgm", ".pnm", ".webp", ".gif", ".tga", ".y4m"}
+
+
+def _pack_one(path, preset):
+    """-> (kind, blob, note). Images that FFIC stores exactly become FFIC streams; everything else is kept byte for byte (xz)."""
+    import lzma
+    ext = os.path.splitext(path)[1].lower()
+    if ext in IMG_EXT:
+        with tempfile.TemporaryDirectory() as t:
+            f = f"{t}/x.ffic"
+            try:
+                r = subprocess.run([sys.executable, os.path.abspath(__file__), "encode", path, f, "--preset", preset], capture_output=True, text=True)
+                if r.returncode == 0: return "image", open(f, "rb").read(), ""
+                note = (r.stderr.strip().splitlines() or ["not supported"])[-1]
+            except Exception as e:
+                note = str(e)
+    else: note = ""
+    return "file", lzma.compress(open(path, "rb").read(), preset=9 | lzma.PRESET_EXTREME), note
+
+
+def pack(folder, dst, preset, jobs=4):
+    """FFA1 archive: "FFA1" + JSON manifest (path, kind, size, original format) + blobs. Images keep their pixels exactly;
+    other files keep their bytes exactly."""
+    files = sorted(os.path.relpath(os.path.join(dp, f), folder) for dp, _, fs in os.walk(folder) for f in fs)
+    build(); t0 = time.time()
+    with ThreadPoolExecutor(jobs) as ex: out = list(ex.map(lambda p: _pack_one(os.path.join(folder, p), preset), files))
+    man = [{"path": p, "kind": k, "size": os.path.getsize(os.path.join(folder, p)), "bytes": len(b), **({"note": n} if n else {})} for p, (k, b, n) in zip(files, out)]
+    js = json.dumps({"files": man}, separators=(",", ":")).encode()
+    with open(dst, "wb") as f:
+        f.write(b"FFA1" + struct.pack("<I", len(js)) + js)
+        for _, b, _ in out: f.write(b)
+    return man, time.time() - t0
+
+
+def unpack(src, folder, jobs=4):
+    import lzma
+    data = open(src, "rb").read()
+    if data[:4] != b"FFA1": sys.exit(f"{src}: not an FFIC folder archive")
+    n = struct.unpack("<I", data[4:8])[0]; man = json.loads(data[8:8 + n])["files"]; pos = 8 + n; t0 = time.time(); jobs_ = []
+    for m in man:
+        blob = data[pos:pos + m["bytes"]]; pos += m["bytes"]; out = os.path.join(folder, m["path"])
+        if os.path.isabs(m["path"]) or ".." in m["path"].split(os.sep): sys.exit(f"unsafe path in archive: {m['path']}")
+        os.makedirs(os.path.dirname(out) or ".", exist_ok=True); jobs_.append((m, blob, out))
+    def one(j):
+        m, blob, out = j
+        if m["kind"] == "file": open(out, "wb").write(lzma.decompress(blob)); return
+        with tempfile.TemporaryDirectory() as t:
+            open(f"{t}/x.ffic", "wb").write(blob)
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), "decode", f"{t}/x.ffic", out], capture_output=True, text=True)
+            if r.returncode: sys.exit(f"{m['path']}: {r.stderr.strip()}")
+    with ThreadPoolExecutor(jobs) as ex: list(ex.map(one, jobs_))
+    return man, time.time() - t0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("encode"); e.add_argument("src"); e.add_argument("dst"); e.add_argument("--preset", choices=PRESETS, default="max")
     d = sub.add_parser("decode"); d.add_argument("src"); d.add_argument("dst")
     i = sub.add_parser("info"); i.add_argument("src")
+    pk = sub.add_parser("pack"); pk.add_argument("folder"); pk.add_argument("dst"); pk.add_argument("--preset", choices=PRESETS, default="max"); pk.add_argument("--jobs", type=int, default=4)
+    up = sub.add_parser("unpack"); up.add_argument("src"); up.add_argument("folder"); up.add_argument("--jobs", type=int, default=4)
     tt = sub.add_parser("test"); tt.add_argument("src", nargs="+"); tt.add_argument("--preset", choices=list(PRESETS) + ["all"], default="all")
     a = ap.parse_args()
+    if a.cmd == "pack":
+        man, s = pack(a.folder, a.dst, a.preset, a.jobs); tot = sum(m["size"] for m in man)
+        print(f"{a.dst}: {len(man)} files ({sum(m['kind'] == 'image' for m in man)} images), {tot:,} -> {os.path.getsize(a.dst):,} bytes, {s:.0f} s")
+        for m in man:
+            if m.get("note"): print(f"  {m['path']}: stored as a plain file ({m['note']})")
+        return
+    if a.cmd == "unpack":
+        man, s = unpack(a.src, a.folder, a.jobs); print(f"{a.folder}: {len(man)} files restored in {s:.0f} s, checksums ok"); return
     if a.cmd == "encode":
         s = encode(a.src, a.dst, a.preset); print(f"{a.dst}: {os.path.getsize(a.dst):,} bytes, {s:.1f} s, preset {a.preset}")
     elif a.cmd == "decode":
